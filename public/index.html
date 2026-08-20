@@ -1,61 +1,350 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>数学学習記録 | Math Study Log</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 24px;
-      line-height: 1.7;
-      color: #222;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Study Log - All Days</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbfcfc;
+    --panel: #ffffff;
+    --line: #dfe7e7;
+    --ink: #192323;
+    --ink-soft: #6b7777;
+    --accent: #315f63;
+    --level-1: #e8f0f0;
+    --level-2: #c9dddd;
+    --level-3: #8fb4b5;
+    --level-4: #315f63;
+    --empty: #f5f7f7;
+  }
 
-    header {
-      margin-bottom: 40px;
-    }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    h1, h2 {
-      line-height: 1.4;
-    }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Noto Sans JP", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
 
-    a {
-      color: inherit;
-    }
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 20px 24px 18px;
+    background: rgba(255,255,255,0.88);
+  }
 
-    img {
-      max-width: 100%;
-      height: auto;
-    }
+  .header-inner {
+    max-width: 940px;
+    margin: 0 auto;
+  }
 
-    .record {
-      border-top: 1px solid #ddd;
-      padding: 20px 0;
-    }
+  .header-title {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
 
-    .date {
-      color: #666;
-      font-size: 0.9rem;
+  .header-date {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  main {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 24px 24px 42px;
+  }
+
+  .latest-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--ink);
+    text-decoration: none;
+    margin-bottom: 24px;
+    transition: 0.18s ease;
+  }
+
+  .latest-link:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .latest-kicker {
+    font-size: 11px;
+    letter-spacing: .1em;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .latest-main {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .latest-meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .month-section { margin-bottom: 28px; }
+
+  .month-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .month-title {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .month-note {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .day-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+
+  .day-cell {
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 0 9px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--panel);
+    color: var(--ink);
+    text-decoration: none;
+    transition: 0.18s ease;
+    overflow: hidden;
+  }
+
+  .day-cell:not(.empty):hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .day-cell.empty {
+    background: var(--empty);
+    color: #a5adad;
+  }
+
+  .day-number {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .day-count {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    opacity: .78;
+    white-space: nowrap;
+  }
+
+  .level-1 { background: var(--level-1); }
+  .level-2 { background: var(--level-2); }
+  .level-3 { background: var(--level-3); color: #102425; border-color: #82aaaa; }
+  .level-4 { background: var(--level-4); color: #fff; border-color: var(--level-4); }
+  .level-4 .day-count { opacity: .86; }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 9px;
+    color: var(--ink-soft);
+    font-size: 10px;
+  }
+
+  .legend-box {
+    width: 18px;
+    height: 10px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+  }
+
+  .stats-section {
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+    margin-top: 22px;
+  }
+
+  .stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    color: var(--ink-soft);
+    font-size: 12px;
+  }
+
+  .stat-item strong {
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    margin-left: 5px;
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 18px 24px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 16px; }
+    main { padding: 18px 12px 32px; }
+    .header-date { font-size: 23px; }
+    .latest-link { padding: 12px 13px; }
+    .latest-meta { display: none; }
+    .calendar-grid { gap: 4px; }
+    .day-cell {
+      height: 42px;
+      padding: 0 6px;
+      border-radius: 6px;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0;
     }
-  </style>
+    .day-number { font-size: 12px; line-height: 1.2; }
+    .day-count { font-size: 8px; line-height: 1.15; }
+    .month-note { display: none; }
+  }
+</style>
 </head>
 <body>
-  <header>
-    <h1>数学学習記録</h1>
-    <p>Math Study Log</p>
-  </header>
+<header>
+  <div class="header-inner">
+    <div class="header-title">Math Study Log</div>
+    <div class="header-date">学習記録</div>
+  </div>
+</header>
 
-  
-<section class="record">
-  <div class="date">2026-08-20</div>
-  <h2>
-    <a href="./records/2026-08-20.html">
-      数学学習記録 001
-    </a>
-  </h2>
-</section>
+<main>
+
+  <a href="./records/2026-08-20.html" class="latest-link">
+    <div>
+      <div class="latest-kicker">LATEST</div>
+      <div class="latest-main">最新更新はこちら → 2026年8月20日</div>
+    </div>
+    <div class="latest-meta">1 problems</div>
+  </a>
+
+
+  <section class="month-section">
+    <div class="month-head">
+      <div class="month-title">2026年8月</div>
+      <div class="month-note">1問でも、ちゃんと1マス。</div>
+    </div>
+
+    <div class="calendar-grid">
+
+      <div class="day-header">日</div>
+      <div class="day-header">月</div>
+      <div class="day-header">火</div>
+      <div class="day-header">水</div>
+      <div class="day-header">木</div>
+      <div class="day-header">金</div>
+      <div class="day-header">土</div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"><span class="day-number">1</span></div>
+      <div class="day-cell empty"><span class="day-number">2</span></div>
+      <div class="day-cell empty"><span class="day-number">3</span></div>
+      <div class="day-cell empty"><span class="day-number">4</span></div>
+      <div class="day-cell empty"><span class="day-number">5</span></div>
+      <div class="day-cell empty"><span class="day-number">6</span></div>
+      <div class="day-cell empty"><span class="day-number">7</span></div>
+      <div class="day-cell empty"><span class="day-number">8</span></div>
+      <div class="day-cell empty"><span class="day-number">9</span></div>
+      <div class="day-cell empty"><span class="day-number">10</span></div>
+      <div class="day-cell empty"><span class="day-number">11</span></div>
+      <div class="day-cell empty"><span class="day-number">12</span></div>
+      <div class="day-cell empty"><span class="day-number">13</span></div>
+      <div class="day-cell empty"><span class="day-number">14</span></div>
+      <div class="day-cell empty"><span class="day-number">15</span></div>
+      <div class="day-cell empty"><span class="day-number">16</span></div>
+      <div class="day-cell empty"><span class="day-number">17</span></div>
+      <div class="day-cell empty"><span class="day-number">18</span></div>
+      <div class="day-cell empty"><span class="day-number">19</span></div>
+      <a href="./records/2026-08-20.html" class="day-cell level-1"><span class="day-number">20</span><span class="day-count">1問</span></a>
+      <div class="day-cell empty"><span class="day-number">21</span></div>
+      <div class="day-cell empty"><span class="day-number">22</span></div>
+      <div class="day-cell empty"><span class="day-number">23</span></div>
+      <div class="day-cell empty"><span class="day-number">24</span></div>
+      <div class="day-cell empty"><span class="day-number">25</span></div>
+      <div class="day-cell empty"><span class="day-number">26</span></div>
+      <div class="day-cell empty"><span class="day-number">27</span></div>
+      <div class="day-cell empty"><span class="day-number">28</span></div>
+      <div class="day-cell empty"><span class="day-number">29</span></div>
+      <div class="day-cell empty"><span class="day-number">30</span></div>
+      <div class="day-cell empty"><span class="day-number">31</span></div>
+
+    </div>
+
+    <div class="legend">
+      <span>少</span>
+      <span class="legend-box" style="background:var(--level-1)"></span>
+      <span class="legend-box" style="background:var(--level-2)"></span>
+      <span class="legend-box" style="background:var(--level-3)"></span>
+      <span class="legend-box" style="background:var(--level-4);border-color:var(--level-4)"></span>
+      <span>多</span>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <div class="stats-row">
+      <div class="stat-item">Total <strong>1 days</strong></div>
+      <div class="stat-item">August <strong>1 days</strong></div>
+      <div class="stat-item">Streak <strong>1 days</strong></div>
+    </div>
+  </section>
+</main>
+
+<footer>Math Study Log © 2026 | 毎日の学習記録</footer>
 </body>
 </html>
