@@ -1,0 +1,21 @@
+{
+  "name": "math-study-log",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "node scripts/build.js"
+    },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sakurak02/math-study-log.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sakurak02/math-study-log/issues"
+  },
+  "homepage": "https://github.com/sakurak02/math-study-log#readme"
+}
