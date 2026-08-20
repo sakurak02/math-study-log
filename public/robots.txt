@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sakurak02.github.io/math-study-log/sitemap.xml

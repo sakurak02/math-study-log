@@ -5,6 +5,20 @@ const rootDir = path.join(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
 const imagesDir = path.join(publicDir, "images");
 const recordsDir = path.join(publicDir, "records");
+const siteUrl = "https://sakurak02.github.io/math-study-log";
+const gaMeasurementId = "G-LTZZZFVRKP";
+
+function gaTag() {
+  return `
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '${gaMeasurementId}');
+</script>`;
+}
 
 fs.mkdirSync(imagesDir, { recursive: true });
 fs.mkdirSync(recordsDir, { recursive: true });
@@ -271,6 +285,8 @@ ${createMonthCalendar(year, month, monthRecords)}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数学学習記録 | Math Study Log</title>
+
+${gaTag()}
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -665,6 +681,8 @@ function createDayPage(record, index) {
 
 <title>数学学習記録 - ${formatJapaneseDate(record.date)}</title>
 
+${gaTag()}
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1045,6 +1063,51 @@ records.forEach((record, index) => {
     "utf8"
   );
 });
+
+/*
+sitemap.xml を自動生成
+*/
+
+const sitemapUrls = [
+  `${siteUrl}/`,
+  ...records.map(
+    (record) => `${siteUrl}/records/${record.date}.html`
+  )
+];
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${sitemapUrls
+  .map(
+    (url) => `  <url>
+    <loc>${url}</loc>
+  </url>`
+  )
+  .join("\n")}
+</urlset>
+`;
+
+fs.writeFileSync(
+  path.join(publicDir, "sitemap.xml"),
+  sitemap,
+  "utf8"
+);
+
+/*
+robots.txt を自動生成
+*/
+
+const robots = `User-agent: *
+Allow: /
+
+Sitemap: ${siteUrl}/sitemap.xml
+`;
+
+fs.writeFileSync(
+  path.join(publicDir, "robots.txt"),
+  robots,
+  "utf8"
+);
 
 console.log("");
 console.log("Math Study Log build complete.");
