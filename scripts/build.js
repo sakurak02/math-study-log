@@ -26,17 +26,13 @@ fs.mkdirSync(recordsDir, { recursive: true });
 /*
 画像ファイル名の基本ルール
 
-2026-08-20-001.jpg
-2026-08-20-002.jpg
-2026-08-20-003.jpg
-
-現在のテスト画像
-2026-08-20-001-1.jpg
-のような末尾付きファイルも読み込めるようにしてあります。
+20260820-001-1.jpg
+20260820-001-2.jpg
+20260820-002-1.jpg
 */
 
 const imagePattern =
-  /^(\d{4}-\d{2}-\d{2})-(\d{3})(?:-\d+)?\.(jpg|jpeg|png|webp)$/i;
+  /^(\d{4})(\d{2})(\d{2})-(\d{3})-(\d+)\.jpg$/i;
 
 const imageFiles = fs
   .readdirSync(imagesDir)
@@ -53,8 +49,9 @@ for (const file of imageFiles) {
 
   if (!match) continue;
 
-  const date = match[1];
-  const number = Number(match[2]);
+  const date = `${match[1]}-${match[2]}-${match[3]}`;
+  const problemNumber = Number(match[4]);
+  const imageNumber = Number(match[5]);
 
   if (!grouped.has(date)) {
     grouped.set(date, []);
@@ -62,19 +59,28 @@ for (const file of imageFiles) {
 
   grouped.get(date).push({
     file,
-    number
+    problemNumber,
+    imageNumber
   });
 }
 
 /*
-日付順・画像番号順に整理
+日付順・問題番号順・画像番号順に整理
 */
 
 const records = [...grouped.entries()]
   .map(([date, images]) => ({
     date,
+    problemCount: new Set(
+      images.map((item) => item.problemNumber)
+    ).size,
     images: images
-      .sort((a, b) => a.number - b.number)
+      .sort(
+        (a, b) =>
+          a.problemNumber - b.problemNumber ||
+          a.imageNumber - b.imageNumber ||
+          a.file.localeCompare(b.file)
+      )
       .map((item) => item.file)
   }))
   .sort((a, b) => a.date.localeCompare(b.date));
@@ -88,7 +94,7 @@ function escapeHtml(value = "") {
 }
 
 function problemCount(record) {
-  return record.images.length;
+  return record.problemCount;
 }
 
 function levelClass(count) {
@@ -1112,5 +1118,11 @@ fs.writeFileSync(
 console.log("");
 console.log("Math Study Log build complete.");
 console.log(`Study days : ${records.length}`);
+console.log(
+  `Problems   : ${records.reduce(
+    (total, record) => total + problemCount(record),
+    0
+  )}`
+);
 console.log(`Images     : ${imageFiles.length}`);
 console.log("");
