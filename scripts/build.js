@@ -26,13 +26,13 @@ fs.mkdirSync(recordsDir, { recursive: true });
 /*
 画像ファイル名の基本ルール
 
+20260820-001.jpg
 20260820-001-1.jpg
 20260820-001-2.jpg
-20260820-002-1.jpg
 */
 
 const imagePattern =
-  /^(\d{4})(\d{2})(\d{2})-(\d{3})-(\d+)\.jpg$/i;
+  /^(\d{4})(\d{2})(\d{2})-(\d{3})(?:-(\d+))?\.jpg$/i;
 
 const imageFiles = fs
   .readdirSync(imagesDir)
@@ -51,7 +51,9 @@ for (const file of imageFiles) {
 
   const date = `${match[1]}-${match[2]}-${match[3]}`;
   const problemNumber = Number(match[4]);
-  const imageNumber = Number(match[5]);
+  const imageNumber = match[5]
+    ? Number(match[5])
+    : 0;
 
   if (!grouped.has(date)) {
     grouped.set(date, []);
