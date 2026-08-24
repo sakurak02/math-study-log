@@ -7,6 +7,8 @@ const publicDir = path.join(rootDir, "public");
 const imagesDir = path.join(publicDir, "images");
 const recordsDir = path.join(publicDir, "records");
 const contentRecordsDir = path.join(rootDir, "content", "records");
+const contentQuestionDir = path.join(rootDir, "content", "question");
+const publicQuestionDir = path.join(publicDir, "question");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
 const gaMeasurementId = "G-LTZZZFVRKP";
 const markdown = new MarkdownIt({
@@ -29,6 +31,7 @@ function gaTag() {
 
 fs.mkdirSync(imagesDir, { recursive: true });
 fs.mkdirSync(recordsDir, { recursive: true });
+fs.mkdirSync(publicQuestionDir, { recursive: true });
 
 /*
 画像ファイル名の基本ルール
@@ -41,9 +44,90 @@ fs.mkdirSync(recordsDir, { recursive: true });
 const imagePattern =
   /^(\d{4})(\d{2})(\d{2})-(\d{3})(?:-(\d+))?\.jpg$/i;
 
-const imageFiles = fs
-  .readdirSync(imagesDir)
-  .filter((file) => imagePattern.test(file));
+function collectRecordImageSources() {
+  const sources = new Map(
+    fs
+      .readdirSync(imagesDir)
+      .filter((file) => imagePattern.test(file))
+      .map((file) => [file, path.join(imagesDir, file)])
+  );
+
+  if (!fs.existsSync(contentRecordsDir)) {
+    return sources;
+  }
+
+  const dateDirectories = fs
+    .readdirSync(contentRecordsDir, { withFileTypes: true })
+    .filter(
+      (entry) => entry.isDirectory() && /^\d{8}$/.test(entry.name)
+    );
+
+  for (const dateEntry of dateDirectories) {
+    const dateContentDir = path.join(contentRecordsDir, dateEntry.name);
+    const studyDirectories = fs
+      .readdirSync(dateContentDir, { withFileTypes: true })
+      .filter(
+        (entry) => entry.isDirectory() && /^\d{3}$/.test(entry.name)
+      );
+
+    for (const studyEntry of studyDirectories) {
+      const inputImagesDir = path.join(
+        dateContentDir,
+        studyEntry.name,
+        "images"
+      );
+
+      if (!fs.existsSync(inputImagesDir)) {
+        continue;
+      }
+
+      const inputImages = fs
+        .readdirSync(inputImagesDir, { withFileTypes: true })
+        .filter((entry) => entry.isFile() && /\.jpg$/i.test(entry.name));
+
+      for (const imageEntry of inputImages) {
+        const match = imageEntry.name.match(imagePattern);
+        const imageDate = match
+          ? `${match[1]}${match[2]}${match[3]}`
+          : "";
+        const imageSequence = match ? match[4] : "";
+
+        if (
+          !match ||
+          imageDate !== dateEntry.name ||
+          imageSequence !== studyEntry.name
+        ) {
+          throw new Error(
+            `LOG画像の名前と保存先が一致しません: ${path.join(inputImagesDir, imageEntry.name)}`
+          );
+        }
+
+        const sourcePath = path.join(inputImagesDir, imageEntry.name);
+        const existingSourcePath = sources.get(imageEntry.name);
+
+        if (existingSourcePath) {
+          const source = fs.readFileSync(sourcePath);
+          const existingSource = fs.readFileSync(existingSourcePath);
+
+          if (!source.equals(existingSource)) {
+            throw new Error(
+              `同名で内容が異なるLOG画像があります: ${imageEntry.name}`
+            );
+          }
+
+          continue;
+        }
+
+        sources.set(imageEntry.name, sourcePath);
+      }
+    }
+  }
+
+  return sources;
+}
+
+const imageSources = collectRecordImageSources();
+const imageFiles = [...imageSources.keys()];
 
 /*
 日付ごとに画像をまとめる
@@ -282,6 +366,114 @@ function renderSessionMarkdown(study) {
     : "";
 
   return `${renderMarkdown(part1Source)}${originalProblemHtml}${renderMarkdown(part2Source)}`;
+}
+
+function isValidDateString(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function loadQuestions() {
+  if (!fs.existsSync(contentQuestionDir)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(contentQuestionDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => {
+      const slug = entry.name;
+      const questionDir = path.join(contentQuestionDir, slug);
+      const metaPath = path.join(questionDir, "meta.json");
+      const articlePath = path.join(questionDir, "article.md");
+      const questionImagesDir = path.join(questionDir, "images");
+      const allowedKeys = new Set(["title", "date"]);
+
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+        throw new Error(`QUESTIONのslugが不正です: ${slug}`);
+      }
+
+      if (!fs.existsSync(metaPath)) {
+        throw new Error(`QUESTIONのmeta.jsonがありません: ${metaPath}`);
+      }
+
+      if (!fs.existsSync(articlePath)) {
+        throw new Error(`QUESTIONのarticle.mdがありません: ${articlePath}`);
+      }
+
+      let meta;
+
+      try {
+        meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+      } catch (error) {
+        throw new Error(`QUESTIONのmeta.jsonを読み込めません: ${metaPath}\n${error.message}`);
+      }
+
+      if (!meta || Array.isArray(meta) || typeof meta !== "object") {
+        throw new Error(`QUESTIONのmeta.jsonはオブジェクトで指定してください: ${metaPath}`);
+      }
+
+      const unexpectedKeys = Object.keys(meta).filter(
+        (key) => !allowedKeys.has(key)
+      );
+
+      if (unexpectedKeys.length > 0) {
+        throw new Error(
+          `QUESTIONのmeta.jsonに公開対象外の項目があります: ${unexpectedKeys.join(", ")}`
+        );
+      }
+
+      if (
+        typeof meta.title !== "string" ||
+        !meta.title.trim() ||
+        meta.title.length > 120 ||
+        /[\u0000-\u001f\u007f]/.test(meta.title)
+      ) {
+        throw new Error(`QUESTIONの公開タイトルが不正です: ${metaPath}`);
+      }
+
+      if (!isValidDateString(meta.date)) {
+        throw new Error(`QUESTIONの日付が不正です: ${metaPath}`);
+      }
+
+      const questionImages = fs.existsSync(questionImagesDir)
+        ? fs
+            .readdirSync(questionImagesDir, { withFileTypes: true })
+            .filter(
+              (imageEntry) =>
+                imageEntry.isFile() &&
+                /\.(?:jpe?g|png|gif|webp)$/i.test(imageEntry.name)
+            )
+            .map((imageEntry) => imageEntry.name)
+            .sort((a, b) =>
+              a.localeCompare(b, "ja", { numeric: true })
+            )
+        : [];
+
+      return {
+        slug,
+        title: meta.title.trim(),
+        date: meta.date,
+        articleMarkdown: fs.readFileSync(articlePath, "utf8"),
+        images: questionImages,
+        sourceImagesDir: questionImagesDir
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.date.localeCompare(a.date) ||
+        a.slug.localeCompare(b.slug)
+    );
 }
 
 function daysInMonth(year, month) {
@@ -1663,6 +1855,114 @@ function archivePageStyles() {
 }`;
 }
 
+function questionPageStyles() {
+  return `${sessionPageStyles().replaceAll(
+    ".session-content",
+    ".question-content"
+  )}
+
+.question-log-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 4px 0 28px;
+}
+
+.question-log-item {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.question-log-item img {
+  width: 100%;
+  margin: 0;
+}
+
+@media (max-width: 650px) {
+  .question-log-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}`;
+}
+
+function renderQuestionMarkdown(question) {
+  const source = question.articleMarkdown.trim();
+  const imageGrid = question.images.length > 0
+    ? `
+  <div class="question-log-grid" aria-label="QUESTION LOG画像">
+${question.images
+  .map(
+    (image, index) => `    <figure class="question-log-item">
+      <img src="./${encodeURIComponent(question.slug)}/images/${encodeURIComponent(image)}" alt="${escapeHtml(question.title)} LOG画像${index + 1}">
+    </figure>`
+  )
+  .join("\n")}
+  </div>`
+    : "";
+
+  let html;
+
+  if (!imageGrid) {
+    html = renderMarkdown(source);
+  } else {
+    const logHeading = source.match(/^##[ \t]+LOG.*$/im);
+
+    if (logHeading) {
+      const lineEnd = source.indexOf("\n", logHeading.index);
+      const splitIndex = lineEnd === -1 ? source.length : lineEnd + 1;
+      html = `${renderMarkdown(source.slice(0, splitIndex))}${imageGrid}${renderMarkdown(source.slice(splitIndex))}`;
+    } else {
+      html = `${imageGrid}${renderMarkdown(source)}`;
+    }
+  }
+
+  return html.replace(
+    /(<img\b[^>]*\bsrc=")\.\/images\//g,
+    `$1./${encodeURIComponent(question.slug)}/images/`
+  );
+}
+
+function createQuestionPage(question) {
+  return createSimpleRecordPage({
+    documentTitle: `QUESTION | ${question.title}`,
+    kicker: "QUESTION",
+    title: question.title,
+    date: formatDotDate(question.date),
+    actions: `<a class="text-link" href="../index.html">TOP</a>`,
+    content: `<article class="question-content">${renderQuestionMarkdown(question)}</article>`,
+    displayYear: question.date.slice(0, 4),
+    headExtra: mathJaxHead(),
+    extraStyles: questionPageStyles()
+  });
+}
+
+function createQuestionIndexPage(questions) {
+  const items = questions
+    .map(
+      (question) => `
+    <article class="archive-item">
+      <div class="archive-date">${formatDotDate(question.date)}</div>
+      <a class="archive-title" href="./${encodeURIComponent(question.slug)}.html">${escapeHtml(question.title)}</a>
+    </article>`
+    )
+    .join("\n");
+
+  return createSimpleRecordPage({
+    documentTitle: "QUESTION | 数学学習記録",
+    kicker: "MATH STUDY LOG",
+    title: "QUESTION",
+    actions: `<a class="text-link" href="../index.html">TOP</a>`,
+    content: `<section class="archive-list">${items}\n  </section>`,
+    displayYear: questions.length > 0
+      ? questions[0].date.slice(0, 4)
+      : new Date().getFullYear(),
+    extraStyles: archivePageStyles()
+  });
+}
+
 function createArchivePage(kind, entries) {
   const pageName = kind.toUpperCase();
   const fileName = kind.toLowerCase();
@@ -1688,6 +1988,8 @@ function createArchivePage(kind, entries) {
     extraStyles: archivePageStyles()
   });
 }
+
+const questions = loadQuestions();
 
 /*
 トップページ生成
@@ -1735,7 +2037,7 @@ records.forEach((record, index) => {
 
     for (const image of study.images) {
       fs.copyFileSync(
-        path.join(imagesDir, image),
+        imageSources.get(image),
         path.join(studyImagesDir, image)
       );
     }
@@ -1773,13 +2075,58 @@ fs.writeFileSync(
 );
 
 /*
+QUESTIONページ生成
+*/
+
+for (const question of questions) {
+  const questionAssetsDir = path.join(
+    publicQuestionDir,
+    question.slug,
+    "images"
+  );
+
+  if (question.images.length > 0) {
+    fs.mkdirSync(questionAssetsDir, { recursive: true });
+
+    for (const image of question.images) {
+      fs.copyFileSync(
+        path.join(question.sourceImagesDir, image),
+        path.join(questionAssetsDir, image)
+      );
+    }
+  }
+
+  fs.writeFileSync(
+    path.join(publicQuestionDir, `${question.slug}.html`),
+    createQuestionPage(question),
+    "utf8"
+  );
+}
+
+fs.writeFileSync(
+  path.join(publicQuestionDir, "index.html"),
+  createQuestionIndexPage(questions),
+  "utf8"
+);
+
+/*
 sitemap.xml を自動生成
 */
 
 const sitemapUrls = [
   `${siteUrl}/`,
+  `${siteUrl}/log/`,
+  `${siteUrl}/session/`,
+  `${siteUrl}/question/`,
   ...records.map(
     (record) => `${siteUrl}/records/${dateKey(record.date)}/`
+  ),
+  ...archiveEntries.flatMap(({ record, study }) => [
+    `${siteUrl}/records/${dateKey(record.date)}/${study.number}/log.html`,
+    `${siteUrl}/records/${dateKey(record.date)}/${study.number}/session.html`
+  ]),
+  ...questions.map(
+    (question) => `${siteUrl}/question/${question.slug}.html`
   )
 ];
 
@@ -1827,4 +2174,5 @@ console.log(
   )}`
 );
 console.log(`Images     : ${imageFiles.length}`);
+console.log(`Questions  : ${questions.length}`);
 console.log("");
