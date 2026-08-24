@@ -4,9 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SESSION | 数学学習記録</title>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LTZZZFVRKP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LTZZZFVRKP');
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
 :root {
   --bg: #fbfcfc;
@@ -16,110 +28,246 @@
   --ink-soft: #6b7777;
   --accent: #315f63;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
   background: var(--bg);
   color: var(--ink);
   font-family: "Noto Sans JP", sans-serif;
   line-height: 1.7;
 }
+
 header {
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.9);
 }
-.header-inner {
-  max-width: 940px;
-  margin: 0 auto;
-  padding: 18px 24px;
-}
-.brand-kicker {
-  font: 600 11px/1.3 "JetBrains Mono", monospace;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-}
-.brand-title { font-size: 21px; font-weight: 700; }
+
+.header-inner,
 main {
-  max-width: 940px;
-  min-height: calc(100vh - 155px);
+  width: min(900px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 24px 48px;
 }
-.page-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 26px;
+
+.header-inner {
+  padding: 22px 0 16px;
 }
+
+.page-kicker,
+.page-date,
+.record-number {
+  font-family: "JetBrains Mono", monospace;
+}
+
 .page-kicker {
-  font: 600 12px/1.3 "JetBrains Mono", monospace;
-  letter-spacing: 0.12em;
   color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
 }
-.top-link {
+
+h1 {
+  margin-top: 3px;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.page-date {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+main {
+  min-height: calc(100vh - 164px);
+  padding: 24px 0 42px;
+}
+
+.page-actions,
+.record-links,
+.day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.page-actions {
+  margin-bottom: 24px;
+}
+
+.text-link {
   display: inline-flex;
   min-height: 36px;
   align-items: center;
-  padding: 6px 11px;
+  padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--panel);
-  color: var(--ink);
+  color: var(--accent);
   text-decoration: none;
   font: 600 11px/1.3 "JetBrains Mono", monospace;
 }
-.top-link:hover { border-color: var(--accent); }
-.list { border-top: 1px solid var(--line); }
-.item {
+
+.text-link:hover {
+  border-color: var(--accent);
+}
+
+.record-list {
+  border-top: 1px solid var(--line);
+}
+
+.record-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-number {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.record-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-links .text-link {
+  min-height: 32px;
+}
+
+.day-navigation {
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.session-shell {
+  min-height: 160px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.move-notice {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.move-notice .text-link {
+  margin-top: 16px;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 11px;
+}
+.archive-list {
+  border-top: 1px solid var(--line);
+}
+
+.archive-item {
   display: grid;
   grid-template-columns: 120px 1fr;
   gap: 18px;
   padding: 16px 2px;
   border-bottom: 1px solid var(--line);
+}
+
+.archive-date {
+  color: var(--ink-soft);
+  font: 500 12px/1.5 "JetBrains Mono", monospace;
+}
+
+.archive-title {
   color: var(--ink);
   text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
 }
-.item:hover .title { color: var(--accent); }
-.date {
-  font: 500 12px/1.5 "JetBrains Mono", monospace;
-  color: var(--ink-soft);
+
+.archive-title:hover {
+  color: var(--accent);
 }
-.title { font-size: 15px; font-weight: 600; }
-footer {
-  border-top: 1px solid var(--line);
-  padding: 18px 24px;
-  color: var(--ink-soft);
-  text-align: center;
-  font-size: 11px;
-}
+
 @media (max-width: 600px) {
-  .header-inner { padding: 15px 14px; }
-  main { padding: 22px 12px 36px; }
-  .item { grid-template-columns: 1fr; gap: 3px; padding: 14px 1px; }
+  .archive-item {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 14px 1px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header-inner,
+  main {
+    width: calc(100% - 24px);
+  }
+
+  .header-inner {
+    padding: 17px 0 13px;
+  }
+
+  h1 {
+    font-size: 21px;
+  }
+
+  main {
+    padding-top: 19px;
+  }
+
+  .record-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 16px 1px;
+  }
 }
 </style>
 </head>
+
 <body>
+
 <header>
   <div class="header-inner">
-    <div class="brand-kicker">MATH STUDY LOG</div>
-    <div class="brand-title">数学学習記録</div>
+    <div class="page-kicker">MATH STUDY LOG</div>
+    <h1>SESSION</h1>
+
   </div>
 </header>
+
 <main>
-  <div class="page-head">
-    <div class="page-kicker">SESSION</div>
-    <a class="top-link" href="../index.html">TOP</a>
-  </div>
-  <div class="list" aria-label="SESSION一覧">
-    <!--
-    <a class="item" href="記事へのパス">
-      <div class="date">2026.08.24</div>
-      <div class="title">部分積分法</div>
-    </a>
-    -->
-  </div>
+  <nav class="page-actions" aria-label="ページメニュー">
+    <a class="text-link" href="../index.html">TOP</a>
+  </nav>
+
+  <section class="archive-list">
+    <div class="archive-item">
+      <div class="archive-date">2026.08.21</div>
+      <a class="archive-title" href="../records/20260821/001/session.html">学習記録</a>
+    </div>
+
+    <div class="archive-item">
+      <div class="archive-date">2026.08.20</div>
+      <a class="archive-title" href="../records/20260820/001/session.html">学習記録</a>
+    </div>
+  </section>
 </main>
+
 <footer>Math Study Log © 2026</footer>
+
 </body>
 </html>

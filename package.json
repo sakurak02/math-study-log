@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/sakurak02/math-study-log/issues"
   },
-  "homepage": "https://github.com/sakurak02/math-study-log#readme"
+  "homepage": "https://github.com/sakurak02/math-study-log#readme",
+  "dependencies": {
+    "markdown-it": "^15.0.0"
+  }
 }

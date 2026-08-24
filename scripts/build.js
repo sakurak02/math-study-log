@@ -1,12 +1,19 @@
 const fs = require("fs");
 const path = require("path");
+const MarkdownIt = require("markdown-it");
 
 const rootDir = path.join(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
 const imagesDir = path.join(publicDir, "images");
 const recordsDir = path.join(publicDir, "records");
+const contentRecordsDir = path.join(rootDir, "content", "records");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
 const gaMeasurementId = "G-LTZZZFVRKP";
+const markdown = new MarkdownIt({
+  html: false,
+  linkify: true,
+  typographer: false
+});
 
 function gaTag() {
   return `
@@ -120,6 +127,92 @@ function dateKey(dateString) {
   return dateString.replace(/-/g, "");
 }
 
+function loadStudyContent(record, study) {
+  const studyContentDir = path.join(
+    contentRecordsDir,
+    dateKey(record.date),
+    study.number
+  );
+  const metaPath = path.join(studyContentDir, "meta.json");
+  const sessionPath = path.join(studyContentDir, "session.md");
+  const allowedKeys = new Set([
+    "studyId",
+    "date",
+    "sequence",
+    "title"
+  ]);
+
+  if (!fs.existsSync(metaPath)) {
+    throw new Error(`公開メタデータがありません: ${metaPath}`);
+  }
+
+  let meta;
+
+  try {
+    meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+  } catch (error) {
+    throw new Error(`meta.jsonを読み込めません: ${metaPath}\n${error.message}`);
+  }
+
+  if (!meta || Array.isArray(meta) || typeof meta !== "object") {
+    throw new Error(`meta.jsonはオブジェクトで指定してください: ${metaPath}`);
+  }
+
+  const unexpectedKeys = Object.keys(meta).filter(
+    (key) => !allowedKeys.has(key)
+  );
+
+  if (unexpectedKeys.length > 0) {
+    throw new Error(
+      `meta.jsonに公開対象外の項目があります: ${unexpectedKeys.join(", ")}`
+    );
+  }
+
+  const expectedStudyId = `${dateKey(record.date)}-${study.number}`;
+
+  if (meta.studyId !== expectedStudyId) {
+    throw new Error(`studyIdが一致しません: ${metaPath}`);
+  }
+
+  if (meta.date !== record.date) {
+    throw new Error(`dateが一致しません: ${metaPath}`);
+  }
+
+  if (meta.sequence !== study.number || !/^\d{3}$/.test(meta.sequence)) {
+    throw new Error(`sequenceが一致しません: ${metaPath}`);
+  }
+
+  if (
+    typeof meta.title !== "string" ||
+    !meta.title.trim() ||
+    meta.title.length > 120 ||
+    /[\u0000-\u001f\u007f]/.test(meta.title)
+  ) {
+    throw new Error(`公開タイトルが不正です: ${metaPath}`);
+  }
+
+  const originalPdfName = `${expectedStudyId}-original.pdf`;
+  const originalPdfPath = path.join(
+    recordsDir,
+    dateKey(record.date),
+    study.number,
+    "files",
+    originalPdfName
+  );
+
+  return {
+    ...study,
+    id: expectedStudyId,
+    title: meta.title.trim(),
+    sessionMarkdown: fs.existsSync(sessionPath)
+      ? fs.readFileSync(sessionPath, "utf8")
+      : "",
+    originalPdf: fs.existsSync(originalPdfPath)
+      ? originalPdfName
+      : null
+  };
+}
+
 function studiesForRecord(record) {
   const studies = new Map();
 
@@ -142,7 +235,53 @@ function studiesForRecord(record) {
     studies.get(number).images.push(image);
   }
 
-  return [...studies.values()];
+  return [...studies.values()].map((study) =>
+    loadStudyContent(record, study)
+  );
+}
+
+function renderMarkdown(source) {
+  const mathBlocks = [];
+  const protectedSource = source.replace(
+    /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$/g,
+    (mathSource) => {
+      const token = `MATHJAXTOKEN${mathBlocks.length}END`;
+      mathBlocks.push({ token, source: mathSource });
+      return token;
+    }
+  );
+
+  let html = markdown.render(protectedSource);
+
+  for (const mathBlock of mathBlocks) {
+    html = html.replace(
+      mathBlock.token,
+      () => escapeHtml(mathBlock.source)
+    );
+  }
+
+  return html;
+}
+
+function renderSessionMarkdown(study) {
+  const source = study.sessionMarkdown.trim();
+  const part2Match = source.match(/^##[ \t]+PART 2.*$/m);
+  const part1Source = part2Match
+    ? source.slice(0, part2Match.index)
+    : source;
+  const part2Source = part2Match
+    ? source.slice(part2Match.index)
+    : "";
+
+  const originalProblemHtml = study.originalPdf
+    ? `
+  <section class="original-problem">
+    <div class="original-problem-label">ORIGINAL PROBLEM</div>
+    <a class="pdf-link" href="./files/${encodeURIComponent(study.originalPdf)}" download>PDF ↓</a>
+  </section>`
+    : "";
+
+  return `${renderMarkdown(part1Source)}${originalProblemHtml}${renderMarkdown(part2Source)}`;
 }
 
 function daysInMonth(year, month) {
@@ -704,7 +843,7 @@ function createLogPage(record, study) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>LOG | 学習記録 - ${formatJapaneseDate(record.date)}</title>
+<title>LOG | ${escapeHtml(study.title)} - ${formatJapaneseDate(record.date)}</title>
 
 ${gaTag()}
 
@@ -1056,7 +1195,10 @@ function createSimpleRecordPage({
   date = "",
   actions,
   content,
-  displayYear
+  displayYear,
+  headExtra = "",
+  bodyScripts = "",
+  extraStyles = ""
 }) {
   const dateHtml = date
     ? `<div class="page-date">${escapeHtml(date)}</div>`
@@ -1073,7 +1215,7 @@ ${gaTag()}
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">${headExtra ? `\n${headExtra}` : ""}
 
 <style>
 :root {
@@ -1231,7 +1373,7 @@ footer {
   color: var(--ink-soft);
   text-align: center;
   font-size: 11px;
-}
+}${extraStyles ? `\n${extraStyles}` : ""}
 
 @media (max-width: 600px) {
   .header-inner,
@@ -1278,7 +1420,7 @@ ${dateHtml}
   ${content}
 </main>
 
-<footer>Math Study Log © ${escapeHtml(displayYear)}</footer>
+<footer>Math Study Log © ${escapeHtml(displayYear)}</footer>${bodyScripts ? `\n${bodyScripts}` : ""}
 
 </body>
 </html>`;
@@ -1321,6 +1463,141 @@ function createRecordIndexPage(record, index) {
   });
 }
 
+function sessionPageStyles() {
+  return `.session-content {
+  padding: 4px 0 24px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.session-content > *:first-child {
+  margin-top: 22px;
+}
+
+.session-content h2 {
+  margin: 34px 0 14px;
+  color: var(--accent);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.session-content h3 {
+  margin: 26px 0 10px;
+  font-size: 15px;
+}
+
+.session-content p,
+.session-content ul,
+.session-content ol,
+.session-content blockquote,
+.session-content pre,
+.session-content table {
+  margin: 0 0 18px;
+}
+
+.session-content ul,
+.session-content ol {
+  padding-left: 1.5em;
+}
+
+.session-content blockquote {
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink-soft);
+}
+
+.session-content pre {
+  max-width: 100%;
+  padding: 13px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  font: 12px/1.7 "JetBrains Mono", monospace;
+}
+
+.session-content code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.session-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.session-content th,
+.session-content td {
+  min-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.session-content th {
+  background: #e8f0f0;
+}
+
+.session-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.session-content a {
+  color: var(--accent);
+}
+
+.original-problem {
+  margin: 28px 0;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.original-problem-label {
+  margin-bottom: 10px;
+  color: var(--accent);
+  font: 600 11px/1.3 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+}
+
+.pdf-link {
+  color: var(--accent);
+  text-decoration: none;
+  font: 600 12px/1.4 "JetBrains Mono", monospace;
+}
+
+mjx-container[display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}`;
+}
+
+function mathJaxHead() {
+  return `<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [["\\\\(", "\\\\)"]],
+    displayMath: [["\\\\[", "\\\\]"], ["$$", "$$"]]
+  },
+  options: {
+    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>`;
+}
+
 function createSessionPage(record, study) {
   return createSimpleRecordPage({
     documentTitle: `SESSION | ${study.title} - ${formatJapaneseDate(record.date)}`,
@@ -1328,8 +1605,10 @@ function createSessionPage(record, study) {
     title: study.title,
     date: formatDotDate(record.date),
     actions: `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="./log.html" target="_blank" rel="noopener noreferrer">LOG ↗</a>`,
-    content: `<section class="session-shell" aria-label="SESSION本文"></section>`,
-    displayYear: record.date.slice(0, 4)
+    content: `<article class="session-content">${renderSessionMarkdown(study)}</article>`,
+    displayYear: record.date.slice(0, 4),
+    headExtra: mathJaxHead(),
+    extraStyles: sessionPageStyles()
   });
 }
 
@@ -1346,6 +1625,70 @@ function createLegacyRecordPage(record) {
   });
 }
 
+function archivePageStyles() {
+  return `.archive-list {
+  border-top: 1px solid var(--line);
+}
+
+.archive-item {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 18px;
+  padding: 16px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.archive-date {
+  color: var(--ink-soft);
+  font: 500 12px/1.5 "JetBrains Mono", monospace;
+}
+
+.archive-title {
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.archive-title:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .archive-item {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 14px 1px;
+  }
+}`;
+}
+
+function createArchivePage(kind, entries) {
+  const pageName = kind.toUpperCase();
+  const fileName = kind.toLowerCase();
+  const items = entries
+    .map(
+      ({ record, study }) => `
+    <div class="archive-item">
+      <div class="archive-date">${formatDotDate(record.date)}</div>
+      <a class="archive-title" href="../records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/${fileName}.html">${escapeHtml(study.title)}</a>
+    </div>`
+    )
+    .join("\n");
+
+  return createSimpleRecordPage({
+    documentTitle: `${pageName} | 数学学習記録`,
+    kicker: "MATH STUDY LOG",
+    title: pageName,
+    actions: `<a class="text-link" href="../index.html">TOP</a>`,
+    content: `<section class="archive-list">${items}\n  </section>`,
+    displayYear: records.length > 0
+      ? records[records.length - 1].date.slice(0, 4)
+      : new Date().getFullYear(),
+    extraStyles: archivePageStyles()
+  });
+}
+
 /*
 トップページ生成
 */
@@ -1359,6 +1702,16 @@ fs.writeFileSync(
 /*
 recordsページ生成
 */
+
+const archiveEntries = records
+  .flatMap((record) =>
+    studiesForRecord(record).map((study) => ({ record, study }))
+  )
+  .sort(
+    (a, b) =>
+      b.record.date.localeCompare(a.record.date) ||
+      b.study.number.localeCompare(a.study.number)
+  );
 
 records.forEach((record, index) => {
   const recordDir = path.join(recordsDir, dateKey(record.date));
@@ -1406,6 +1759,18 @@ records.forEach((record, index) => {
     "utf8"
   );
 });
+
+fs.writeFileSync(
+  path.join(publicDir, "log", "index.html"),
+  createArchivePage("log", archiveEntries),
+  "utf8"
+);
+
+fs.writeFileSync(
+  path.join(publicDir, "session", "index.html"),
+  createArchivePage("session", archiveEntries),
+  "utf8"
+);
 
 /*
 sitemap.xml を自動生成
