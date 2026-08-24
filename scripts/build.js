@@ -227,7 +227,6 @@ function createIndexPage() {
   <section class="month-section">
     <div class="month-head">
       <div class="month-title">${year}年${month}月</div>
-      <div class="month-note">1問でも、ちゃんと1マス。</div>
     </div>
 
     <div class="calendar-grid">
@@ -245,43 +244,6 @@ ${createMonthCalendar(year, month, monthRecords)}
   </section>`;
     })
     .join("\n");
-
-  const latestHtml = latest
-    ? `
-  <a href="./records/${latest.date}.html" class="latest-link">
-    <div>
-      <div class="latest-kicker">LATEST</div>
-      <div class="latest-main">
-        最新更新はこちら → ${formatJapaneseDate(latest.date)}
-      </div>
-    </div>
-    <div class="latest-meta">
-      ${problemCount(latest)} problems
-    </div>
-  </a>`
-    : `
-  <div class="latest-link">
-    <div>
-      <div class="latest-kicker">LATEST</div>
-      <div class="latest-main">まだ学習記録はありません。</div>
-    </div>
-  </div>`;
-
-  const latestMonthKey = latest
-    ? latest.date.slice(0, 7)
-    : "";
-
-  const latestMonthCount = latestMonthKey
-    ? records.filter((record) =>
-        record.date.startsWith(latestMonthKey)
-      ).length
-    : 0;
-
-  const monthEnglish = latest
-    ? new Intl.DateTimeFormat("en", {
-        month: "long"
-      }).format(new Date(`${latest.date}T00:00:00`))
-    : "Month";
 
   const displayYear = latest
     ? latest.date.slice(0, 4)
@@ -362,48 +324,8 @@ main {
   padding: 24px 24px 42px;
 }
 
-.latest-link {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 13px 16px;
-  color: var(--ink);
-  text-decoration: none;
-  margin-bottom: 24px;
-  transition: 0.18s ease;
-}
-
-.latest-link:hover {
-  border-color: var(--accent);
-  transform: translateY(-1px);
-}
-
-.latest-kicker {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-
-.latest-main {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.latest-meta {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-
 .month-section {
-  margin-bottom: 28px;
+  margin-bottom: 26px;
 }
 
 .month-head {
@@ -417,11 +339,6 @@ main {
 .month-title {
   font-size: 17px;
   font-weight: 700;
-}
-
-.month-note {
-  font-size: 11px;
-  color: var(--ink-soft);
 }
 
 .calendar-grid {
@@ -520,25 +437,97 @@ main {
   border: 1px solid var(--line);
 }
 
-.stats-section {
+.section-divider {
+  border-top: 1px solid var(--line);
+  margin: 28px 0;
+}
+
+.entry-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.entry-card {
+  display: block;
+  padding: 15px 16px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+  transition: 0.18s ease;
+}
+
+.entry-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.entry-kicker,
+.about-kicker,
+.about-start,
+.total-label,
+.total-value {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.entry-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-align: center;
+}
+
+.about-section {
+  max-width: 720px;
+}
+
+.about-kicker {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.about-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.5;
+  margin-bottom: 5px;
+}
+
+.about-start {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+}
+
+.about-text {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--ink-soft);
+}
+
+.total-section {
   border-top: 1px solid var(--line);
   padding-top: 18px;
-  margin-top: 22px;
+  margin-top: 28px;
 }
 
-.stats-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 18px;
+.total-label {
+  font-size: 11px;
   color: var(--ink-soft);
-  font-size: 12px;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
 }
 
-.stat-item strong {
-  color: var(--ink);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 14px;
-  margin-left: 5px;
+.total-value {
+  font-size: 16px;
+  font-weight: 600;
 }
 
 footer {
@@ -560,14 +549,6 @@ footer {
 
   .header-date {
     font-size: 23px;
-  }
-
-  .latest-link {
-    padding: 12px 13px;
-  }
-
-  .latest-meta {
-    display: none;
   }
 
   .calendar-grid {
@@ -593,8 +574,16 @@ footer {
     line-height: 1.15;
   }
 
-  .month-note {
-    display: none;
+  .entry-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .entry-card {
+    padding: 12px 13px;
+  }
+
+  .about-title {
+    font-size: 18px;
   }
 }
 </style>
@@ -604,39 +593,51 @@ footer {
 
 <header>
   <div class="header-inner">
-    <div class="header-title">Math Study Log</div>
-    <div class="header-date">学習記録</div>
+    <div class="header-title">MATH STUDY LOG</div>
+    <div class="header-date">数学学習記録</div>
   </div>
 </header>
 
 <main>
 
-${latestHtml}
-
 ${monthSections}
 
-  <section class="stats-section">
-    <div class="stats-row">
-      <div class="stat-item">
-        Total <strong>${records.length} days</strong>
-      </div>
+  <div class="section-divider"></div>
 
-      <div class="stat-item">
-        ${monthEnglish}
-        <strong>${latestMonthCount} days</strong>
-      </div>
+  <nav class="entry-nav" aria-label="学習記録メニュー">
+    <a class="entry-card" href="./log/index.html">
+      <div class="entry-kicker">LOG</div>
+    </a>
+    <a class="entry-card" href="./session/index.html">
+      <div class="entry-kicker">SESSION</div>
+    </a>
+    <a class="entry-card" href="./question/index.html">
+      <div class="entry-kicker">QUESTION</div>
+    </a>
+  </nav>
 
-      <div class="stat-item">
-        Streak
-        <strong>${currentStreak(records)} days</strong>
-      </div>
-    </div>
+  <div class="section-divider"></div>
+
+  <section class="about-section">
+    <div class="about-kicker">ABOUT THIS STUDY</div>
+    <div class="about-title">64歳から、5年後の難関大受験数学へ。</div>
+    <div class="about-start">STARTED AUGUST 2026</div>
+    <p class="about-text">
+      数学IIIはほぼ未修。数学II・Bも久しぶりの学習です。<br>
+      ここから、初見問題に対して仮説を立て、試し、間違いを修正し、別の見方へ切り替えられる力を育てていきます。<br><br>
+      LOGは学習の跡、SESSIONは一つの学習テーマの振り返り、QUESTIONは自由な数学の疑問。
+    </p>
+  </section>
+
+  <section class="total-section">
+    <div class="total-label">TOTAL STUDY DAYS</div>
+    <div class="total-value">${records.length} days</div>
   </section>
 
 </main>
 
 <footer>
-  Math Study Log © ${displayYear} | 毎日の学習記録
+  Math Study Log © ${displayYear}
 </footer>
 
 </body>
