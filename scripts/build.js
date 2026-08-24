@@ -112,6 +112,39 @@ function formatJapaneseDate(dateString) {
   return `${year}年${month}月${day}日`;
 }
 
+function formatDotDate(dateString) {
+  return dateString.replace(/-/g, ".");
+}
+
+function dateKey(dateString) {
+  return dateString.replace(/-/g, "");
+}
+
+function studiesForRecord(record) {
+  const studies = new Map();
+
+  for (const image of record.images) {
+    const match = image.match(imagePattern);
+
+    if (!match) continue;
+
+    const number = match[4];
+
+    if (!studies.has(number)) {
+      studies.set(number, {
+        id: `${dateKey(record.date)}-${number}`,
+        number,
+        title: "学習記録",
+        images: []
+      });
+    }
+
+    studies.get(number).images.push(image);
+  }
+
+  return [...studies.values()];
+}
+
 function daysInMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }
@@ -187,7 +220,7 @@ function createMonthCalendar(year, month, monthRecords) {
     if (record) {
       const count = problemCount(record);
 
-      cells += `      <a href="./records/${record.date}.html" class="day-cell ${levelClass(
+      cells += `      <a href="./records/${dateKey(record.date)}/index.html" class="day-cell ${levelClass(
         count
       )}"><span class="day-number">${day}</span><span class="day-count">${count}問</span></a>\n`;
     } else {
@@ -648,37 +681,20 @@ ${monthSections}
 日別ページ
 */
 
-function createDayPage(record, index) {
-  const previous =
-    index > 0 ? records[index - 1] : null;
-
-  const next =
-    index < records.length - 1
-      ? records[index + 1]
-      : null;
-
-  const imageItems = record.images
+function createLogPage(record, study) {
+  const imageItems = study.images
     .map(
       (image, imageIndex) => `
     <div class="study-item">
       <img
         class="sheet"
-        src="../images/${encodeURIComponent(image)}"
-        alt="${escapeHtml(record.date)} 学習記録 ${imageIndex + 1}"
+        src="./images/${encodeURIComponent(image)}"
+        alt="${escapeHtml(formatDotDate(record.date))} 学習記録 画像${imageIndex + 1}"
         onclick="openLightbox(this)"
       >
-      <div class="sheet-label">${escapeHtml(image)}</div>
     </div>`
     )
     .join("\n");
-
-  const previousLink = previous
-    ? `<a class="nav-link prev" href="./${previous.date}.html">← 前日</a>`
-    : `<span></span>`;
-
-  const nextLink = next
-    ? `<a class="nav-link next" href="./${next.date}.html">次日 →</a>`
-    : `<span></span>`;
 
   const displayYear = record.date.slice(0, 4);
 
@@ -688,7 +704,7 @@ function createDayPage(record, index) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>数学学習記録 - ${formatJapaneseDate(record.date)}</title>
+<title>LOG | 学習記録 - ${formatJapaneseDate(record.date)}</title>
 
 ${gaTag()}
 
@@ -698,16 +714,16 @@ ${gaTag()}
 
 <style>
 :root {
-  --bg: #f3f7f4;
+  --bg: #fbfcfc;
   --paper: #ffffff;
-  --ink: #172019;
-  --ink-soft: #708077;
-  --line: #cfded4;
-  --green-1: #e4efe8;
-  --green-2: #c5dbcb;
-  --green-3: #86a98f;
-  --green-4: #4f765d;
-  --green-dark: #2f5d43;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --line: #dfe7e7;
+  --green-1: #e8f0f0;
+  --green-2: #c9dddd;
+  --green-3: #8fb4b5;
+  --green-4: #315f63;
+  --green-dark: #315f63;
 }
 
 * {
@@ -731,11 +747,7 @@ body {
 header {
   border-bottom: 1px solid var(--line);
   padding: 22px 24px 14px;
-  background: linear-gradient(
-    180deg,
-    #edf5ef 0%,
-    #f7faf8 100%
-  );
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .header-inner,
@@ -776,17 +788,26 @@ main {
   padding: 24px 0 34px;
 }
 
+.page-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+
 .back-link {
   display: inline-block;
-  margin-bottom: 18px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
   color: var(--green-dark);
   text-decoration: none;
-  border-bottom: 1px solid #b8ccbf;
   font-size: 12px;
 }
 
 .back-link:hover {
-  border-bottom-color: var(--green-dark);
+  border-color: var(--green-dark);
 }
 
 .study-grid {
@@ -800,8 +821,9 @@ main {
   flex-direction: column;
   gap: 7px;
   padding: 8px;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(228, 239, 232, 0.45);
+  background: var(--paper);
 }
 
 .sheet {
@@ -881,11 +903,7 @@ footer {
   border-top: 1px solid var(--line);
   font-size: 10px;
   color: var(--ink-soft);
-  background: linear-gradient(
-    180deg,
-    rgba(228, 239, 232, 0),
-    rgba(228, 239, 232, 0.38)
-  );
+  background: var(--paper);
 }
 
 /* 画像拡大 */
@@ -961,31 +979,22 @@ footer {
 
 <header>
   <div class="header-inner">
-    <div class="eyebrow">Math Study Log</div>
-    <div class="date">${formatJapaneseDate(record.date)}</div>
-    <div class="meta">${problemCount(record)} problems</div>
+    <div class="eyebrow">LOG</div>
+    <div class="date">${escapeHtml(study.title)}</div>
+    <div class="meta">${formatDotDate(record.date)}</div>
   </div>
 </header>
 
 <main>
 
-  <a class="back-link" href="../index.html">
-    ← 学習記録へ戻る
-  </a>
+  <nav class="page-links" aria-label="ページメニュー">
+    <a class="back-link" href="../../../index.html">TOP</a>
+    <a class="back-link" href="./session.html" target="_blank" rel="noopener noreferrer">SESSION ↗</a>
+  </nav>
 
   <section class="study-grid">
 ${imageItems}
   </section>
-
-  <nav class="nav-section">
-    <div class="nav-row">
-      ${previousLink}
-      <a class="nav-center" href="../index.html">
-        全日付を見る
-      </a>
-      ${nextLink}
-    </div>
-  </nav>
 
 </main>
 
@@ -1040,15 +1049,301 @@ document.addEventListener(
 </html>`;
 }
 
-/*
-古い日別HTMLを一度消してから再生成
-画像を削除した日がサイトに残らないようにする
-*/
+function createSimpleRecordPage({
+  documentTitle,
+  kicker,
+  title,
+  date = "",
+  actions,
+  content,
+  displayYear
+}) {
+  const dateHtml = date
+    ? `<div class="page-date">${escapeHtml(date)}</div>`
+    : "";
 
-for (const file of fs.readdirSync(recordsDir)) {
-  if (file.endsWith(".html")) {
-    fs.unlinkSync(path.join(recordsDir, file));
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(documentTitle)}</title>
+
+${gaTag()}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #fbfcfc;
+  --panel: #ffffff;
+  --line: #dfe7e7;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --accent: #315f63;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans JP", sans-serif;
+  line-height: 1.7;
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.header-inner,
+main {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.header-inner {
+  padding: 22px 0 16px;
+}
+
+.page-kicker,
+.page-date,
+.record-number {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.page-kicker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin-top: 3px;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.page-date {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+main {
+  min-height: calc(100vh - 164px);
+  padding: 24px 0 42px;
+}
+
+.page-actions,
+.record-links,
+.day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.page-actions {
+  margin-bottom: 24px;
+}
+
+.text-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--accent);
+  text-decoration: none;
+  font: 600 11px/1.3 "JetBrains Mono", monospace;
+}
+
+.text-link:hover {
+  border-color: var(--accent);
+}
+
+.record-list {
+  border-top: 1px solid var(--line);
+}
+
+.record-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-number {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.record-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-links .text-link {
+  min-height: 32px;
+}
+
+.day-navigation {
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.session-shell {
+  min-height: 160px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.move-notice {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.move-notice .text-link {
+  margin-top: 16px;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .header-inner,
+  main {
+    width: calc(100% - 24px);
   }
+
+  .header-inner {
+    padding: 17px 0 13px;
+  }
+
+  h1 {
+    font-size: 21px;
+  }
+
+  main {
+    padding-top: 19px;
+  }
+
+  .record-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 16px 1px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="page-kicker">${escapeHtml(kicker)}</div>
+    <h1>${escapeHtml(title)}</h1>
+${dateHtml}
+  </div>
+</header>
+
+<main>
+  <nav class="page-actions" aria-label="ページメニュー">
+    ${actions}
+  </nav>
+
+  ${content}
+</main>
+
+<footer>Math Study Log © ${escapeHtml(displayYear)}</footer>
+
+</body>
+</html>`;
+}
+
+function createRecordIndexPage(record, index) {
+  const studies = studiesForRecord(record);
+  const previous = index > 0 ? records[index - 1] : null;
+  const next = index < records.length - 1 ? records[index + 1] : null;
+
+  const studyItems = studies
+    .map(
+      (study) => `
+    <article class="record-item">
+      <div class="record-number">${escapeHtml(study.number)}</div>
+      <div class="record-title">${escapeHtml(study.title)}</div>
+      <nav class="record-links" aria-label="${escapeHtml(study.number)} 学習記録">
+        <a class="text-link" href="./${encodeURIComponent(study.number)}/log.html">LOG</a>
+        <a class="text-link" href="./${encodeURIComponent(study.number)}/session.html">SESSION</a>
+      </nav>
+    </article>`
+    )
+    .join("\n");
+
+  const previousLink = previous
+    ? `<a class="text-link" href="../${dateKey(previous.date)}/index.html">← ${formatDotDate(previous.date)}</a>`
+    : `<span></span>`;
+
+  const nextLink = next
+    ? `<a class="text-link" href="../${dateKey(next.date)}/index.html">${formatDotDate(next.date)} →</a>`
+    : `<span></span>`;
+
+  return createSimpleRecordPage({
+    documentTitle: `${formatJapaneseDate(record.date)} | 数学学習記録`,
+    kicker: "MATH STUDY LOG",
+    title: formatDotDate(record.date),
+    actions: `<a class="text-link" href="../../index.html">TOP</a>`,
+    content: `<section class="record-list">${studyItems}\n  </section>\n  <nav class="day-navigation" aria-label="学習日の移動">${previousLink}${nextLink}</nav>`,
+    displayYear: record.date.slice(0, 4)
+  });
+}
+
+function createSessionPage(record, study) {
+  return createSimpleRecordPage({
+    documentTitle: `SESSION | ${study.title} - ${formatJapaneseDate(record.date)}`,
+    kicker: "SESSION",
+    title: study.title,
+    date: formatDotDate(record.date),
+    actions: `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="./log.html" target="_blank" rel="noopener noreferrer">LOG ↗</a>`,
+    content: `<section class="session-shell" aria-label="SESSION本文"></section>`,
+    displayYear: record.date.slice(0, 4)
+  });
+}
+
+function createLegacyRecordPage(record) {
+  const newUrl = `./${dateKey(record.date)}/index.html`;
+
+  return createSimpleRecordPage({
+    documentTitle: `${formatJapaneseDate(record.date)} | 数学学習記録`,
+    kicker: "MATH STUDY LOG",
+    title: formatDotDate(record.date),
+    actions: `<a class="text-link" href="../index.html">TOP</a>`,
+    content: `<section class="move-notice">\n    <p>この記録は新しいページへ移動しました。</p>\n    <a class="text-link" href="${newUrl}">新しいページへ</a>\n  </section>`,
+    displayYear: record.date.slice(0, 4)
+  });
 }
 
 /*
@@ -1062,13 +1357,52 @@ fs.writeFileSync(
 );
 
 /*
-日別ページ生成
+recordsページ生成
 */
 
 records.forEach((record, index) => {
+  const recordDir = path.join(recordsDir, dateKey(record.date));
+  const studies = studiesForRecord(record);
+
+  fs.mkdirSync(recordDir, { recursive: true });
+
+  fs.writeFileSync(
+    path.join(recordDir, "index.html"),
+    createRecordIndexPage(record, index),
+    "utf8"
+  );
+
+  for (const study of studies) {
+    const studyDir = path.join(recordDir, study.number);
+    const studyImagesDir = path.join(studyDir, "images");
+    const studyFilesDir = path.join(studyDir, "files");
+
+    fs.mkdirSync(studyImagesDir, { recursive: true });
+    fs.mkdirSync(studyFilesDir, { recursive: true });
+
+    for (const image of study.images) {
+      fs.copyFileSync(
+        path.join(imagesDir, image),
+        path.join(studyImagesDir, image)
+      );
+    }
+
+    fs.writeFileSync(
+      path.join(studyDir, "log.html"),
+      createLogPage(record, study),
+      "utf8"
+    );
+
+    fs.writeFileSync(
+      path.join(studyDir, "session.html"),
+      createSessionPage(record, study),
+      "utf8"
+    );
+  }
+
   fs.writeFileSync(
     path.join(recordsDir, `${record.date}.html`),
-    createDayPage(record, index),
+    createLegacyRecordPage(record),
     "utf8"
   );
 });
@@ -1080,7 +1414,7 @@ sitemap.xml を自動生成
 const sitemapUrls = [
   `${siteUrl}/`,
   ...records.map(
-    (record) => `${siteUrl}/records/${record.date}.html`
+    (record) => `${siteUrl}/records/${dateKey(record.date)}/`
   )
 ];
 
