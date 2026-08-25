@@ -336,32 +336,11 @@ function loadStudyContent(record, study) {
     title = session.title.trim();
   }
 
-  const originalPdfName = `${expectedStudyId}-original.pdf`;
-  const inputOriginalPdfPath = path.join(
-    studyContentDir,
-    "files",
-    originalPdfName
-  );
-  const publicOriginalPdfPath = path.join(
-    recordsDir,
-    dateKey(record.date),
-    study.number,
-    "files",
-    originalPdfName
-  );
-  const originalPdfSource = fs.existsSync(inputOriginalPdfPath)
-    ? inputOriginalPdfPath
-    : fs.existsSync(publicOriginalPdfPath)
-      ? publicOriginalPdfPath
-      : null;
-
   return {
     ...study,
     id: expectedStudyId,
     title,
-    sessionMarkdown: session.markdown,
-    originalPdf: originalPdfSource ? originalPdfName : null,
-    originalPdfSource
+    sessionMarkdown: session.markdown
   };
 }
 
@@ -417,23 +396,7 @@ function renderMarkdown(source) {
 
 function renderSessionMarkdown(study) {
   const source = study.sessionMarkdown.trim();
-  const part2Match = source.match(/^##[ \t]+PART 2.*$/m);
-  const part1Source = part2Match
-    ? source.slice(0, part2Match.index)
-    : source;
-  const part2Source = part2Match
-    ? source.slice(part2Match.index)
-    : "";
-
-  const originalProblemHtml = study.originalPdf
-    ? `
-  <section class="original-problem">
-    <div class="original-problem-label">ORIGINAL PROBLEM</div>
-    <a class="pdf-link" href="./files/${encodeURIComponent(study.originalPdf)}" download>PDF ↓</a>
-  </section>`
-    : "";
-
-  return `${renderMarkdown(part1Source)}${originalProblemHtml}${renderMarkdown(part2Source)}`;
+  return renderMarkdown(source);
 }
 
 function isValidDateString(value) {
@@ -1815,26 +1778,6 @@ function sessionPageStyles() {
   color: var(--accent);
 }
 
-.original-problem {
-  margin: 28px 0;
-  padding: 18px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.original-problem-label {
-  margin-bottom: 10px;
-  color: var(--accent);
-  font: 600 11px/1.3 "JetBrains Mono", monospace;
-  letter-spacing: 0.1em;
-}
-
-.pdf-link {
-  color: var(--accent);
-  text-decoration: none;
-  font: 600 12px/1.4 "JetBrains Mono", monospace;
-}
-
 mjx-container[display="true"] {
   max-width: 100%;
   overflow-x: auto;
@@ -2098,21 +2041,8 @@ records.forEach((record, index) => {
   for (const study of studies) {
     const studyDir = path.join(recordDir, study.number);
     const studyImagesDir = path.join(studyDir, "images");
-    const studyFilesDir = path.join(studyDir, "files");
 
     fs.mkdirSync(studyImagesDir, { recursive: true });
-    fs.mkdirSync(studyFilesDir, { recursive: true });
-
-    if (
-      study.originalPdfSource &&
-      path.resolve(study.originalPdfSource) !==
-        path.resolve(studyFilesDir, study.originalPdf)
-    ) {
-      fs.copyFileSync(
-        study.originalPdfSource,
-        path.join(studyFilesDir, study.originalPdf)
-      );
-    }
 
     for (const image of study.images) {
       fs.copyFileSync(
