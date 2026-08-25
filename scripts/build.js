@@ -221,6 +221,45 @@ function dateKey(dateString) {
   return dateString.replace(/-/g, "");
 }
 
+function parseSessionFrontMatter(source) {
+  const frontMatter = source.match(
+    /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/
+  );
+
+  if (!frontMatter) {
+    return { title: null, markdown: source };
+  }
+
+  const titleLine = frontMatter[1]
+    .split(/\r?\n/)
+    .find((line) => /^title[ \t]*:/.test(line));
+  let title = titleLine
+    ? titleLine.replace(/^title[ \t]*:/, "").trim()
+    : "";
+
+  if (
+    title.length >= 2 &&
+    ((title.startsWith('"') && title.endsWith('"')) ||
+      (title.startsWith("'") && title.endsWith("'")))
+  ) {
+    title = title.slice(1, -1).trim();
+  }
+
+  return {
+    title,
+    markdown: source.slice(frontMatter[0].length)
+  };
+}
+
+function isValidPublicTitle(title) {
+  return (
+    typeof title === "string" &&
+    title.trim() &&
+    title.length <= 120 &&
+    !/[\u0000-\u001f\u007f]/.test(title)
+  );
+}
+
 function loadStudyContent(record, study) {
   const studyContentDir = path.join(
     contentRecordsDir,
@@ -229,6 +268,10 @@ function loadStudyContent(record, study) {
   );
   const metaPath = path.join(studyContentDir, "meta.json");
   const sessionPath = path.join(studyContentDir, "session.md");
+  const sessionSource = fs.existsSync(sessionPath)
+    ? fs.readFileSync(sessionPath, "utf8")
+    : "";
+  const session = parseSessionFrontMatter(sessionSource);
   const allowedKeys = new Set([
     "studyId",
     "date",
@@ -236,74 +279,89 @@ function loadStudyContent(record, study) {
     "title"
   ]);
 
-  if (!fs.existsSync(metaPath)) {
-    throw new Error(`公開メタデータがありません: ${metaPath}`);
-  }
-
-  let meta;
-
-  try {
-    meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-  } catch (error) {
-    throw new Error(`meta.jsonを読み込めません: ${metaPath}\n${error.message}`);
-  }
-
-  if (!meta || Array.isArray(meta) || typeof meta !== "object") {
-    throw new Error(`meta.jsonはオブジェクトで指定してください: ${metaPath}`);
-  }
-
-  const unexpectedKeys = Object.keys(meta).filter(
-    (key) => !allowedKeys.has(key)
-  );
-
-  if (unexpectedKeys.length > 0) {
-    throw new Error(
-      `meta.jsonに公開対象外の項目があります: ${unexpectedKeys.join(", ")}`
-    );
-  }
-
   const expectedStudyId = `${dateKey(record.date)}-${study.number}`;
+  let title;
 
-  if (meta.studyId !== expectedStudyId) {
-    throw new Error(`studyIdが一致しません: ${metaPath}`);
-  }
+  if (fs.existsSync(metaPath)) {
+    let meta;
 
-  if (meta.date !== record.date) {
-    throw new Error(`dateが一致しません: ${metaPath}`);
-  }
+    try {
+      meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+    } catch (error) {
+      throw new Error(`meta.jsonを読み込めません: ${metaPath}\n${error.message}`);
+    }
 
-  if (meta.sequence !== study.number || !/^\d{3}$/.test(meta.sequence)) {
-    throw new Error(`sequenceが一致しません: ${metaPath}`);
-  }
+    if (!meta || Array.isArray(meta) || typeof meta !== "object") {
+      throw new Error(`meta.jsonはオブジェクトで指定してください: ${metaPath}`);
+    }
 
-  if (
-    typeof meta.title !== "string" ||
-    !meta.title.trim() ||
-    meta.title.length > 120 ||
-    /[\u0000-\u001f\u007f]/.test(meta.title)
-  ) {
-    throw new Error(`公開タイトルが不正です: ${metaPath}`);
+    const unexpectedKeys = Object.keys(meta).filter(
+      (key) => !allowedKeys.has(key)
+    );
+
+    if (unexpectedKeys.length > 0) {
+      throw new Error(
+        `meta.jsonに公開対象外の項目があります: ${unexpectedKeys.join(", ")}`
+      );
+    }
+
+    if (meta.studyId !== expectedStudyId) {
+      throw new Error(`studyIdが一致しません: ${metaPath}`);
+    }
+
+    if (meta.date !== record.date) {
+      throw new Error(`dateが一致しません: ${metaPath}`);
+    }
+
+    if (meta.sequence !== study.number || !/^\d{3}$/.test(meta.sequence)) {
+      throw new Error(`sequenceが一致しません: ${metaPath}`);
+    }
+
+    if (!isValidPublicTitle(meta.title)) {
+      throw new Error(`公開タイトルが不正です: ${metaPath}`);
+    }
+
+    title = meta.title.trim();
+  } else {
+    if (!fs.existsSync(sessionPath)) {
+      throw new Error(`session.mdがありません: ${sessionPath}`);
+    }
+
+    if (!isValidPublicTitle(session.title)) {
+      throw new Error(
+        `session.mdのfront matterに有効なtitleがありません: ${sessionPath}`
+      );
+    }
+
+    title = session.title.trim();
   }
 
   const originalPdfName = `${expectedStudyId}-original.pdf`;
-  const originalPdfPath = path.join(
+  const inputOriginalPdfPath = path.join(
+    studyContentDir,
+    "files",
+    originalPdfName
+  );
+  const publicOriginalPdfPath = path.join(
     recordsDir,
     dateKey(record.date),
     study.number,
     "files",
     originalPdfName
   );
+  const originalPdfSource = fs.existsSync(inputOriginalPdfPath)
+    ? inputOriginalPdfPath
+    : fs.existsSync(publicOriginalPdfPath)
+      ? publicOriginalPdfPath
+      : null;
 
   return {
     ...study,
     id: expectedStudyId,
-    title: meta.title.trim(),
-    sessionMarkdown: fs.existsSync(sessionPath)
-      ? fs.readFileSync(sessionPath, "utf8")
-      : "",
-    originalPdf: fs.existsSync(originalPdfPath)
-      ? originalPdfName
-      : null
+    title,
+    sessionMarkdown: session.markdown,
+    originalPdf: originalPdfSource ? originalPdfName : null,
+    originalPdfSource
   };
 }
 
@@ -2044,6 +2102,17 @@ records.forEach((record, index) => {
 
     fs.mkdirSync(studyImagesDir, { recursive: true });
     fs.mkdirSync(studyFilesDir, { recursive: true });
+
+    if (
+      study.originalPdfSource &&
+      path.resolve(study.originalPdfSource) !==
+        path.resolve(studyFilesDir, study.originalPdf)
+    ) {
+      fs.copyFileSync(
+        study.originalPdfSource,
+        path.join(studyFilesDir, study.originalPdf)
+      );
+    }
 
     for (const image of study.images) {
       fs.copyFileSync(
