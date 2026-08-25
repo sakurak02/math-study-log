@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SESSION | 無限等比数列の収束条件――公比だけでなく初項を見る - 2026年8月25日</title>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LTZZZFVRKP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LTZZZFVRKP');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"], ["$$", "$$"]]
+  },
+  options: {
+    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+:root {
+  --bg: #fbfcfc;
+  --panel: #ffffff;
+  --line: #dfe7e7;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --accent: #315f63;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans JP", sans-serif;
+  line-height: 1.7;
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.header-inner,
+main {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.header-inner {
+  padding: 22px 0 16px;
+}
+
+.page-kicker,
+.page-date,
+.record-number {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.page-kicker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin-top: 3px;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.page-date {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+main {
+  min-height: calc(100vh - 164px);
+  padding: 24px 0 42px;
+}
+
+.page-actions,
+.record-links,
+.day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.page-actions {
+  margin-bottom: 24px;
+}
+
+.text-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--accent);
+  text-decoration: none;
+  font: 600 11px/1.3 "JetBrains Mono", monospace;
+}
+
+.text-link:hover {
+  border-color: var(--accent);
+}
+
+.record-list {
+  border-top: 1px solid var(--line);
+}
+
+.record-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-number {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.record-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-links .text-link {
+  min-height: 32px;
+}
+
+.day-navigation {
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.session-shell {
+  min-height: 160px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.move-notice {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.move-notice .text-link {
+  margin-top: 16px;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 11px;
+}
+.session-content {
+  padding: 4px 0 24px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.session-content > *:first-child {
+  margin-top: 22px;
+}
+
+.session-content h2 {
+  margin: 34px 0 14px;
+  color: var(--accent);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.session-content h3 {
+  margin: 26px 0 10px;
+  font-size: 15px;
+}
+
+.session-content p,
+.session-content ul,
+.session-content ol,
+.session-content blockquote,
+.session-content pre,
+.session-content table {
+  margin: 0 0 18px;
+}
+
+.session-content ul,
+.session-content ol {
+  padding-left: 1.5em;
+}
+
+.session-content blockquote {
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink-soft);
+}
+
+.session-content pre {
+  max-width: 100%;
+  padding: 13px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  font: 12px/1.7 "JetBrains Mono", monospace;
+}
+
+.session-content code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.session-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.session-content th,
+.session-content td {
+  min-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.session-content th {
+  background: #e8f0f0;
+}
+
+.session-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.session-content a {
+  color: var(--accent);
+}
+
+mjx-container[display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+@media (max-width: 600px) {
+  .header-inner,
+  main {
+    width: calc(100% - 24px);
+  }
+
+  .header-inner {
+    padding: 17px 0 13px;
+  }
+
+  h1 {
+    font-size: 21px;
+  }
+
+  main {
+    padding-top: 19px;
+  }
+
+  .record-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 16px 1px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="page-kicker">SESSION</div>
+    <h1>無限等比数列の収束条件――公比だけでなく初項を見る</h1>
+<div class="page-date">2026.08.25</div>
+  </div>
+</header>
+
+<main>
+  <nav class="page-actions" aria-label="ページメニュー">
+    <a class="text-link" href="../../../index.html">TOP</a>
+    <a class="text-link" href="./log.html" target="_blank" rel="noopener noreferrer">LOG ↗</a>
+  </nav>
+
+  <article class="session-content"><h1>無限等比数列の収束条件――公比だけでなく初項を見る</h1>
+<h2>今日のポイント</h2>
+<p>無限等比数列</p>
+<p>\[
+a_n = ar^{n-1}
+\]</p>
+<p>の収束を考えるとき、最初に目が向きやすいのは公比 \(r\) です。</p>
+<p>通常、</p>
+<p>\[
+-1 &lt; r \le 1
+\]</p>
+<p>が収束の条件になります。</p>
+<p>ただし、ここには先に確認しておきたい例外があります。</p>
+<p><strong>初項 \(a=0\) の場合です。</strong></p>
+<p>初項が0なら、</p>
+<p>\[
+a_n = 0
+\]</p>
+<p>となり、すべての項が0です。</p>
+<p>この場合、公比がどんな値であっても数列は</p>
+<p>\[
+0,0,0,\dots
+\]</p>
+<p>となるので、0に収束します。</p>
+<hr>
+<h2>最初の考え方</h2>
+<p>今回、sakurak02さんは無限等比数列を見て、公比に注目して収束条件を調べました。</p>
+<p>これは基本的な方針として正しいのですが、</p>
+<blockquote>
+<p>公比の条件を調べればよい</p>
+</blockquote>
+<p>という意識が強く、<strong>初項が0になる場合を独立して確認する必要があることを軽く見ていました。</strong></p>
+<p>問題集を普通に解いていると、公比についての不等式処理が中心に見えるため、この例外は見落としやすいところです。</p>
+<hr>
+<h2>先に見るべきもの</h2>
+<p>無限等比数列</p>
+<p>\[
+a_n = ar^{n-1}
+\]</p>
+<p>を見たら、次の順序で考えることにします。</p>
+<h3>1. 初項が0にならないか</h3>
+<p>\[
+a=0
+\]</p>
+<p>なら、すべての項が0なのでその時点で収束します。</p>
+<h3>2. 初項が0でなければ公比を見る</h3>
+<p>\[
+a\neq0
+\]</p>
+<p>の場合に、</p>
+<p>\[
+-1 &lt; r \le 1
+\]</p>
+<p>を調べます。</p>
+<p>さらに極限値は、</p>
+<p>\[
+|r|&lt;1
+\]</p>
+<p>なら</p>
+<p>\[
+\lim_{n\to\infty} a_n = 0
+\]</p>
+<p>で、</p>
+<p>\[
+r=1
+\]</p>
+<p>なら</p>
+<p>\[
+\lim_{n\to\infty} a_n = a
+\]</p>
+<p>です。</p>
+<p>一方、</p>
+<p>\[
+r=-1
+\]</p>
+<p>では正負を交互に繰り返すため、初項が0でない限り収束しません。</p>
+<hr>
+<h2>力だめしで確認</h2>
+<p>指導後、同じポイントを含む類題で確認しました。</p>
+<p>今度は、公比を調べる前に</p>
+<p>\[
+x-1=0
+\]</p>
+<p>となる場合を自分で取り出し、<strong>初項が0になるケースを先に確認することができました。</strong></p>
+<p>最初の答案では軽く見ていた条件を、類題では自分から拾えるようになっています。</p>
+<p>単に公式を覚え直したのではなく、</p>
+<blockquote>
+<p>無限等比数列を見たら、公比の前に初項も確認する</p>
+</blockquote>
+<p>という新しい確認手順が加わったことが、今回のいちばん大きな収穫でした。</p>
+<hr>
+<h2>今日の整理</h2>
+<p>無限等比数列</p>
+<p>\[
+a_n = ar^{n-1}
+\]</p>
+<p>では、</p>
+<p>\[
+\boxed{\text{まず初項 }a=0\text{ かを確認する}}
+\]</p>
+<p>そのあとで、</p>
+<p>\[
+\boxed{\text{公比 }r\text{ の収束条件を調べる}}
+\]</p>
+<p>という順序で考える。</p>
+<p>公比だけを見る癖をつけず、<strong>式全体の構造を見ること</strong>を意識したい。</p>
+</article>
+</main>
+
+<footer>Math Study Log © 2026</footer>
+
+</body>
+</html>
