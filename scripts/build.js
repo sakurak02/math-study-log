@@ -412,8 +412,36 @@ function renderMarkdown(source, inlineDollarMath = false) {
 }
 
 function renderSessionMarkdown(study) {
-  const source = study.sessionMarkdown.trim();
-  return renderMarkdown(source, true);
+  const allowedHtml = [];
+  const protectHtml = (html) => {
+    const token = `SESSIONHTMLTOKEN${allowedHtml.length}END`;
+    allowedHtml.push({ token, html });
+    return `\n\n${token}\n\n`;
+  };
+  const source = study.sessionMarkdown
+    .trim()
+    .replace(
+      /^[ \t]*<summary>([^\r\n]*)<\/summary>[ \t]*$/gm,
+      (_, label) => protectHtml(`<summary>${escapeHtml(label.trim())}</summary>`)
+    )
+    .replace(
+      /^[ \t]*<details>[ \t]*$/gm,
+      () => protectHtml("<details>")
+    )
+    .replace(
+      /^[ \t]*<\/details>[ \t]*$/gm,
+      () => protectHtml("</details>")
+    );
+  let html = renderMarkdown(source, true);
+
+  for (const allowed of allowedHtml) {
+    html = html.replace(
+      new RegExp(`<p>${allowed.token}<\\/p>\\s*`, "g"),
+      `${allowed.html}\n`
+    );
+  }
+
+  return html;
 }
 
 function isValidDateString(value) {
