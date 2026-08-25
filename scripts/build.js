@@ -39,14 +39,14 @@ fs.mkdirSync(publicQuestionDir, { recursive: true });
 20260820-001.jpg
 20260820-001-1.jpg
 20260820-001-2.jpg
-20260820-001-first.jpg
-20260820-001-1-first.jpg
-20260820-001-retry.jpg
-20260820-001-1-retry.jpg
+20260820-001-f.jpg
+20260820-001-1-f.jpg
+20260820-001-r.jpg
+20260820-001-1-r.jpg
 */
 
 const imagePattern =
-  /^(\d{4})(\d{2})(\d{2})-(\d{3})(?:-(\d+))?(?:-(first|retry))?\.jpg$/i;
+  /^(\d{4})(\d{2})(\d{2})-(\d{3})(?:-(\d+))?(?:-(f|r))?\.jpg$/i;
 
 function collectRecordImageSources() {
   const sources = new Map(
@@ -179,8 +179,8 @@ const records = [...grouped.entries()]
       .sort(
         (a, b) =>
           a.problemNumber - b.problemNumber ||
-          ({ first: 0, retry: 1, legacy: 2 }[a.imageStage] -
-            { first: 0, retry: 1, legacy: 2 }[b.imageStage]) ||
+          ({ f: 0, r: 1, legacy: 2 }[a.imageStage] -
+            { f: 0, r: 1, legacy: 2 }[b.imageStage]) ||
           a.imageNumber - b.imageNumber ||
           a.file.localeCompare(b.file)
       )
