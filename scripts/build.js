@@ -260,6 +260,26 @@ function isValidPublicTitle(title) {
   );
 }
 
+function sessionTitleFromMarkdown(session, record, study) {
+  if (isValidPublicTitle(session.title)) {
+    return session.title.trim();
+  }
+
+  const tokens = markdown.parse(session.markdown, {});
+  const headingIndex = tokens.findIndex(
+    (token) => token.type === "heading_open" && token.tag === "h1"
+  );
+  const heading = headingIndex >= 0
+    ? tokens[headingIndex + 1]?.content
+    : null;
+
+  if (isValidPublicTitle(heading)) {
+    return heading.trim();
+  }
+
+  return `${formatDotDate(record.date)} 学習記録 ${study.number}`;
+}
+
 function loadStudyContent(record, study) {
   const studyContentDir = path.join(
     contentRecordsDir,
@@ -327,13 +347,7 @@ function loadStudyContent(record, study) {
       throw new Error(`session.mdがありません: ${sessionPath}`);
     }
 
-    if (!isValidPublicTitle(session.title)) {
-      throw new Error(
-        `session.mdのfront matterに有効なtitleがありません: ${sessionPath}`
-      );
-    }
-
-    title = session.title.trim();
+    title = sessionTitleFromMarkdown(session, record, study);
   }
 
   return {
@@ -371,10 +385,13 @@ function studiesForRecord(record) {
   );
 }
 
-function renderMarkdown(source) {
+function renderMarkdown(source, inlineDollarMath = false) {
   const mathBlocks = [];
+  const mathPattern = inlineDollarMath
+    ? /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|(?<!\\)\$(?!\$)[^\r\n$]+?(?<!\\)\$/g
+    : /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$/g;
   const protectedSource = source.replace(
-    /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$/g,
+    mathPattern,
     (mathSource) => {
       const token = `MATHJAXTOKEN${mathBlocks.length}END`;
       mathBlocks.push({ token, source: mathSource });
@@ -396,7 +413,7 @@ function renderMarkdown(source) {
 
 function renderSessionMarkdown(study) {
   const source = study.sessionMarkdown.trim();
-  return renderMarkdown(source);
+  return renderMarkdown(source, true);
 }
 
 function isValidDateString(value) {
@@ -1786,11 +1803,15 @@ mjx-container[display="true"] {
 }`;
 }
 
-function mathJaxHead() {
+function mathJaxHead(inlineDollarMath = false) {
+  const inlineMath = inlineDollarMath
+    ? `[["\\\\(", "\\\\)"], ["$", "$"]]`
+    : `[["\\\\(", "\\\\)"]]`;
+
   return `<script>
 window.MathJax = {
   tex: {
-    inlineMath: [["\\\\(", "\\\\)"]],
+    inlineMath: ${inlineMath},
     displayMath: [["\\\\[", "\\\\]"], ["$$", "$$"]]
   },
   options: {
@@ -1810,7 +1831,7 @@ function createSessionPage(record, study) {
     actions: `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="./log.html" target="_blank" rel="noopener noreferrer">LOG ↗</a>`,
     content: `<article class="session-content">${renderSessionMarkdown(study)}</article>`,
     displayYear: record.date.slice(0, 4),
-    headExtra: mathJaxHead(),
+    headExtra: mathJaxHead(true),
     extraStyles: sessionPageStyles()
   });
 }
