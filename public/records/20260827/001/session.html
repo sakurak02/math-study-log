@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SESSION | 数列の極限――場合分けと定義の確認 - 2026年8月27日</title>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LTZZZFVRKP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LTZZZFVRKP');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [["\\(", "\\)"], ["$", "$"]],
+    displayMath: [["\\[", "\\]"], ["$$", "$$"]]
+  },
+  options: {
+    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+:root {
+  --bg: #fbfcfc;
+  --panel: #ffffff;
+  --line: #dfe7e7;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --accent: #315f63;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans JP", sans-serif;
+  line-height: 1.7;
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.header-inner,
+main {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.header-inner {
+  padding: 22px 0 16px;
+}
+
+.page-kicker,
+.page-date,
+.record-number {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.page-kicker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin-top: 3px;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.page-date {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+main {
+  min-height: calc(100vh - 164px);
+  padding: 24px 0 42px;
+}
+
+.page-actions,
+.record-links,
+.day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.page-actions {
+  margin-bottom: 24px;
+}
+
+.text-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--accent);
+  text-decoration: none;
+  font: 600 11px/1.3 "JetBrains Mono", monospace;
+}
+
+.text-link:hover {
+  border-color: var(--accent);
+}
+
+.record-list {
+  border-top: 1px solid var(--line);
+}
+
+.record-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-number {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.record-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-links .text-link {
+  min-height: 32px;
+}
+
+.day-navigation {
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.session-shell {
+  min-height: 160px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.move-notice {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.move-notice .text-link {
+  margin-top: 16px;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 11px;
+}
+.session-content {
+  padding: 4px 0 24px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.session-content > *:first-child {
+  margin-top: 22px;
+}
+
+.session-content h2 {
+  margin: 34px 0 14px;
+  color: var(--accent);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.session-content h3 {
+  margin: 26px 0 10px;
+  font-size: 15px;
+}
+
+.session-content p,
+.session-content ul,
+.session-content ol,
+.session-content blockquote,
+.session-content pre,
+.session-content table {
+  margin: 0 0 18px;
+}
+
+.session-content ul,
+.session-content ol {
+  padding-left: 1.5em;
+}
+
+.session-content blockquote {
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink-soft);
+}
+
+.session-content pre {
+  max-width: 100%;
+  padding: 13px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  font: 12px/1.7 "JetBrains Mono", monospace;
+}
+
+.session-content code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.session-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.session-content th,
+.session-content td {
+  min-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.session-content th {
+  background: #e8f0f0;
+}
+
+.session-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.session-content a {
+  color: var(--accent);
+}
+
+mjx-container[display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+@media (max-width: 600px) {
+  .header-inner,
+  main {
+    width: calc(100% - 24px);
+  }
+
+  .header-inner {
+    padding: 17px 0 13px;
+  }
+
+  h1 {
+    font-size: 21px;
+  }
+
+  main {
+    padding-top: 19px;
+  }
+
+  .record-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 16px 1px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="page-kicker">SESSION</div>
+    <h1>数列の極限――場合分けと定義の確認</h1>
+<div class="page-date">2026.08.27</div>
+  </div>
+</header>
+
+<main>
+  <nav class="page-actions" aria-label="ページメニュー">
+    <a class="text-link" href="../../../index.html">TOP</a>
+    <a class="text-link" href="./log.html" target="_blank" rel="noopener noreferrer">LOG ↗</a>
+  </nav>
+
+  <article class="session-content"><h1>数列の極限――場合分けと定義の確認</h1>
+<h2>FIRST SESSION</h2>
+<p>今日は、$r^n$ を含む数列の極限について学習した。</p>
+<h3>今日のポイント</h3>
+<p>$r^n$ の極限では、$r$ の値によって場合分けする。</p>
+<h4>$|r|&lt;1$ のとき</h4>
+<p>$$
+r^n\to0
+$$</p>
+<p>となるので、そのまま極限を求めることができる。</p>
+<h4>$r=1$ のとき</h4>
+<p>$$
+r^n=1
+$$</p>
+<p>なので、式にそのまま代入して考える。</p>
+<h4>$|r|&gt;1$ のとき</h4>
+<p>$r^n$ はそのままでは大きくなるため、分子・分母を $r^n$ で割る。</p>
+<p>すると、</p>
+<p>$$
+\left(\frac1r\right)^n
+$$</p>
+<p>が現れる。</p>
+<p>$$
+|r|&gt;1
+\quad\Longrightarrow\quad
+\left|\frac1r\right|&lt;1
+$$</p>
+<p>だから、</p>
+<p>$$
+\left(\frac1r\right)^n\to0
+$$</p>
+<p>となる。</p>
+<p>したがって、</p>
+<p>$$
+\boxed{|r|&gt;1\text{ なら、逆数の累乗を }0\text{ に持っていく}}
+$$</p>
+<p>という考え方がポイントだった。</p>
+<h3>今日のつまずき</h3>
+<p>条件に $r\neq-1$ と書かれている理由について確認した。</p>
+<p>$r=-1$ のときは、</p>
+<p>$$
+(-1)^n
+$$</p>
+<p>が</p>
+<p>$$
+1,-1,1,-1,\dots
+$$</p>
+<p>と変化する。</p>
+<p>さらに、元の式によっては分母が $0$ となり、数列そのものが定義できない場合がある。</p>
+<p>ここから、</p>
+<p>$$
+\boxed{\text{極限を考える前に、式がきちんと定義されているか確認する}}
+$$</p>
+<p>ことも大切だとわかった。</p>
+<hr>
+<h2>ORIGINAL QUESTION</h2>
+<p>実数 $r$ に対して、数列</p>
+<p>$$
+a_n=\frac{2r^n+3}{r^n-4}
+$$</p>
+<p>を考える。</p>
+<p>$$
+\lim_{n\to\infty}a_n
+$$</p>
+<p>を、$r$ の値によって場合分けして求めよ。</p>
+<p>また、この数列が定義されない $r$ がないかについても考えよ。</p>
+<details>
+<summary>ヒント</summary>
+<p>まず、分母</p>
+<p>$$
+r^n-4
+$$</p>
+<p>が $0$ になる場合がないか確認する。</p>
+<p>極限については、</p>
+<p>$$
+|r|&lt;1,\qquad r=1,\qquad r=-1,\qquad |r|&gt;1
+$$</p>
+<p>に分けて考える。</p>
+<p>$|r|&gt;1$ のときは、分子・分母を $r^n$ で割る。</p>
+</details>
+<details>
+<summary>解答・解説</summary>
+<p>まず、数列が定義される条件を調べる。</p>
+<p>$$
+r^n-4=0
+$$</p>
+<p>となるとき、</p>
+<p>$$
+r^n=4
+$$</p>
+<p>である。</p>
+<p>したがって、ある正整数 $n$ に対して $r^n=4$ となる場合、この数列は定義されない。</p>
+<p>$r&gt;0$ のときは、</p>
+<p>$$
+r=4^{1/n}
+\qquad(n=1,2,3,\dots)
+$$</p>
+<p>である。</p>
+<p>また、$r&lt;0$ のときは、負の数の奇数乗は負になるため、$r^n=4$ となるには $n$ が偶数でなければならない。</p>
+<p>$n=2m$ とおくと、</p>
+<p>$$
+r=-4^{1/(2m)}
+\qquad(m=1,2,3,\dots)
+$$</p>
+<p>となる。</p>
+<p>したがって、</p>
+<p>$$
+r=4^{1/n}\qquad(n\in\mathbb N)
+$$</p>
+<p>または</p>
+<p>$$
+r=-4^{1/(2m)}\qquad(m\in\mathbb N)
+$$</p>
+<p>の場合は、ある項で分母が $0$ となるため、数列は定義されない。</p>
+<p>以下では、これらの $r$ を除いて考える。</p>
+<h3>1. $|r|&lt;1$ のとき</h3>
+<p>$$
+r^n\to0
+$$</p>
+<p>より、</p>
+<p>$$
+\lim_{n\to\infty}a_n
+=
+\frac{2\cdot0+3}{0-4}
+=
+-\frac34
+$$</p>
+<p>したがって、</p>
+<p>$$
+\boxed{-\frac34}
+$$</p>
+<h3>2. $r=1$ のとき</h3>
+<p>$$
+a_n
+=
+\frac{2+3}{1-4}
+=
+-\frac53
+$$</p>
+<p>であるから、</p>
+<p>$$
+\boxed{-\frac53}
+$$</p>
+<h3>3. $r=-1$ のとき</h3>
+<p>$n$ が偶数なら、</p>
+<p>$$
+(-1)^n=1
+$$</p>
+<p>なので、</p>
+<p>$$
+a_n
+=
+\frac{2+3}{1-4}
+=
+-\frac53
+$$</p>
+<p>となる。</p>
+<p>$n$ が奇数なら、</p>
+<p>$$
+(-1)^n=-1
+$$</p>
+<p>なので、</p>
+<p>$$
+a_n
+=
+\frac{-2+3}{-1-4}
+=
+-\frac15
+$$</p>
+<p>となる。</p>
+<p>したがって、$a_n$ は</p>
+<p>$$
+-\frac53,\ -\frac15,\ -\frac53,\ -\frac15,\dots
+$$</p>
+<p>と交互に値をとり、一定の値に近づかない。</p>
+<p>よって、</p>
+<p>$$
+\boxed{\text{極限は存在しない}}
+$$</p>
+<h3>4. $|r|&gt;1$ のとき</h3>
+<p>分子・分母を $r^n$ で割ると、</p>
+<p>$$
+a_n
+=
+\frac{2+3\left(\frac1r\right)^n}
+{1-4\left(\frac1r\right)^n}
+$$</p>
+<p>となる。</p>
+<p>ここで、</p>
+<p>$$
+|r|&gt;1
+$$</p>
+<p>より、</p>
+<p>$$
+\left|\frac1r\right|&lt;1
+$$</p>
+<p>だから、</p>
+<p>$$
+\left(\frac1r\right)^n\to0
+$$</p>
+<p>である。</p>
+<p>したがって、</p>
+<p>$$
+\lim_{n\to\infty}a_n
+=
+\frac{2+0}{1-0}
+=
+2
+$$</p>
+<p>よって、</p>
+<p>$$
+\boxed{2}
+$$</p>
+<p>以上より、</p>
+<p>$$
+\boxed{
+\lim_{n\to\infty}a_n=
+\begin{cases}
+-\dfrac34 &amp; (|r|&lt;1),\\[6pt]
+-\dfrac53 &amp; (r=1),\\[6pt]
+\text{存在しない} &amp; (r=-1),\\[6pt]
+2 &amp; (|r|&gt;1),
+\end{cases}
+}
+$$</p>
+<p>ただし、</p>
+<p>$$
+\boxed{
+r=4^{1/n}\ (n\in\mathbb N),
+\qquad
+r=-4^{1/(2m)}\ (m\in\mathbb N)
+}
+$$</p>
+<p>の場合は、ある項で分母が $0$ となるため、数列は定義されない。</p>
+<h3>この問題でのつまずき</h3>
+<p>最初、</p>
+<p>$$
+r^n=4
+$$</p>
+<p>から</p>
+<p>$$
+r=\pm2
+$$</p>
+<p>と考えた。</p>
+<p>しかし、これは $n=2$ の場合だけである。</p>
+<p>今回の $n$ は固定されておらず、</p>
+<p>$$
+n=1,2,3,\dots
+$$</p>
+<p>と動く。</p>
+<p>たとえば、</p>
+<p>$$
+n=1\Rightarrow r=4
+$$</p>
+<p>$$
+n=2\Rightarrow r=\pm2
+$$</p>
+<p>$$
+n=3\Rightarrow r=\sqrt[3]{4}
+$$</p>
+<p>となる。</p>
+<p>ここでは、</p>
+<p>$$
+\boxed{n\text{ は固定されているのか、動いているのか}}
+$$</p>
+<p>を見る必要がある。</p>
+<p>また、負の解については、</p>
+<p>$$
+\text{負の数}^{\text{偶数}}=\text{正}
+$$</p>
+<p>$$
+\text{負の数}^{\text{奇数}}=\text{負}
+$$</p>
+<p>に戻って考えるとよい。</p>
+<p>したがって、$r^n=4$ に負の解が現れるのは、$n$ が偶数のときだけである。</p>
+</details>
+<h2>今日のまとめ</h2>
+<p>今日の学習では、</p>
+<p>$$
+\boxed{r\text{ の値によって場合分けする}}
+$$</p>
+<p>ことと、</p>
+<p>$$
+\boxed{|r|&gt;1\text{ では逆数の累乗を使って }0\text{ に持っていく}}
+$$</p>
+<p>ことを確認した。</p>
+<p>また、オリジナル問題では、</p>
+<p>$$
+\boxed{\text{極限を考える前に、数列が定義されているか確認する}}
+$$</p>
+<p>こと、</p>
+<p>$$
+\boxed{n\text{ が固定されているか、動いているかを見る}}
+$$</p>
+<p>こと、</p>
+<p>そして</p>
+<p>$$
+\boxed{\text{負の数の偶数乗は正、奇数乗は負}}
+$$</p>
+<p>という基本に戻って考えることが重要だった。</p>
+</article>
+</main>
+
+<footer>Math Study Log © 2026</footer>
+
+</body>
+</html>

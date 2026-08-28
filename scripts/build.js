@@ -34,27 +34,55 @@ fs.mkdirSync(recordsDir, { recursive: true });
 fs.mkdirSync(publicQuestionDir, { recursive: true });
 
 /*
-画像ファイル名の基本ルール
-
-20260820-001.jpg
-20260820-001-1.jpg
-20260820-001-2.jpg
-20260820-001-f.jpg
-20260820-001-1-f.jpg
-20260820-001-r.jpg
-20260820-001-1-r.jpg
+公開LOG画像: YYYYMMDD-NNNf-M.jpg / YYYYMMDD-NNNr-M.jpg
+f = 最初の答案、r = 公開に採用した1回分の再挑戦答案。
+Mはリトライ回数ではなく画像ページ番号。1枚でも必ず -1 を付ける。
 */
 
 const imagePattern =
-  /^(\d{4})(\d{2})(\d{2})-(\d{3})(?:-(\d+))?(?:-(f|r))?\.jpg$/i;
+  /^(\d{4})(\d{2})(\d{2})-(\d{3})(f|r)-([1-9]\d*)\.jpg$/;
+
+function isImageFile(entry) {
+  return entry.isFile() && /\.(?:jpe?g|png|gif|webp|avif|bmp|tiff?|heic|svg)$/i.test(entry.name);
+}
+
+function validateRecordImage(file, sourcePath, expectedDate, expectedSequence) {
+  const match = file.match(imagePattern);
+
+  if (!match) {
+    throw new Error(
+      `LOG画像の命名形式が不正です: ${sourcePath}\n` +
+      "新形式: YYYYMMDD-NNNf-M.jpg または YYYYMMDD-NNNr-M.jpg。" +
+      "種別は小文字のf/rのみ、拡張子は.jpg、Mは1以上の整数（先頭の0なし）です。" +
+      "1枚でもページ番号 -1 が必須です。旧命名形式は使用できません。"
+    );
+  }
+
+  const imageDate = `${match[1]}${match[2]}${match[3]}`;
+  if (expectedDate && imageDate !== expectedDate) {
+    throw new Error(
+      `LOG画像の日付が保存先と一致しません: ${sourcePath}\n` +
+      `保存先の日付: ${expectedDate} / 画像名の日付: ${imageDate}`
+    );
+  }
+
+  if (expectedSequence && match[4] !== expectedSequence) {
+    throw new Error(
+      `LOG画像の学習セット番号が保存先と一致しません: ${sourcePath}\n` +
+      `保存先の学習セット番号: ${expectedSequence} / 画像名の学習セット番号: ${match[4]}`
+    );
+  }
+}
 
 function collectRecordImageSources() {
-  const sources = new Map(
-    fs
-      .readdirSync(imagesDir)
-      .filter((file) => imagePattern.test(file))
-      .map((file) => [file, path.join(imagesDir, file)])
-  );
+  const sources = new Map();
+
+  // 従来の入力場所でも、旧形式や不正な画像名を黙って無視しない。
+  for (const entry of fs.readdirSync(imagesDir, { withFileTypes: true }).filter(isImageFile)) {
+    const sourcePath = path.join(imagesDir, entry.name);
+    validateRecordImage(entry.name, sourcePath);
+    sources.set(entry.name, sourcePath);
+  }
 
   if (!fs.existsSync(contentRecordsDir)) {
     return sources;
@@ -87,26 +115,16 @@ function collectRecordImageSources() {
 
       const inputImages = fs
         .readdirSync(inputImagesDir, { withFileTypes: true })
-        .filter((entry) => entry.isFile() && /\.jpg$/i.test(entry.name));
+        .filter(isImageFile);
 
       for (const imageEntry of inputImages) {
-        const match = imageEntry.name.match(imagePattern);
-        const imageDate = match
-          ? `${match[1]}${match[2]}${match[3]}`
-          : "";
-        const imageSequence = match ? match[4] : "";
-
-        if (
-          !match ||
-          imageDate !== dateEntry.name ||
-          imageSequence !== studyEntry.name
-        ) {
-          throw new Error(
-            `LOG画像の名前と保存先が一致しません: ${path.join(inputImagesDir, imageEntry.name)}`
-          );
-        }
-
         const sourcePath = path.join(inputImagesDir, imageEntry.name);
+        validateRecordImage(
+          imageEntry.name,
+          sourcePath,
+          dateEntry.name,
+          studyEntry.name
+        );
         const existingSourcePath = sources.get(imageEntry.name);
 
         if (existingSourcePath) {
@@ -133,6 +151,17 @@ function collectRecordImageSources() {
 const imageSources = collectRecordImageSources();
 const imageFiles = [...imageSources.keys()];
 
+// 各答案は1ページ目から公開する。単独の -2 なども受け付けない。
+for (const file of imageFiles) {
+  const firstPage = file.replace(/-\d+\.jpg$/, "-1.jpg");
+  if (!imageSources.has(firstPage)) {
+    throw new Error(
+      `LOG画像の1ページ目がありません: ${imageSources.get(file)}\n` +
+      `必要な画像名: ${firstPage}。ページ番号はリトライ回数ではありません。`
+    );
+  }
+}
+
 /*
 日付ごとに画像をまとめる
 */
@@ -146,12 +175,8 @@ for (const file of imageFiles) {
 
   const date = `${match[1]}-${match[2]}-${match[3]}`;
   const problemNumber = Number(match[4]);
-  const imageNumber = match[5]
-    ? Number(match[5])
-    : 0;
-  const imageStage = match[6]
-    ? match[6].toLowerCase()
-    : "legacy";
+  const imageStage = match[5];
+  const imageNumber = BigInt(match[6]);
 
   if (!grouped.has(date)) {
     grouped.set(date, []);
@@ -166,7 +191,7 @@ for (const file of imageFiles) {
 }
 
 /*
-日付順・問題番号順・画像番号順に整理
+日付順・学習セット番号順・first→retry・画像ページ番号の数値順に整理
 */
 
 const records = [...grouped.entries()]
@@ -179,9 +204,9 @@ const records = [...grouped.entries()]
       .sort(
         (a, b) =>
           a.problemNumber - b.problemNumber ||
-          ({ f: 0, r: 1, legacy: 2 }[a.imageStage] -
-            { f: 0, r: 1, legacy: 2 }[b.imageStage]) ||
-          a.imageNumber - b.imageNumber ||
+          ({ f: 0, r: 1 }[a.imageStage] -
+            { f: 0, r: 1 }[b.imageStage]) ||
+          (a.imageNumber < b.imageNumber ? -1 : a.imageNumber > b.imageNumber ? 1 : 0) ||
           a.file.localeCompare(b.file)
       )
       .map((item) => item.file)
