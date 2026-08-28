@@ -317,6 +317,12 @@ function loadStudyContent(record, study) {
     ? fs.readFileSync(sessionPath, "utf8")
     : "";
   const session = parseSessionFrontMatter(sessionSource);
+  const stageSessions = Object.fromEntries(["f", "r"].map((stage) => {
+    const stagePath = path.join(studyContentDir, `session-${stage}.md`);
+    return [stage, fs.existsSync(stagePath)
+      ? parseSessionFrontMatter(fs.readFileSync(stagePath, "utf8"))
+      : null];
+  }));
   const allowedKeys = new Set([
     "studyId",
     "date",
@@ -368,18 +374,23 @@ function loadStudyContent(record, study) {
 
     title = meta.title.trim();
   } else {
-    if (!fs.existsSync(sessionPath)) {
-      throw new Error(`session.mdがありません: ${sessionPath}`);
+    if (!fs.existsSync(sessionPath) && !stageSessions.f && !stageSessions.r) {
+      throw new Error(`SESSIONがありません（session.md / session-f.md / session-r.md）: ${studyContentDir}`);
     }
 
-    title = sessionTitleFromMarkdown(session, record, study);
+    title = sessionTitleFromMarkdown(
+      fs.existsSync(sessionPath) ? session : stageSessions.f || stageSessions.r,
+      record,
+      study
+    );
   }
 
   return {
     ...study,
     id: expectedStudyId,
     title,
-    sessionMarkdown: session.markdown
+    sessionMarkdown: session.markdown,
+    stageSessions
   };
 }
 
@@ -1113,372 +1124,153 @@ ${monthSections}
 日別ページ
 */
 
-function createLogPage(record, study) {
-  const imageItems = study.images
-    .map(
-      (image, imageIndex) => `
-    <div class="study-item">
-      <img
-        class="sheet"
-        src="./images/${encodeURIComponent(image)}"
-        alt="${escapeHtml(formatDotDate(record.date))} 学習記録 画像${imageIndex + 1}"
-        onclick="openLightbox(this)"
-      >
-    </div>`
-    )
-    .join("\n");
-
-  const displayYear = record.date.slice(0, 4);
-
-  return `<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>LOG | ${escapeHtml(study.title)} - ${formatJapaneseDate(record.date)}</title>
-
-${gaTag()}
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-<style>
-:root {
-  --bg: #fbfcfc;
-  --paper: #ffffff;
-  --ink: #192323;
-  --ink-soft: #6b7777;
-  --line: #dfe7e7;
-  --green-1: #e8f0f0;
-  --green-2: #c9dddd;
-  --green-3: #8fb4b5;
-  --green-4: #315f63;
-  --green-dark: #315f63;
+function renderStageLog(record, study, stage) {
+  const label = stage === "f" ? "FIRST" : "RETRY";
+  // 収集済み画像の順序・命名チェックは変更せず、種別だけで振り分ける。
+  const images = study.images.filter((file) => file.match(imagePattern)[5] === stage);
+  if (!images.length) return `<p class="study-empty">${label}のLOGはまだありません。</p>`;
+  return images.map((file) => {
+    const page = file.match(imagePattern)[6];
+    const alt = `${formatDotDate(record.date)} ${study.number} ${label} ページ${page}`;
+    return `<figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="${escapeHtml(alt)}を拡大">
+        <img class="sheet" src="./images/${encodeURIComponent(file)}" alt="${escapeHtml(alt)}" loading="lazy">
+      </button>
+      <figcaption>${label} · ${page}</figcaption>
+    </figure>`;
+  }).join("\n");
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+function studyPageStyles() {
+  return `${sessionPageStyles()}
+.header-inner, main { width: min(1440px, calc(100% - 48px)); }
+.study-stage + .study-stage { margin-top: 40px; }
+.stage-heading {
+  margin-bottom: 14px;
+  color: var(--accent);
+  font: 600 17px/1.5 "JetBrains Mono", monospace;
 }
-
-html,
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: "Noto Sans JP", sans-serif;
-  line-height: 1.65;
+/* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
+.study-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 24px;
 }
-
-body {
-  min-height: 100vh;
+.study-column {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
 }
-
-header {
-  border-bottom: 1px solid var(--line);
-  padding: 22px 24px 14px;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.header-inner,
-main,
-footer {
-  width: min(900px, calc(100% - 32px));
-  margin: 0 auto;
-}
-
-.eyebrow {
-  font-family: "JetBrains Mono", monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 11px;
-  color: var(--ink-soft);
-  margin-bottom: 4px;
-}
-
-.date {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-}
-
-.meta {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 7px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--green-1);
-  color: var(--green-dark);
-  font-size: 11px;
-  font-family: "JetBrains Mono", monospace;
-}
-
-main {
-  padding: 24px 0 34px;
-}
-
-.page-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
+.column-heading {
   margin-bottom: 18px;
+  color: var(--ink-soft);
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
 }
-
-.back-link {
-  display: inline-block;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--paper);
-  color: var(--green-dark);
-  text-decoration: none;
-  font-size: 12px;
-}
-
-.back-link:hover {
-  border-color: var(--green-dark);
-}
-
-.study-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.study-item {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--paper);
-}
-
-.sheet {
-  width: 100%;
-  height: auto;
+.study-column .session-content { padding: 0; border: 0; }
+.study-column .session-content > :first-child { margin-top: 0; }
+.study-sheet + .study-sheet, .legacy-log-stage + .legacy-log-stage { margin-top: 24px; }
+.sheet-button {
   display: block;
-  background: #fff;
-  border: 1px solid var(--line);
+  width: 100%;
+  border: 0;
   border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(27, 49, 35, 0.035);
+  background: var(--panel);
   cursor: zoom-in;
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+}
+.sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
+.study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
+.legacy-note { margin-bottom: 18px; }
+.legacy-session { margin-top: 40px; }
+.lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
+.lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
+.lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
+.lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
+@media (max-width: 900px) {
+  .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .study-column { padding: 14px; }
+  .header-inner, main { width: calc(100% - 24px); }
+}`;
 }
 
-.sheet:hover {
-  transform: translateY(-1px);
-  border-color: #b8cdbf;
-  box-shadow: 0 5px 15px rgba(27, 49, 35, 0.07);
-}
+function createStudyPage(record, study) {
+  const hasStageSessions = Boolean(study.stageSessions.f || study.stageSessions.r);
+  const legacySession = study.sessionMarkdown.trim()
+    ? `<p class="legacy-note">共通SESSION：従来の記事を分割せず掲載しています。</p><article class="session-content">${renderSessionMarkdown(study)}</article>`
+    : "";
+  let content;
 
-.sheet-label {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
-  color: var(--ink-soft);
-  padding-left: 2px;
-}
-
-.nav-section {
-  margin-top: 28px;
-  padding: 14px 14px 0;
-  border-top: 1px solid var(--line);
-  border-radius: 8px 8px 0 0;
-  background: linear-gradient(
-    180deg,
-    rgba(228, 239, 232, 0.62),
-    rgba(228, 239, 232, 0)
-  );
-}
-
-.nav-row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 14px;
-}
-
-.nav-link {
-  color: var(--green-dark);
-  text-decoration: none;
-  font-size: 12px;
-}
-
-.nav-link:hover {
-  text-decoration: underline;
-}
-
-.nav-link.next {
-  text-align: right;
-}
-
-.nav-center {
-  color: var(--ink-soft);
-  text-decoration: none;
-  font-size: 11px;
-}
-
-.nav-center:hover {
-  color: var(--green-dark);
-}
-
-footer {
-  margin-top: 6px;
-  padding: 15px 0 20px;
-  border-top: 1px solid var(--line);
-  font-size: 10px;
-  color: var(--ink-soft);
-  background: var(--paper);
-}
-
-/* 画像拡大 */
-
-.lightbox {
-  position: fixed;
-  inset: 0;
-  background: rgba(12, 20, 15, 0.82);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  z-index: 20;
-}
-
-.lightbox.open {
-  display: flex;
-}
-
-.lightbox img {
-  max-width: 94vw;
-  max-height: 92vh;
-  width: auto;
-  height: auto;
-  border-radius: 8px;
-  background: #fff;
-  cursor: zoom-out;
-}
-
-@media (max-width: 650px) {
-  header {
-    padding: 16px 12px 11px;
-  }
-
-  .header-inner,
-  main,
-  footer {
-    width: calc(100% - 20px);
-  }
-
-  .date {
-    font-size: 22px;
-  }
-
-  main {
-    padding-top: 16px;
-  }
-
-  .study-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .sheet {
-    border-radius: 5px;
-  }
-
-  .nav-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .nav-center {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    text-align: center;
-    margin-top: 4px;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<header>
-  <div class="header-inner">
-    <div class="eyebrow">LOG</div>
-    <div class="date">${escapeHtml(study.title)}</div>
-    <div class="meta">${formatDotDate(record.date)}</div>
-  </div>
-</header>
-
-<main>
-
-  <nav class="page-links" aria-label="ページメニュー">
-    <a class="back-link" href="../../../index.html">TOP</a>
-    <a class="back-link" href="./session.html" target="_blank" rel="noopener noreferrer">SESSION ↗</a>
-  </nav>
-
-  <section class="study-grid">
-${imageItems}
-  </section>
-
-</main>
-
-<footer>
-  Math Study Log © ${displayYear}
-</footer>
-
-<div
-  class="lightbox"
-  id="lightbox"
-  onclick="closeLightbox()"
->
-  <img
-    id="lightboxImage"
-    src=""
-    alt=""
-  >
-</div>
-
-<script>
-function openLightbox(element) {
-  const image =
-    document.getElementById("lightboxImage");
-
-  image.src = element.src;
-  image.alt = element.alt;
-
-  document
-    .getElementById("lightbox")
-    .classList
-    .add("open");
-}
-
-function closeLightbox() {
-  document
-    .getElementById("lightbox")
-    .classList
-    .remove("open");
-}
-
-document.addEventListener(
-  "keydown",
-  (event) => {
-    if (event.key === "Escape") {
-      closeLightbox();
+  if (!hasStageSessions && legacySession) {
+    // 旧記事を推測でFIRST/RETRYに分割したり、両方へ重複掲載したりしない。
+    content = `<section class="study-pair" aria-label="LOGと共通SESSION">
+      <div class="study-column" data-column="log">
+        <h2 class="column-heading">LOG</h2>
+        ${["f", "r"].map((stage) => `<section class="legacy-log-stage" data-stage="${stage}">
+          <h3 class="stage-heading">${stage === "f" ? "FIRST" : "RETRY"}</h3>
+          ${renderStageLog(record, study, stage)}
+        </section>`).join("\n")}
+      </div>
+      <div class="study-column" data-column="session"><h2 class="column-heading">SESSION</h2>${legacySession}</div>
+    </section>`;
+  } else {
+    content = ["f", "r"].map((stage) => {
+      const label = stage === "f" ? "FIRST" : "RETRY";
+      const session = study.stageSessions[stage];
+      const sessionHtml = session?.markdown.trim()
+        ? renderSessionMarkdown({ sessionMarkdown: session.markdown })
+        : `<p class="study-empty">${label}のSESSIONはまだありません。</p>`;
+      return `<section class="study-stage" data-stage="${stage}" aria-labelledby="stage-${stage}">
+        <h2 class="stage-heading" id="stage-${stage}">${label}</h2>
+        <div class="study-pair">
+          <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage)}</div>
+          <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>
+        </div>
+      </section>`;
+    }).join("\n");
+    if (legacySession) {
+      content += `<section class="legacy-session study-column" aria-label="共通SESSION"><h2 class="column-heading">SESSION · 共通</h2>${legacySession}</section>`;
     }
   }
-);
-</script>
 
-</body>
-</html>`;
+  return createSimpleRecordPage({
+    documentTitle: `${study.title} | 学習記録 ${study.number} - ${formatJapaneseDate(record.date)}`,
+    kicker: "STUDY · LOG & SESSION",
+    title: study.title,
+    date: `${formatDotDate(record.date)} / ${study.number}`,
+    actions: `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="../index.html">${formatDotDate(record.date)} の学習セット</a>`,
+    content,
+    displayYear: record.date.slice(0, 4),
+    headExtra: `${mathJaxHead(true)}\n<link rel="canonical" href="${siteUrl}/records/${dateKey(record.date)}/${study.number}/index.html">`,
+    extraStyles: studyPageStyles(),
+    bodyScripts: `<dialog class="lightbox" aria-label="答案画像の拡大">
+  <button class="text-link lightbox-close" type="button">閉じる</button>
+  <img alt="">
+</dialog>
+<script>
+const lightbox = document.querySelector(".lightbox");
+document.querySelectorAll(".sheet-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    const source = button.querySelector("img");
+    const enlarged = lightbox.querySelector("img");
+    enlarged.src = source.src;
+    enlarged.alt = source.alt;
+    lightbox.showModal();
+  });
+});
+lightbox.querySelector("button").addEventListener("click", () => lightbox.close());
+lightbox.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") lightbox.close();
+});
+lightbox.addEventListener("click", (event) => {
+  if (event.target === lightbox) lightbox.close();
+});
+</script>`
+  });
 }
 
 function createSimpleRecordPage({
@@ -1731,8 +1523,7 @@ function createRecordIndexPage(record, index) {
       <div class="record-number">${escapeHtml(study.number)}</div>
       <div class="record-title">${escapeHtml(study.title)}</div>
       <nav class="record-links" aria-label="${escapeHtml(study.number)} 学習記録">
-        <a class="text-link" href="./${encodeURIComponent(study.number)}/log.html">LOG</a>
-        <a class="text-link" href="./${encodeURIComponent(study.number)}/session.html">SESSION</a>
+        <a class="text-link" href="./${encodeURIComponent(study.number)}/index.html" aria-label="${escapeHtml(study.number)} ${escapeHtml(study.title)}を開く">OPEN</a>
       </nav>
     </article>`
     )
@@ -1875,17 +1666,16 @@ window.MathJax = {
 <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>`;
 }
 
-function createSessionPage(record, study) {
+function createStudyRedirectPage(record, study) {
   return createSimpleRecordPage({
-    documentTitle: `SESSION | ${study.title} - ${formatJapaneseDate(record.date)}`,
-    kicker: "SESSION",
+    documentTitle: `STUDY | ${study.title} - ${formatJapaneseDate(record.date)}`,
+    kicker: "STUDY",
     title: study.title,
     date: formatDotDate(record.date),
-    actions: `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="./log.html" target="_blank" rel="noopener noreferrer">LOG ↗</a>`,
-    content: `<article class="session-content">${renderSessionMarkdown(study)}</article>`,
+    actions: `<a class="text-link" href="../../../index.html">TOP</a>`,
+    content: `<section class="move-notice"><p>LOGとSESSIONは1つの学習記録ページにまとまりました。</p><a class="text-link" href="./index.html">学習記録を開く</a></section>`,
     displayYear: record.date.slice(0, 4),
-    headExtra: mathJaxHead(true),
-    extraStyles: sessionPageStyles()
+    headExtra: `<meta http-equiv="refresh" content="0; url=./index.html">\n<link rel="canonical" href="${siteUrl}/records/${dateKey(record.date)}/${study.number}/index.html">`
   });
 }
 
@@ -2050,13 +1840,12 @@ function createQuestionIndexPage(questions) {
 
 function createArchivePage(kind, entries) {
   const pageName = kind.toUpperCase();
-  const fileName = kind.toLowerCase();
   const items = entries
     .map(
       ({ record, study }) => `
     <div class="archive-item">
       <div class="archive-date">${formatDotDate(record.date)}</div>
-      <a class="archive-title" href="../records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/${fileName}.html">${escapeHtml(study.title)}</a>
+      <a class="archive-title" href="../records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/index.html">${escapeHtml(study.title)}</a>
     </div>`
     )
     .join("\n");
@@ -2126,16 +1915,18 @@ records.forEach((record, index) => {
     }
 
     fs.writeFileSync(
-      path.join(studyDir, "log.html"),
-      createLogPage(record, study),
+      path.join(studyDir, "index.html"),
+      createStudyPage(record, study),
       "utf8"
     );
 
-    fs.writeFileSync(
-      path.join(studyDir, "session.html"),
-      createSessionPage(record, study),
-      "utf8"
-    );
+    for (const oldPage of ["log.html", "session.html"]) {
+      fs.writeFileSync(
+        path.join(studyDir, oldPage),
+        createStudyRedirectPage(record, study),
+        "utf8"
+      );
+    }
   }
 
   fs.writeFileSync(
@@ -2204,10 +1995,9 @@ const sitemapUrls = [
   ...records.map(
     (record) => `${siteUrl}/records/${dateKey(record.date)}/`
   ),
-  ...archiveEntries.flatMap(({ record, study }) => [
-    `${siteUrl}/records/${dateKey(record.date)}/${study.number}/log.html`,
-    `${siteUrl}/records/${dateKey(record.date)}/${study.number}/session.html`
-  ]),
+  ...archiveEntries.map(({ record, study }) =>
+    `${siteUrl}/records/${dateKey(record.date)}/${study.number}/index.html`
+  ),
   ...questions.map(
     (question) => `${siteUrl}/question/${question.slug}.html`
   )
