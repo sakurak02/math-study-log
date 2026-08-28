@@ -62,8 +62,18 @@ QUESTION画像はこのLOG命名チェックの対象外です。
 
 各セットは `records/YYYYMMDD/NNN/index.html` にLOGとSESSIONをまとめて表示します。
 日付ページの各セットの `OPEN` から開けます。同じ日の `001`・`002`・`003` はそれぞれ別ページです。
-トップページの構造は変更せず、LOG一覧・SESSION一覧のリンク先も統合ページにしています。
-以前の `log.html` / `session.html` は統合ページへ自動移動します（手動リンクもあります）。
+トップページの3ボタンは、そのまま各カテゴリの一覧へ移動します。
+
+| ボタン | 一覧ページ | 一覧から開く記事 |
+| --- | --- | --- |
+| LOG | `log/index.html` | `records/YYYYMMDD/NNN/log.html`（LOG画像のみ） |
+| SESSION | `session/index.html` | `records/YYYYMMDD/NNN/session.html`（SESSION本文のみ） |
+| QUESTION | `question/index.html` | `question/slug.html`（QUESTION記事） |
+
+LOG一覧には画像があるセット、SESSION一覧には本文があるセット、QUESTION一覧にはQUESTION記事だけを掲載します。
+LOGとSESSIONが同じ学習セットに属する場合は、両一覧に同じタイトルが並びますが、記事の遷移先と表示内容は別です。
+`log.html` / `session.html` から統合ページへの自動移動は行いません。
+日付ページの `OPEN` は引き続き統合ページを開きます。トップページの見た目や他のセクションは変更しません。
 
 新規記事には、小文字の次のファイル名を使用してください。
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STUDY | 無限等比数列――公比を見る前に初項を見る - 2026年8月25日</title>
+<title>LOG | 無限等比数列――公比を見る前に初項を見る | 学習記録 001 - 2026年8月25日</title>
 
 
 <!-- Google tag (gtag.js) -->
@@ -18,8 +18,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<meta http-equiv="refresh" content="0; url=./index.html">
-<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260825/001/index.html">
+
+<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260825/001/log.html">
 
 <style>
 :root {
@@ -178,6 +178,158 @@ footer {
   text-align: center;
   font-size: 11px;
 }
+.session-content {
+  padding: 4px 0 24px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.session-content > *:first-child {
+  margin-top: 22px;
+}
+
+.session-content h2 {
+  margin: 34px 0 14px;
+  color: var(--accent);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.session-content h3 {
+  margin: 26px 0 10px;
+  font-size: 15px;
+}
+
+.session-content p,
+.session-content ul,
+.session-content ol,
+.session-content blockquote,
+.session-content pre,
+.session-content table {
+  margin: 0 0 18px;
+}
+
+.session-content ul,
+.session-content ol {
+  padding-left: 1.5em;
+}
+
+.session-content blockquote {
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink-soft);
+}
+
+.session-content pre {
+  max-width: 100%;
+  padding: 13px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  font: 12px/1.7 "JetBrains Mono", monospace;
+}
+
+.session-content code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.session-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.session-content th,
+.session-content td {
+  min-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.session-content th {
+  background: #e8f0f0;
+}
+
+.session-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.session-content a {
+  color: var(--accent);
+}
+
+mjx-container[display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+.header-inner, main { width: min(1440px, calc(100% - 48px)); }
+.study-stage + .study-stage { margin-top: 40px; }
+.stage-heading {
+  margin-bottom: 14px;
+  color: var(--accent);
+  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
+}
+/* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
+.study-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 24px;
+}
+.study-column {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.column-heading {
+  margin-bottom: 18px;
+  color: var(--ink-soft);
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+}
+.study-column .session-content { padding: 0; border: 0; }
+.study-column .session-content > :first-child { margin-top: 0; }
+.study-sheet + .study-sheet { margin-top: 24px; }
+.sheet-button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: var(--panel);
+  cursor: zoom-in;
+}
+.sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
+.study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
+.legacy-note { margin-bottom: 18px; }
+.legacy-session { margin-top: 40px; }
+.lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
+.lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
+.lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
+.lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
+@media (max-width: 900px) {
+  .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .study-column { padding: 14px; }
+  .header-inner, main { width: calc(100% - 24px); }
+}
+.study-pair { grid-template-columns: minmax(0, 1fr); }
+.header-inner, main { max-width: 900px; }
 
 @media (max-width: 600px) {
   .header-inner,
@@ -210,21 +362,69 @@ footer {
 
 <header>
   <div class="header-inner">
-    <div class="page-kicker">STUDY</div>
+    <div class="page-kicker">LOG</div>
     <h1>無限等比数列――公比を見る前に初項を見る</h1>
-<div class="page-date">2026.08.25</div>
+<div class="page-date">2026.08.25 / 001</div>
   </div>
 </header>
 
 <main>
   <nav class="page-actions" aria-label="ページメニュー">
     <a class="text-link" href="../../../index.html">TOP</a>
+    <a class="text-link" href="../../../log/index.html">LOG 一覧</a>
+    <a class="text-link" href="./index.html">学習セット全体</a>
   </nav>
 
-  <section class="move-notice"><p>LOGとSESSIONは1つの学習記録ページにまとまりました。</p><a class="text-link" href="./index.html">学習記録を開く</a></section>
+  <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
+      <h2 class="stage-heading" id="stage-f">教材問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.25 001 教材問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260825-001f-1.jpg" alt="2026.08.25 001 教材問題 ページ1" loading="lazy">
+      </button>
+      <figcaption>教材問題 · 1</figcaption>
+    </figure></div>
+
+      </div>
+    </section>
+<section class="study-stage" data-stage="r" aria-labelledby="stage-r">
+      <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.25 001 オリジナル問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260825-001r-1.jpg" alt="2026.08.25 001 オリジナル問題 ページ1" loading="lazy">
+      </button>
+      <figcaption>オリジナル問題 · 1</figcaption>
+    </figure></div>
+
+      </div>
+    </section>
 </main>
 
 <footer>Math Study Log © 2026</footer>
+<dialog class="lightbox" aria-label="答案画像の拡大">
+  <button class="text-link lightbox-close" type="button">閉じる</button>
+  <img alt="">
+</dialog>
+<script>
+const lightbox = document.querySelector(".lightbox");
+document.querySelectorAll(".sheet-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    const source = button.querySelector("img");
+    const enlarged = lightbox.querySelector("img");
+    enlarged.src = source.src;
+    enlarged.alt = source.alt;
+    lightbox.showModal();
+  });
+});
+lightbox.querySelector("button").addEventListener("click", () => lightbox.close());
+lightbox.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") lightbox.close();
+});
+lightbox.addEventListener("click", (event) => {
+  if (event.target === lightbox) lightbox.close();
+});
+</script>
 
 </body>
 </html>

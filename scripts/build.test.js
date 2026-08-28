@@ -137,15 +137,25 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
     assert.match(page, /mathjax@3/);
     assert.doesNotMatch(page, /target="_blank"/);
     assert.doesNotMatch(page, /href="\.\/(?:log|session)\.html"/);
-    for (const oldPage of ["log.html", "session.html"]) {
-      const redirect = build.read(`public/records/20260828/${number}/${oldPage}`);
-      assert.match(redirect, /http-equiv="refresh" content="0; url=\.\/index\.html"/);
-      assert.match(redirect, /href="\.\/index\.html"/);
+    for (const kind of ["log", "session"]) {
+      const categoryPage = build.read(`public/records/20260828/${number}/${kind}.html`);
+      assert.doesNotMatch(categoryPage, /http-equiv="refresh"/);
+      assert.match(categoryPage, /href="\.\/index\.html"/);
+      assert.ok(categoryPage.includes(`data-column="${kind}"`));
+      assert.ok(!categoryPage.includes(`data-column="${kind === "log" ? "session" : "log"}"`));
+      if (kind === "log") {
+        assert.doesNotMatch(categoryPage, /First explanation|Retry explanation/);
+        assert.match(categoryPage, /class="sheet"/);
+      } else {
+        assert.match(categoryPage, /First explanation/);
+        assert.match(categoryPage, /Retry explanation/);
+        assert.doesNotMatch(categoryPage, /class="sheet"|class="lightbox"/);
+      }
     }
     for (const index of ["records/20260828", "log", "session"]) {
       const listing = build.read(`public/${index}/index.html`);
-      assert.ok(listing.includes(`${number}/index.html`));
-      assert.doesNotMatch(listing, /\/(?:log|session)\.html/);
+      const target = index.startsWith("records/") ? "index" : index;
+      assert.ok(listing.includes(`${number}/${target}.html`));
     }
   }
   const day = build.read("public/records/20260828/index.html");
@@ -153,7 +163,46 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
   assert.equal((day.match(/>OPEN<\/a>/g) || []).length, 3);
   const sitemap = build.read("public/sitemap.xml");
   assert.match(sitemap, /20260828\/001\/index\.html/);
-  assert.doesNotMatch(sitemap, /\/(?:log|session)\.html/);
+  assert.match(sitemap, /20260828\/001\/log\.html/);
+  assert.match(sitemap, /20260828\/001\/session\.html/);
+});
+
+test("homepage buttons lead to separate category lists and exclude articles without category content", (t) => {
+  const files = {
+    "content/records/20260828/001/session-f.md": "# Both categories\n\nSession explanation.",
+    "content/records/20260828/004/session.md": "# Legacy session\n\nLegacy explanation.",
+    "content/records/20260828/003/session-f.md": "---\ntitle: Empty session\n---\n\n",
+    "content/question/example/meta.json": JSON.stringify({ title: "Question only", date: "2026-08-28" }),
+    "content/question/example/article.md": "# Question only\n\nQuestion explanation."
+  };
+  for (const [number, title] of [["001", "Both categories"], ["002", "Log only"], ["003", "Empty session"], ["004", "Legacy session"]]) {
+    const dir = `content/records/20260828/${number}`;
+    files[`${dir}/images/20260828-${number}f-1.jpg`] = "log image";
+    files[`${dir}/meta.json`] = JSON.stringify({ studyId: `20260828-${number}`, date: "2026-08-28", sequence: number, title });
+  }
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+  assert.deepEqual([...home.matchAll(/class="entry-card" href="([^"]+)"/g)].map(m => m[1]),
+    ["./log/index.html", "./session/index.html", "./question/index.html"]);
+  for (const kind of ["log", "session", "question"]) {
+    const listing = build.read(`public/${kind}/index.html`);
+    assert.match(listing, new RegExp(`<h1>${kind.toUpperCase()}</h1>`));
+    assert.doesNotMatch(listing, /http-equiv="refresh"/);
+    const links = [...listing.matchAll(/class="archive-title" href="([^"]+)"/g)].map(m => m[1]);
+    const expected = kind === "log" ? ["004", "003", "002", "001"] : ["004", "001"];
+    assert.deepEqual(links, kind === "question" ? ["./example.html"]
+      : expected.map(number => `../records/20260828/${number}/${kind}.html`));
+    for (const link of links) {
+      const target = path.posix.normalize(`public/${kind}/${link}`);
+      const page = build.read(target);
+      assert.doesNotMatch(page, /http-equiv="refresh"/);
+      if (kind !== "question") assert.doesNotMatch(page, /Question explanation/);
+    }
+  }
+  assert.match(build.read("public/records/20260828/004/session.html"), /Legacy explanation/);
+  assert.doesNotMatch(build.read("public/records/20260828/004/log.html"), /Legacy explanation/);
 });
 
 test("unmigrated legacy SESSION never restores the all-LOG/all-SESSION columns", (t) => {

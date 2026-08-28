@@ -1200,8 +1200,11 @@ function studyPageStyles() {
 }`;
 }
 
-function createStudyPage(record, study) {
-  const legacySession = study.sessionMarkdown.trim()
+function createStudyPage(record, study, view = "study") {
+  const showLog = view !== "session";
+  const showSession = view !== "log";
+  const pageFile = view === "study" ? "index.html" : `${view}.html`;
+  const legacySession = showSession && study.sessionMarkdown.trim()
     ? `<p class="legacy-note">未分類の旧SESSIONです。対応表示にはsession-f.md（教材問題）とsession-r.md（オリジナル問題）を使用してください。</p><article class="session-content">${renderSessionMarkdown(study)}</article>`
     : "";
 
@@ -1215,8 +1218,8 @@ function createStudyPage(record, study) {
     return `<section class="study-stage" data-stage="${stage}" aria-labelledby="stage-${stage}">
       <h2 class="stage-heading" id="stage-${stage}">${label}</h2>
       <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage)}</div>
-        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>
+${showLog ? `        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage)}</div>` : ""}
+${showSession ? `        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>` : ""}
       </div>
     </section>`;
   }).join("\n");
@@ -1226,16 +1229,18 @@ function createStudyPage(record, study) {
   }
 
   return createSimpleRecordPage({
-    documentTitle: `${study.title} | 学習記録 ${study.number} - ${formatJapaneseDate(record.date)}`,
-    kicker: "STUDY · LOG & SESSION",
+    documentTitle: `${view === "study" ? "" : `${view.toUpperCase()} | `}${study.title} | 学習記録 ${study.number} - ${formatJapaneseDate(record.date)}`,
+    kicker: view === "study" ? "STUDY · LOG & SESSION" : view.toUpperCase(),
     title: study.title,
     date: `${formatDotDate(record.date)} / ${study.number}`,
-    actions: `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="../index.html">${formatDotDate(record.date)} の学習セット</a>`,
+    actions: view === "study"
+      ? `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="../index.html">${formatDotDate(record.date)} の学習セット</a>`
+      : `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="../../../${view}/index.html">${view.toUpperCase()} 一覧</a>\n    <a class="text-link" href="./index.html">学習セット全体</a>`,
     content,
     displayYear: record.date.slice(0, 4),
-    headExtra: `${mathJaxHead(true)}\n<link rel="canonical" href="${siteUrl}/records/${dateKey(record.date)}/${study.number}/index.html">`,
-    extraStyles: studyPageStyles(),
-    bodyScripts: `<dialog class="lightbox" aria-label="答案画像の拡大">
+    headExtra: `${showSession ? mathJaxHead(true) : ""}\n<link rel="canonical" href="${siteUrl}/records/${dateKey(record.date)}/${study.number}/${pageFile}">`,
+    extraStyles: studyPageStyles() + (view === "study" ? "" : "\n.study-pair { grid-template-columns: minmax(0, 1fr); }\n.header-inner, main { max-width: 900px; }"),
+    bodyScripts: showLog ? `<dialog class="lightbox" aria-label="答案画像の拡大">
   <button class="text-link lightbox-close" type="button">閉じる</button>
   <img alt="">
 </dialog>
@@ -1257,7 +1262,7 @@ lightbox.addEventListener("keydown", (event) => {
 lightbox.addEventListener("click", (event) => {
   if (event.target === lightbox) lightbox.close();
 });
-</script>`
+</script>` : ""
   });
 }
 
@@ -1654,19 +1659,6 @@ window.MathJax = {
 <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>`;
 }
 
-function createStudyRedirectPage(record, study) {
-  return createSimpleRecordPage({
-    documentTitle: `STUDY | ${study.title} - ${formatJapaneseDate(record.date)}`,
-    kicker: "STUDY",
-    title: study.title,
-    date: formatDotDate(record.date),
-    actions: `<a class="text-link" href="../../../index.html">TOP</a>`,
-    content: `<section class="move-notice"><p>LOGとSESSIONは1つの学習記録ページにまとまりました。</p><a class="text-link" href="./index.html">学習記録を開く</a></section>`,
-    displayYear: record.date.slice(0, 4),
-    headExtra: `<meta http-equiv="refresh" content="0; url=./index.html">\n<link rel="canonical" href="${siteUrl}/records/${dateKey(record.date)}/${study.number}/index.html">`
-  });
-}
-
 function createLegacyRecordPage(record) {
   const newUrl = `./${dateKey(record.date)}/index.html`;
 
@@ -1826,14 +1818,22 @@ function createQuestionIndexPage(questions) {
   });
 }
 
+function hasCategoryContent(study, kind) {
+  return kind === "log"
+    ? study.images.length > 0
+    : [study.sessionMarkdown, study.stageSessions.f?.markdown, study.stageSessions.r?.markdown]
+        .some((source) => Boolean(source?.trim()));
+}
+
 function createArchivePage(kind, entries) {
   const pageName = kind.toUpperCase();
   const items = entries
+    .filter(({ study }) => hasCategoryContent(study, kind))
     .map(
       ({ record, study }) => `
     <div class="archive-item">
       <div class="archive-date">${formatDotDate(record.date)}</div>
-      <a class="archive-title" href="../records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/index.html">${escapeHtml(study.title)}</a>
+      <a class="archive-title" href="../records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/${kind}.html">${escapeHtml(study.title)}</a>
     </div>`
     )
     .join("\n");
@@ -1908,10 +1908,10 @@ records.forEach((record, index) => {
       "utf8"
     );
 
-    for (const oldPage of ["log.html", "session.html"]) {
+    for (const kind of ["log", "session"]) {
       fs.writeFileSync(
-        path.join(studyDir, oldPage),
-        createStudyRedirectPage(record, study),
+        path.join(studyDir, `${kind}.html`),
+        createStudyPage(record, study, kind),
         "utf8"
       );
     }
@@ -1985,6 +1985,11 @@ const sitemapUrls = [
   ),
   ...archiveEntries.map(({ record, study }) =>
     `${siteUrl}/records/${dateKey(record.date)}/${study.number}/index.html`
+  ),
+  ...archiveEntries.flatMap(({ record, study }) =>
+    ["log", "session"].filter((kind) => hasCategoryContent(study, kind)).map((kind) =>
+      `${siteUrl}/records/${dateKey(record.date)}/${study.number}/${kind}.html`
+    )
   ),
   ...questions.map(
     (question) => `${siteUrl}/question/${question.slug}.html`
