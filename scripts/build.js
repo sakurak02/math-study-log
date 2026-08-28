@@ -1124,11 +1124,13 @@ ${monthSections}
 日別ページ
 */
 
+const studyPartLabels = { f: "教材問題", r: "オリジナル問題" };
+
 function renderStageLog(record, study, stage) {
-  const label = stage === "f" ? "FIRST" : "RETRY";
+  const label = studyPartLabels[stage];
   // 収集済み画像の順序・命名チェックは変更せず、種別だけで振り分ける。
   const images = study.images.filter((file) => file.match(imagePattern)[5] === stage);
-  if (!images.length) return `<p class="study-empty">${label}のLOGはまだありません。</p>`;
+  // 未登録でも左には説明文を置かず、答案画像と操作用ラベルだけを表示する。
   return images.map((file) => {
     const page = file.match(imagePattern)[6];
     const alt = `${formatDotDate(record.date)} ${study.number} ${label} ページ${page}`;
@@ -1148,7 +1150,7 @@ function studyPageStyles() {
 .stage-heading {
   margin-bottom: 14px;
   color: var(--accent);
-  font: 600 17px/1.5 "JetBrains Mono", monospace;
+  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
 }
 /* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
 .study-pair {
@@ -1172,7 +1174,7 @@ function studyPageStyles() {
 }
 .study-column .session-content { padding: 0; border: 0; }
 .study-column .session-content > :first-child { margin-top: 0; }
-.study-sheet + .study-sheet, .legacy-log-stage + .legacy-log-stage { margin-top: 24px; }
+.study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
   width: 100%;
@@ -1199,42 +1201,28 @@ function studyPageStyles() {
 }
 
 function createStudyPage(record, study) {
-  const hasStageSessions = Boolean(study.stageSessions.f || study.stageSessions.r);
   const legacySession = study.sessionMarkdown.trim()
-    ? `<p class="legacy-note">共通SESSION：従来の記事を分割せず掲載しています。</p><article class="session-content">${renderSessionMarkdown(study)}</article>`
+    ? `<p class="legacy-note">未分類の旧SESSIONです。対応表示にはsession-f.md（教材問題）とsession-r.md（オリジナル問題）を使用してください。</p><article class="session-content">${renderSessionMarkdown(study)}</article>`
     : "";
-  let content;
 
-  if (!hasStageSessions && legacySession) {
-    // 旧記事を推測でFIRST/RETRYに分割したり、両方へ重複掲載したりしない。
-    content = `<section class="study-pair" aria-label="LOGと共通SESSION">
-      <div class="study-column" data-column="log">
-        <h2 class="column-heading">LOG</h2>
-        ${["f", "r"].map((stage) => `<section class="legacy-log-stage" data-stage="${stage}">
-          <h3 class="stage-heading">${stage === "f" ? "FIRST" : "RETRY"}</h3>
-          ${renderStageLog(record, study, stage)}
-        </section>`).join("\n")}
+  // 常にパート単位の独立したグリッドを2段作る。左右を別々の縦列にしない。
+  let content = ["f", "r"].map((stage) => {
+    const label = studyPartLabels[stage];
+    const session = study.stageSessions[stage];
+    const sessionHtml = session?.markdown.trim()
+      ? renderSessionMarkdown({ sessionMarkdown: session.markdown })
+      : `<p class="study-empty">${label}のSESSIONはまだありません。</p>`;
+    return `<section class="study-stage" data-stage="${stage}" aria-labelledby="stage-${stage}">
+      <h2 class="stage-heading" id="stage-${stage}">${label}</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage)}</div>
+        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>
       </div>
-      <div class="study-column" data-column="session"><h2 class="column-heading">SESSION</h2>${legacySession}</div>
     </section>`;
-  } else {
-    content = ["f", "r"].map((stage) => {
-      const label = stage === "f" ? "FIRST" : "RETRY";
-      const session = study.stageSessions[stage];
-      const sessionHtml = session?.markdown.trim()
-        ? renderSessionMarkdown({ sessionMarkdown: session.markdown })
-        : `<p class="study-empty">${label}のSESSIONはまだありません。</p>`;
-      return `<section class="study-stage" data-stage="${stage}" aria-labelledby="stage-${stage}">
-        <h2 class="stage-heading" id="stage-${stage}">${label}</h2>
-        <div class="study-pair">
-          <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage)}</div>
-          <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>
-        </div>
-      </section>`;
-    }).join("\n");
-    if (legacySession) {
-      content += `<section class="legacy-session study-column" aria-label="共通SESSION"><h2 class="column-heading">SESSION · 共通</h2>${legacySession}</section>`;
-    }
+  }).join("\n");
+  if (legacySession) {
+    // 未移行の記事は失わず別枠で保持するが、推測でいずれかのパートに割り当てない。
+    content += `<section class="legacy-session study-column" aria-label="未分類の旧SESSION"><h2 class="column-heading">SESSION · 未分類</h2>${legacySession}</section>`;
   }
 
   return createSimpleRecordPage({

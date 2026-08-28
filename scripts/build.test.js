@@ -101,9 +101,9 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
   const files = {};
   for (const number of ["001", "002", "003"]) {
     const dir = `content/records/20260828/${number}`;
-    files[`${dir}/session-f.md`] = `---\ntitle: Set ${number}\n---\n# FIRST ${number}\n\nFirst explanation $a=1$.\n\n<details>\n<summary>Hint</summary>\n\n$$a_n=2^n$$\n\n</details>`;
-    files[`${dir}/session-r.md`] = `# RETRY ${number}\n\nRetry explanation.`;
-    for (const suffix of ["f-1", "f-2", "r-1", "r-10", "r-3", "r-2"]) {
+    files[`${dir}/session-f.md`] = `---\ntitle: Set ${number}\n---\n# 教材問題の振り返り ${number}\n\nFirst explanation $a=1$.\n\n<details>\n<summary>Hint</summary>\n\n$$a_n=2^n$$\n\n</details>`;
+    files[`${dir}/session-r.md`] = `# オリジナル問題 ${number}\n\nRetry explanation.`;
+    for (const suffix of ["f-1", "f-10", "f-3", "f-2", "r-1", "r-10", "r-3", "r-2"]) {
       files[`${dir}/images/20260828-${number}${suffix}.jpg`] = suffix;
     }
   }
@@ -112,16 +112,24 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
   assert.equal(result.status, 0, result.stderr);
   for (const number of ["001", "002", "003"]) {
     const page = build.read(`public/records/20260828/${number}/index.html`);
+    assert.equal((page.match(/class="study-stage"/g) || []).length, 2);
+    assert.equal((page.match(/class="study-pair"/g) || []).length, 2);
+    assert.match(page, /id="stage-f">教材問題<\/h2>/);
+    assert.match(page, /id="stage-r">オリジナル問題<\/h2>/);
+    assert.doesNotMatch(page, /FIRST|RETRY|legacy-log-stage/);
     const first = page.split('data-stage="f"')[1].split('data-stage="r"')[0];
     const retry = page.split('data-stage="r"')[1].split('</main>')[0];
     assert.match(first, /First explanation/);
     assert.doesNotMatch(first, /Retry explanation/);
     assert.match(retry, /Retry explanation/);
     assert.doesNotMatch(retry, /First explanation/);
-    for (const [section, stage, pages] of [[first, "f", [1, 2]], [retry, "r", [1, 2, 3, 10]]]) {
+    for (const [section, stage, pages] of [[first, "f", [1, 2, 3, 10]], [retry, "r", [1, 2, 3, 10]]]) {
       assert.deepEqual([...section.matchAll(/src="\.\/images\/([^"]+)"/g)].map(m => m[1]),
         pages.map(p => `20260828-${number}${stage}-${p}.jpg`));
       assert.ok(section.indexOf('data-column="log"') < section.indexOf('data-column="session"'));
+      const left = section.match(/data-column="log">([\s\S]*?)<\/div>/)[1];
+      assert.doesNotMatch(left, /explanation|Hint|<article|<p>|<details>|\$a/);
+      assert.equal((left.match(/<img /g) || []).length, pages.length);
     }
     assert.match(first, /<details>\s*<summary>Hint<\/summary>/);
     assert.match(first, /\$a=1\$/);
@@ -148,7 +156,7 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
   assert.doesNotMatch(sitemap, /\/(?:log|session)\.html/);
 });
 
-test("legacy SESSION remains complete once beside grouped FIRST and RETRY logs", (t) => {
+test("unmigrated legacy SESSION never restores the all-LOG/all-SESSION columns", (t) => {
   const build = fixture(t, {
     "content/records/20260828/001/session.md": "# Existing title\n\nLegacy paragraph.\n\n## FIRST SESSION\n\nDo not split headings.\n\n<details>\n<summary>Answer</summary>\n\nLegacy answer.\n\n</details>",
     [`${defaultImagesDir}/20260828-001f-1.jpg`]: "first",
@@ -157,10 +165,12 @@ test("legacy SESSION remains complete once beside grouped FIRST and RETRY logs",
   assert.equal(build.run().status, 0);
   const page = build.read("public/records/20260828/001/index.html");
   assert.equal((page.match(/Legacy paragraph\./g) || []).length, 1);
-  assert.match(page, /共通SESSION/);
+  assert.match(page, /未分類の旧SESSION/);
   assert.match(page, /<h2>FIRST SESSION<\/h2>/);
   assert.match(page, /Legacy answer\./);
-  assert.ok(page.indexOf('data-stage="r"') < page.indexOf('data-column="session"'));
+  assert.equal((page.match(/class="study-pair"/g) || []).length, 2);
+  assert.ok(page.indexOf('data-stage="r"') < page.indexOf('class="legacy-session'));
+  assert.doesNotMatch(page, /legacy-log-stage|aria-label="LOGと共通SESSION"/);
 });
 
 test("mixed old and split SESSION files do not hide or duplicate the legacy article", (t) => {
@@ -174,11 +184,11 @@ test("mixed old and split SESSION files do not hide or duplicate the legacy arti
   assert.match(page, /<h1>Original title<\/h1>/);
   assert.equal((page.match(/Original full article\./g) || []).length, 1);
   assert.match(page, /New first explanation\./);
-  assert.match(page, /RETRYのSESSIONはまだありません/);
-  assert.match(page, /RETRYのLOGはまだありません/);
+  assert.match(page, /オリジナル問題のSESSIONはまだありません/);
+  assert.doesNotMatch(page, /のLOGはまだありません/);
 });
 
-test("retry SESSION alone works, while missing FIRST stays explicitly empty", (t) => {
+test("original SESSION alone works, while the textbook LOG column stays empty", (t) => {
   const build = fixture(t, {
     "content/records/20260828/001/session-r.md": "# Retry title\n\nRetry only.",
     [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry"
@@ -186,8 +196,10 @@ test("retry SESSION alone works, while missing FIRST stays explicitly empty", (t
   assert.equal(build.run().status, 0);
   const page = build.read("public/records/20260828/001/index.html");
   assert.match(page, /<h1>Retry title<\/h1>/);
-  assert.match(page, /FIRSTのSESSIONはまだありません/);
-  assert.match(page, /FIRSTのLOGはまだありません/);
+  assert.match(page, /教材問題のSESSIONはまだありません/);
+  const textbook = page.split('data-stage="f"')[1].split('data-stage="r"')[0];
+  const left = textbook.match(/data-column="log">([\s\S]*?)<\/div>/)[1];
+  assert.equal(left.trim(), '<h3 class="column-heading">LOG</h3>');
   assert.match(page, /Retry only\./);
 });
 
@@ -199,6 +211,37 @@ test("meta title still takes precedence with split SESSION files", (t) => {
   });
   assert.equal(build.run().status, 0);
   assert.match(build.read("public/records/20260828/001/index.html"), /<h1>Metadata title<\/h1>/);
+});
+
+test("existing migrated articles show textbook and original content in separate right columns", (t) => {
+  const records = [
+    ["20260825", "今日のつまずき", "今回の修正"],
+    ["20260827", "教材問題の振り返り", "この問題でのつまずき"],
+    ["20260828", "教材問題での確認", "今日の発見"]
+  ];
+  const files = {};
+  for (const [day] of records) {
+    const dir = `content/records/${day}/001`;
+    for (const stage of ["f", "r"]) {
+      files[`${dir}/session-${stage}.md`] = fs.readFileSync(path.join(projectDir, dir, `session-${stage}.md`), "utf8");
+      files[`${dir}/images/${day}-001${stage}-1.jpg`] = stage;
+    }
+  }
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  for (const [day, textbookHeading, originalHeading] of records) {
+    const page = build.read(`public/records/${day}/001/index.html`);
+    const textbook = page.split('data-stage="f"')[1].split('data-stage="r"')[0];
+    const original = page.split('data-stage="r"')[1].split('</main>')[0];
+    assert.ok(textbook.includes(textbookHeading));
+    assert.ok(original.includes(originalHeading));
+    assert.match(original, /<h2>オリジナル問題<\/h2>/);
+    assert.match(original, /<details>/);
+    assert.doesNotMatch(textbook, /<details>|<h2>オリジナル問題<\/h2>/);
+    assert.doesNotMatch(page, /class="legacy-session|FIRST|RETRY/);
+    assert.equal((page.match(/class="study-pair"/g) || []).length, 2);
+  }
 });
 
 for (const file of invalidNames) {

@@ -291,7 +291,7 @@ mjx-container[display="true"] {
 .stage-heading {
   margin-bottom: 14px;
   color: var(--accent);
-  font: 600 17px/1.5 "JetBrains Mono", monospace;
+  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
 }
 /* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
 .study-pair {
@@ -315,7 +315,7 @@ mjx-container[display="true"] {
 }
 .study-column .session-content { padding: 0; border: 0; }
 .study-column .session-content > :first-child { margin-top: 0; }
-.study-sheet + .study-sheet, .legacy-log-stage + .legacy-log-stage { margin-top: 24px; }
+.study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
   width: 100%;
@@ -383,29 +383,16 @@ mjx-container[display="true"] {
     <a class="text-link" href="../index.html">2026.08.25 の学習セット</a>
   </nav>
 
-  <section class="study-pair" aria-label="LOGと共通SESSION">
-      <div class="study-column" data-column="log">
-        <h2 class="column-heading">LOG</h2>
-        <section class="legacy-log-stage" data-stage="f">
-          <h3 class="stage-heading">FIRST</h3>
-          <figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.25 001 FIRST ページ1を拡大">
-        <img class="sheet" src="./images/20260825-001f-1.jpg" alt="2026.08.25 001 FIRST ページ1" loading="lazy">
+  <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
+      <h2 class="stage-heading" id="stage-f">教材問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.25 001 教材問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260825-001f-1.jpg" alt="2026.08.25 001 教材問題 ページ1" loading="lazy">
       </button>
-      <figcaption>FIRST · 1</figcaption>
-    </figure>
-        </section>
-<section class="legacy-log-stage" data-stage="r">
-          <h3 class="stage-heading">RETRY</h3>
-          <figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.25 001 RETRY ページ1を拡大">
-        <img class="sheet" src="./images/20260825-001r-1.jpg" alt="2026.08.25 001 RETRY ページ1" loading="lazy">
-      </button>
-      <figcaption>RETRY · 1</figcaption>
-    </figure>
-        </section>
-      </div>
-      <div class="study-column" data-column="session"><h2 class="column-heading">SESSION</h2><p class="legacy-note">共通SESSION：従来の記事を分割せず掲載しています。</p><article class="session-content"><h1>無限等比数列――公比を見る前に初項を見る</h1>
+      <figcaption>教材問題 · 1</figcaption>
+    </figure></div>
+        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h1>無限等比数列――公比を見る前に初項を見る</h1>
 <h2>今日のポイント</h2>
 <p>無限等比数列では、つい公比の収束条件だけに目が向きます。</p>
 <p>しかし</p>
@@ -423,7 +410,19 @@ $$</p>
 <p>sakurak02さんは最初、公比の条件を中心に考え、<strong>初項が 0 になる場合を独立して確認する意識が弱くなっていました。</strong></p>
 <p>そこで、同じポイントを別の式で確認するオリジナル問題に挑戦しました。</p>
 <hr>
-<h2>オリジナル問題</h2>
+</article></div>
+      </div>
+    </section>
+<section class="study-stage" data-stage="r" aria-labelledby="stage-r">
+      <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.25 001 オリジナル問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260825-001r-1.jpg" alt="2026.08.25 001 オリジナル問題 ページ1" loading="lazy">
+      </button>
+      <figcaption>オリジナル問題 · 1</figcaption>
+    </figure></div>
+        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h2>オリジナル問題</h2>
 <p>実数 $x$ に対して、数列</p>
 <p>$$
 a_n=(x-1)(x^2-4)^{n-1}
@@ -532,6 +531,7 @@ $$</p>
 <p><strong>初項を見る → そのあと公比を見る</strong></p>
 <p>無限等比数列を見たとき、公比だけに反応せず、数列全体の構造を確認する。</p>
 </article></div>
+      </div>
     </section>
 </main>
 

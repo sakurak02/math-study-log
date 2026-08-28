@@ -291,7 +291,7 @@ mjx-container[display="true"] {
 .stage-heading {
   margin-bottom: 14px;
   color: var(--accent);
-  font: 600 17px/1.5 "JetBrains Mono", monospace;
+  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
 }
 /* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
 .study-pair {
@@ -315,7 +315,7 @@ mjx-container[display="true"] {
 }
 .study-column .session-content { padding: 0; border: 0; }
 .study-column .session-content > :first-child { margin-top: 0; }
-.study-sheet + .study-sheet, .legacy-log-stage + .legacy-log-stage { margin-top: 24px; }
+.study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
   width: 100%;
@@ -383,30 +383,17 @@ mjx-container[display="true"] {
     <a class="text-link" href="../index.html">2026.08.27 の学習セット</a>
   </nav>
 
-  <section class="study-pair" aria-label="LOGと共通SESSION">
-      <div class="study-column" data-column="log">
-        <h2 class="column-heading">LOG</h2>
-        <section class="legacy-log-stage" data-stage="f">
-          <h3 class="stage-heading">FIRST</h3>
-          <figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.27 001 FIRST ページ1を拡大">
-        <img class="sheet" src="./images/20260827-001f-1.jpg" alt="2026.08.27 001 FIRST ページ1" loading="lazy">
+  <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
+      <h2 class="stage-heading" id="stage-f">教材問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.27 001 教材問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260827-001f-1.jpg" alt="2026.08.27 001 教材問題 ページ1" loading="lazy">
       </button>
-      <figcaption>FIRST · 1</figcaption>
-    </figure>
-        </section>
-<section class="legacy-log-stage" data-stage="r">
-          <h3 class="stage-heading">RETRY</h3>
-          <figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.27 001 RETRY ページ1を拡大">
-        <img class="sheet" src="./images/20260827-001r-1.jpg" alt="2026.08.27 001 RETRY ページ1" loading="lazy">
-      </button>
-      <figcaption>RETRY · 1</figcaption>
-    </figure>
-        </section>
-      </div>
-      <div class="study-column" data-column="session"><h2 class="column-heading">SESSION</h2><p class="legacy-note">共通SESSION：従来の記事を分割せず掲載しています。</p><article class="session-content"><h1>数列の極限――場合分けと定義の確認</h1>
-<h2>FIRST SESSION</h2>
+      <figcaption>教材問題 · 1</figcaption>
+    </figure></div>
+        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h1>数列の極限――場合分けと定義の確認</h1>
+<h2>教材問題の振り返り</h2>
 <p>今日は、$r^n$ を含む数列の極限について学習した。</p>
 <h3>今日のポイント</h3>
 <p>$r^n$ の極限では、$r$ の値によって場合分けする。</p>
@@ -460,7 +447,19 @@ $$</p>
 $$</p>
 <p>ことも大切だとわかった。</p>
 <hr>
-<h2>ORIGINAL QUESTION</h2>
+</article></div>
+      </div>
+    </section>
+<section class="study-stage" data-stage="r" aria-labelledby="stage-r">
+      <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.27 001 オリジナル問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260827-001r-1.jpg" alt="2026.08.27 001 オリジナル問題 ページ1" loading="lazy">
+      </button>
+      <figcaption>オリジナル問題 · 1</figcaption>
+    </figure></div>
+        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h2>オリジナル問題</h2>
 <p>実数 $r$ に対して、数列</p>
 <p>$$
 a_n=\frac{2r^n+3}{r^n-4}
@@ -706,6 +705,7 @@ $$</p>
 $$</p>
 <p>という基本に戻って考えることが重要だった。</p>
 </article></div>
+      </div>
     </section>
 </main>
 
