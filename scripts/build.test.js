@@ -103,6 +103,9 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
     const dir = `content/records/20260828/${number}`;
     files[`${dir}/session-f.md`] = `---\ntitle: Set ${number}\n---\n# 教材問題の振り返り ${number}\n\nFirst explanation $a=1$.\n\n<details>\n<summary>Hint</summary>\n\n$$a_n=2^n$$\n\n</details>`;
     files[`${dir}/session-r.md`] = `# オリジナル問題 ${number}\n\nRetry explanation.`;
+    if (number === "001") {
+      files[`${dir}/session-r-extra.md`] = `# 発展解説\n\nExtended explanation with $x=1$.\n\n- first item\n- second item\n\n> important quote\n\n<details>\n<summary>Extra answer</summary>\n\n$$x^2=1$$\n\n</details>`;
+    }
     for (const suffix of ["f-1", "f-10", "f-3", "f-2", "r-1", "r-10", "r-3", "r-2"]) {
       files[`${dir}/images/20260828-${number}${suffix}.jpg`] = suffix;
     }
@@ -119,10 +122,11 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
     assert.doesNotMatch(page, /FIRST|RETRY|legacy-log-stage/);
     const first = page.split('data-stage="f"')[1].split('data-stage="r"')[0];
     const retry = page.split('data-stage="r"')[1].split('</main>')[0];
+    const retryStage = retry.split('</section>')[0];
     assert.match(first, /First explanation/);
     assert.doesNotMatch(first, /Retry explanation/);
-    assert.match(retry, /Retry explanation/);
-    assert.doesNotMatch(retry, /First explanation/);
+    assert.match(retryStage, /Retry explanation/);
+    assert.doesNotMatch(retryStage, /First explanation|Extended explanation/);
     for (const [section, stage, pages] of [[first, "f", [1, 2, 3, 10]], [retry, "r", [1, 2, 3, 10]]]) {
       assert.deepEqual([...section.matchAll(/src="\.\/images\/([^"]+)"/g)].map(m => m[1]),
         pages.map(p => `20260828-${number}${stage}-${p}.jpg`));
@@ -146,11 +150,27 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
       if (kind === "log") {
         assert.doesNotMatch(categoryPage, /First explanation|Retry explanation/);
         assert.match(categoryPage, /class="sheet"/);
+        assert.doesNotMatch(categoryPage, /class="retry-extra/);
       } else {
         assert.match(categoryPage, /First explanation/);
         assert.match(categoryPage, /Retry explanation/);
         assert.doesNotMatch(categoryPage, /class="sheet"|class="lightbox"/);
       }
+    }
+    if (number === "001") {
+      const extraStart = page.indexOf('<section class="retry-extra study-column"');
+      assert.ok(extraStart > page.indexOf('data-stage="r"'));
+      assert.ok(page.lastIndexOf('</section>', extraStart) > page.indexOf('data-stage="r"'));
+      const extra = page.slice(extraStart, page.indexOf('</section>', extraStart) + 10);
+      assert.match(extra, /Extended explanation with \$x=1\$\./);
+      assert.match(extra, /<ul>[\s\S]*<li>first item<\/li>/);
+      assert.match(extra, /<blockquote>[\s\S]*important quote/);
+      assert.match(extra, /<details>\s*<summary>Extra answer<\/summary>/);
+      assert.match(extra, /\$\$x\^2=1\$\$/);
+      assert.match(build.read(`public/records/20260828/${number}/session.html`), /class="retry-extra study-column"/);
+    } else {
+      assert.doesNotMatch(page, /class="retry-extra study-column"/);
+      assert.doesNotMatch(build.read(`public/records/20260828/${number}/session.html`), /class="retry-extra study-column"/);
     }
     for (const index of ["records/20260828", "log", "session"]) {
       const listing = build.read(`public/${index}/index.html`);
@@ -260,6 +280,20 @@ test("meta title still takes precedence with split SESSION files", (t) => {
   });
   assert.equal(build.run().status, 0);
   assert.match(build.read("public/records/20260828/001/index.html"), /<h1>Metadata title<\/h1>/);
+});
+
+test("session-r-extra alone remains optional content and can supply a fallback title", (t) => {
+  const build = fixture(t, {
+    "content/records/20260828/001/session-r-extra.md": "# Extra fallback title\n\nExtra-only explanation.",
+    [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry"
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const study = build.read("public/records/20260828/001/index.html");
+  assert.match(study, /<h1>Extra fallback title<\/h1>/);
+  assert.match(study, /class="retry-extra study-column"/);
+  assert.match(study, /Extra-only explanation\./);
+  assert.match(build.read("public/session/index.html"), /001\/session\.html/);
 });
 
 test("existing migrated articles show textbook and original content in separate right columns", (t) => {

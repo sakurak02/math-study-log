@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>不等式で極限を評価する――「十分な評価」と「足りない評価」 | 学習記録 001 - 2026年8月29日</title>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LTZZZFVRKP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LTZZZFVRKP');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [["\\(", "\\)"], ["$", "$"]],
+    displayMath: [["\\[", "\\]"], ["$$", "$$"]]
+  },
+  options: {
+    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260829/001/index.html">
+
+<style>
+:root {
+  --bg: #fbfcfc;
+  --panel: #ffffff;
+  --line: #dfe7e7;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --accent: #315f63;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans JP", sans-serif;
+  line-height: 1.7;
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.header-inner,
+main {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.header-inner {
+  padding: 22px 0 16px;
+}
+
+.page-kicker,
+.page-date,
+.record-number {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.page-kicker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin-top: 3px;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.page-date {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+main {
+  min-height: calc(100vh - 164px);
+  padding: 24px 0 42px;
+}
+
+.page-actions,
+.record-links,
+.day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.page-actions {
+  margin-bottom: 24px;
+}
+
+.text-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--accent);
+  text-decoration: none;
+  font: 600 11px/1.3 "JetBrains Mono", monospace;
+}
+
+.text-link:hover {
+  border-color: var(--accent);
+}
+
+.record-list {
+  border-top: 1px solid var(--line);
+}
+
+.record-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-number {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.record-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-links .text-link {
+  min-height: 32px;
+}
+
+.day-navigation {
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.session-shell {
+  min-height: 160px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.move-notice {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.move-notice .text-link {
+  margin-top: 16px;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 11px;
+}
+.session-content {
+  padding: 4px 0 24px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.session-content > *:first-child {
+  margin-top: 22px;
+}
+
+.session-content h2 {
+  margin: 34px 0 14px;
+  color: var(--accent);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.session-content h3 {
+  margin: 26px 0 10px;
+  font-size: 15px;
+}
+
+.session-content p,
+.session-content ul,
+.session-content ol,
+.session-content blockquote,
+.session-content pre,
+.session-content table {
+  margin: 0 0 18px;
+}
+
+.session-content ul,
+.session-content ol {
+  padding-left: 1.5em;
+}
+
+.session-content blockquote {
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink-soft);
+}
+
+.session-content pre {
+  max-width: 100%;
+  padding: 13px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  font: 12px/1.7 "JetBrains Mono", monospace;
+}
+
+.session-content code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.session-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.session-content th,
+.session-content td {
+  min-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.session-content th {
+  background: #e8f0f0;
+}
+
+.session-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.session-content a {
+  color: var(--accent);
+}
+
+mjx-container[display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+.header-inner, main { width: min(1440px, calc(100% - 48px)); }
+.study-stage + .study-stage { margin-top: 40px; }
+.stage-heading {
+  margin-bottom: 14px;
+  color: var(--accent);
+  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
+}
+/* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
+.study-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 24px;
+}
+.study-column {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.column-heading {
+  margin-bottom: 18px;
+  color: var(--ink-soft);
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+}
+.study-column .session-content { padding: 0; border: 0; }
+.study-column .session-content > :first-child { margin-top: 0; }
+.study-sheet + .study-sheet { margin-top: 24px; }
+.sheet-button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: var(--panel);
+  cursor: zoom-in;
+}
+.sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
+.study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
+.legacy-note { margin-bottom: 18px; }
+.legacy-session { margin-top: 40px; }
+.retry-extra {
+  width: min(900px, 100%);
+  margin: 28px auto 0;
+}
+.retry-extra .session-content { padding: 0; border: 0; }
+.retry-extra .session-content > :first-child { margin-top: 0; }
+.lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
+.lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
+.lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
+.lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
+@media (max-width: 900px) {
+  .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .study-column { padding: 14px; }
+  .header-inner, main { width: calc(100% - 24px); }
+}
+
+@media (max-width: 600px) {
+  .header-inner,
+  main {
+    width: calc(100% - 24px);
+  }
+
+  .header-inner {
+    padding: 17px 0 13px;
+  }
+
+  h1 {
+    font-size: 21px;
+  }
+
+  main {
+    padding-top: 19px;
+  }
+
+  .record-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 16px 1px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="page-kicker">STUDY · LOG &amp; SESSION</div>
+    <h1>不等式で極限を評価する――「十分な評価」と「足りない評価」</h1>
+<div class="page-date">2026.08.29 / 001</div>
+  </div>
+</header>
+
+<main>
+  <nav class="page-actions" aria-label="ページメニュー">
+    <a class="text-link" href="../../../index.html">TOP</a>
+    <a class="text-link" href="../index.html">2026.08.29 の学習セット</a>
+  </nav>
+
+  <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
+      <h2 class="stage-heading" id="stage-f">教材問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.29 001 教材問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260829-001f-1.jpg" alt="2026.08.29 001 教材問題 ページ1" loading="lazy">
+      </button>
+      <figcaption>教材問題 · 1</figcaption>
+    </figure>
+<figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.29 001 教材問題 ページ2を拡大">
+        <img class="sheet" src="./images/20260829-001f-2.jpg" alt="2026.08.29 001 教材問題 ページ2" loading="lazy">
+      </button>
+      <figcaption>教材問題 · 2</figcaption>
+    </figure></div>
+        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h1>不等式で極限を評価する――「十分な評価」と「足りない評価」</h1>
+<p>今回は、数列の極限を不等式で評価する問題に取り組んだ。</p>
+<p>直接極限を求めにくい式に対して、別の式で上下から挟む。
+そのために二項展開の一部を利用する、というのが今回の中心テーマだった。</p>
+<hr>
+<h2>LOG｜最初の取り組み</h2>
+<p><img src="20260828-001f-1.jpg" alt="最初の答案"></p>
+<p>最初は、与えられた不等式に何を代入すればよいかは分かったものの、</p>
+<blockquote>
+<p>なぜその値を選ぶのか</p>
+</blockquote>
+<p>という発想が自分の中に残っていなかった。</p>
+<p>解答を見れば理解できるが、次に同じタイプが出たとき、自力で再現できる自信がない。</p>
+<p>そこで、解答をもう一度「逆向き」に考え直した。</p>
+<hr>
+<h2>復習｜補助変数は「思いつく」のではなく逆算する</h2>
+<p><img src="20260828-001f-2.jpg" alt="復習メモ"></p>
+<p>証明したい形に $n$ 乗根が含まれている場合、そのまま扱うのではなく、</p>
+<p>$$
+(1+x)^n&gt;n
+$$</p>
+<p>のような形をまず作れないか考える。</p>
+<p>与えられた評価</p>
+<p>$$
+(1+x)^n
+\ge
+1+nx+\frac{n(n-1)}{2}x^2
+$$</p>
+<p>を見ると、右辺で $n$ を作りたい。</p>
+<p>そこで二次の項を</p>
+<p>$$
+n-1
+$$</p>
+<p>にできれば、</p>
+<p>$$
+1+nx+(n-1)=n+nx&gt;n
+$$</p>
+<p>となる。</p>
+<p>したがって、</p>
+<p>$$
+\frac{n(n-1)}{2}x^2=n-1
+$$</p>
+<p>となるように $x$ を決める。</p>
+<p>$n&gt;1$ として $n-1$ を消すと、</p>
+<p>$$
+\frac n2x^2=1
+$$</p>
+<p>よって</p>
+<p>$$
+x^2=\frac2n,
+\qquad
+x=\sqrt{\frac2n}.
+$$</p>
+<p>つまり、</p>
+<p>$$
+\boxed{x=\sqrt{\frac2n}}
+$$</p>
+<p>は突然思いつく値ではない。</p>
+<p><strong>「右辺に $n$ を作りたい」という目的から逆算すると出てくる。</strong></p>
+<hr>
+<h2>はさみうちは「閉じ込める」</h2>
+<p>極限を直接計算するのではなく、</p>
+<p>$$
+1\le n^{1/n}&lt;1+\sqrt{\frac2n}
+$$</p>
+<p>という形を作る。</p>
+<p>左右はともに</p>
+<p>$$
+1
+$$</p>
+<p>へ近づくので、</p>
+<p>$$
+\lim_{n\to\infty}n^{1/n}=1
+$$</p>
+<p>となる。</p>
+<p>はさみうちの原理では、</p>
+<blockquote>
+<p>求めたいものを直接動かすのではなく、<br>
+極限の分かる二つの式の間に閉じ込める</p>
+</blockquote>
+<p>という見方を持っておきたい。</p>
+</article></div>
+      </div>
+    </section>
+<section class="study-stage" data-stage="r" aria-labelledby="stage-r">
+      <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
+      <div class="study-pair">
+        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.29 001 オリジナル問題 ページ1を拡大">
+        <img class="sheet" src="./images/20260829-001r-1.jpg" alt="2026.08.29 001 オリジナル問題 ページ1" loading="lazy">
+      </button>
+      <figcaption>オリジナル問題 · 1</figcaption>
+    </figure>
+<figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.29 001 オリジナル問題 ページ2を拡大">
+        <img class="sheet" src="./images/20260829-001r-2.jpg" alt="2026.08.29 001 オリジナル問題 ページ2" loading="lazy">
+      </button>
+      <figcaption>オリジナル問題 · 2</figcaption>
+    </figure></div>
+        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h1>オリジナル問題と発展</h1>
+<h2>オリジナル問題</h2>
+<p>正の整数 $n$ に対して、</p>
+<p>$$
+\left(1+\sqrt{\frac3n}\right)^n&gt;n
+$$</p>
+<p>が十分大きな $n$ で成り立つことを示す。</p>
+<p><img src="20260829-001r-1.jpg" alt="オリジナル問題の答案"></p>
+<p>今回は、</p>
+<p>$$
+(1+x)^n
+\ge
+1+nx+\frac{n(n-1)}2x^2
+$$</p>
+<p>を使うところまでは自力で進めることができた。</p>
+<p>$x=\sqrt{3/n}$ を代入すると、</p>
+<p>$$
+\begin{aligned}
+\left(1+\sqrt{\frac3n}\right)^n
+&amp;\ge
+1+n\sqrt{\frac3n}
++\frac{n(n-1)}2\frac3n\\
+&amp;=
+1+\sqrt{3n}+\frac32(n-1)\\
+&amp;=
+\sqrt{3n}+\frac{3n-1}{2}.
+\end{aligned}
+$$</p>
+<p>ここで、</p>
+<p>$$
+\frac{3n-1}{2}\to\infty
+$$</p>
+<p>だから $n$ より大きくなるのではないか、と考えた。</p>
+<p>しかし、ここには穴がある。</p>
+<h2>「無限大になる」と「こちらの方が大きい」は別</h2>
+<p>比較相手である</p>
+<p>$$
+n
+$$</p>
+<p>も</p>
+<p>$$
+n\to\infty
+$$</p>
+<p>である。</p>
+<p>したがって、</p>
+<p>$$
+\frac{3n-1}{2}\to\infty
+$$</p>
+<p>という事実だけでは、</p>
+<p>$$
+\frac{3n-1}{2}&gt;n
+$$</p>
+<p>とは結論できない。</p>
+<p>たとえば、</p>
+<p>$$
+\frac n2\to\infty
+$$</p>
+<p>だが、</p>
+<p>$$
+\frac n2&lt;n
+$$</p>
+<p>である。</p>
+<p>大小を知りたいなら、直接比較する。</p>
+<p>$$
+\frac{3n-1}{2}&gt;n
+$$</p>
+<p>は、</p>
+<p>$$
+3n-1&gt;2n
+$$</p>
+<p>すなわち</p>
+<p>$$
+n&gt;1
+$$</p>
+<p>で成立する。</p>
+<p>したがって $n\ge2$ なら、</p>
+<p>$$
+\left(1+\sqrt{\frac3n}\right)^n&gt;n.
+$$</p>
+<details>
+<summary>解答</summary>
+<p>$n\ge2$ とする。</p>
+<p>$$
+\begin{aligned}
+\left(1+\sqrt{\frac3n}\right)^n
+&amp;\ge
+1+\sqrt{3n}+\frac32(n-1)\\
+&amp;=
+\sqrt{3n}+\frac{3n-1}{2}.
+\end{aligned}
+$$</p>
+<p>$n&gt;1$ なら、</p>
+<p>$$
+\frac{3n-1}{2}&gt;n
+$$</p>
+<p>であるから、</p>
+<p>$$
+\sqrt{3n}+\frac{3n-1}{2}&gt;n.
+$$</p>
+<p>よって、</p>
+<p>$$
+\boxed{
+\left(1+\sqrt{\frac3n}\right)^n&gt;n
+}
+$$</p>
+<p>が成り立つ。</p>
+</details>
+<hr>
+<h2>発展・寄り道｜同じ方法では届かない？</h2>
+<p>さらに、</p>
+<p>$$
+\left(1+\frac2{\sqrt n}\right)^n&gt;n^2
+$$</p>
+<p>を十分大きな $n$ で示せるか考えてみた。</p>
+<p><img src="20260829-001r-2.jpg" alt="発展問題の思考ログ"></p>
+<p>最初は同じ不等式をそのまま使おうとした。</p>
+<p>途中で、</p>
+<p>$$
+n\frac2{\sqrt n}
+$$</p>
+<p>を $\sqrt{2n}$ としてしまったが、正しくは</p>
+<p>$$
+n\frac2{\sqrt n}=2\sqrt n
+$$</p>
+<p>である。</p>
+<p>また、</p>
+<p>$$
+\left(\frac2{\sqrt n}\right)^2=\frac4n
+$$</p>
+<p>なので、正しく計算すると、</p>
+<p>$$
+\begin{aligned}
+\left(1+\frac2{\sqrt n}\right)^n
+&amp;\ge
+1+2\sqrt n
++\frac{n(n-1)}2\frac4n\\
+&amp;=
+2n-1+2\sqrt n.
+\end{aligned}
+$$</p>
+<p>ところが、</p>
+<p>$$
+2n-1+2\sqrt n
+$$</p>
+<p>では、十分大きな $n$ に対して $n^2$ より小さい。</p>
+<p>ここで重要なのは、</p>
+<p>$$
+2n-1+2\sqrt n&lt;n^2
+$$</p>
+<p>だからといって、</p>
+<p>$$
+\left(1+\frac2{\sqrt n}\right)^n&lt;n^2
+$$</p>
+<p>とは言えないことである。</p>
+<p>分かったのは、</p>
+<blockquote>
+<p><strong>二次項まで使った下からの評価では弱すぎる</strong></p>
+</blockquote>
+<p>ということだけである。</p>
+<p>$$
+\boxed{
+\text{下界が目標より小さい}
+\;\not\Rightarrow\;
+\text{元の式が目標より小さい}
+}
+$$</p>
+</article></div>
+      </div>
+    </section><section class="retry-extra study-column" aria-label="オリジナル問題の追加SESSION">
+      <h2 class="column-heading">SESSION · EXTRA</h2>
+      <article class="session-content"><h1>発展解説｜評価の強さを見る</h1>
+<h2>何次項まで見ればよいのか</h2>
+<p>二項展開の $k$ 次項のおおよその大きさを見ると、</p>
+<p>$$
+\binom nk
+\left(\frac2{\sqrt n}\right)^k
+$$</p>
+<p>は、</p>
+<p>$$
+n^k\cdot n^{-k/2}
+=
+n^{k/2}
+$$</p>
+<p>程度の大きさになる。</p>
+<p>したがって、</p>
+<ul>
+<li>2次項：$n$</li>
+<li>3次項：$n^{3/2}$</li>
+<li>4次項：$n^2$</li>
+<li>5次項：$n^{5/2}$</li>
+</ul>
+<p>程度となる。</p>
+<p>$n^2$ を確実に追い越すには、</p>
+<p>$$
+n^{5/2}
+$$</p>
+<p>の大きさを持つ5次項を利用すればよい。</p>
+<p>ここで初めて、</p>
+<blockquote>
+<p>計算を始める前に「何次項まで必要か」を見る</p>
+</blockquote>
+<p>という考え方が出てくる。</p>
+<hr>
+<h2>5次項を下から評価する</h2>
+<p>5次項は、</p>
+<p>$$
+\binom n5
+\left(\frac2{\sqrt n}\right)^5
+$$</p>
+<p>である。</p>
+<p>これは、</p>
+<p>$$
+\frac{n(n-1)(n-2)(n-3)(n-4)}{120}
+\cdot
+\frac{32}{n^{5/2}}
+$$</p>
+<p>と書ける。</p>
+<p>このまま積を展開する必要はない。</p>
+<p>$n\ge8$ なら、</p>
+<p>$$
+n-4\ge\frac n2.
+$$</p>
+<p>したがって、</p>
+<p>$$
+n-1,\ n-2,\ n-3,\ n-4
+\ge\frac n2.
+$$</p>
+<p>よって、</p>
+<p>$$
+n(n-1)(n-2)(n-3)(n-4)
+\ge
+n\left(\frac n2\right)^4.
+$$</p>
+<p>したがって、</p>
+<p>$$
+\begin{aligned}
+\binom n5
+\left(\frac2{\sqrt n}\right)^5
+&amp;\ge
+\frac{n(n/2)^4}{120}
+\cdot
+\frac{32}{n^{5/2}}\\
+&amp;=
+\frac1{60}n^{5/2}.
+\end{aligned}
+$$</p>
+<p>そこで、</p>
+<p>$$
+\frac1{60}n^{5/2}&gt;n^2
+$$</p>
+<p>となればよい。</p>
+<p>これは、</p>
+<p>$$
+\frac{\sqrt n}{60}&gt;1
+$$</p>
+<p>すなわち、</p>
+<p>$$
+n&gt;3600
+$$</p>
+<p>で成り立つ。</p>
+<p>したがって、十分大きな $n$ に対して、</p>
+<p>$$
+\boxed{
+\left(1+\frac2{\sqrt n}\right)^n&gt;n^2
+}
+$$</p>
+<p>が成り立つ。</p>
+<hr>
+<h2>評価の定石｜$n-k$ を単純な形に置き換える</h2>
+<p>今回、</p>
+<p>$$
+(n-1)(n-2)(n-3)(n-4)
+$$</p>
+<p>という複雑な積を、そのまま展開しなかった。</p>
+<p>$n\ge8$ なら、</p>
+<p>$$
+n-1,\ n-2,\ n-3,\ n-4
+\ge\frac n2
+$$</p>
+<p>なので、</p>
+<p>$$
+(n-1)(n-2)(n-3)(n-4)
+\ge
+\left(\frac n2\right)^4
+$$</p>
+<p>と評価できる。</p>
+<p>ここでの $\frac n2$ は特別な値ではない。</p>
+<p>大切なのは、</p>
+<p>$$
+\boxed{
+n-k\text{ が並んだら、十分大きな }n\text{ で }cn\text{ に置き換えられないか考える}
+}
+$$</p>
+<p>という発想である。</p>
+<p>たとえば、</p>
+<p>$$
+n-100\ge\frac n2
+$$</p>
+<p>も、</p>
+<p>$$
+n\ge200
+$$</p>
+<p>なら成立する。</p>
+<p>極限では「十分大きな $n$」について考えればよいので、最小の境界を求める必要はない。</p>
+<hr>
+<h2>今回の学び</h2>
+<h3>1. 補助変数は逆算して決める</h3>
+<p>$$
+x=\sqrt{\frac2n}
+$$</p>
+<p>を覚えるのではなく、</p>
+<blockquote>
+<p>何を作りたいのか</p>
+</blockquote>
+<p>から逆算する。</p>
+<h3>2. $\infty$ 同士は、それだけでは大小比較できない</h3>
+<p>$$
+a_n\to\infty,\qquad b_n\to\infty
+$$</p>
+<p>でも、</p>
+<p>$$
+a_n&gt;b_n
+$$</p>
+<p>とは限らない。</p>
+<p>大小が必要なら、直接比較する。</p>
+<h3>3. 下からの評価が弱すぎることがある</h3>
+<p>正しい不等式を使っていても、その評価が目的に届くとは限らない。</p>
+<p>計算を続ける前に、</p>
+<blockquote>
+<p>この評価の大きさで目標まで届くか</p>
+</blockquote>
+<p>を見る。</p>
+<h3>4. 評価は正確でなくてもよい</h3>
+<p>証明に必要なのは、必ずしも最も鋭い評価ではない。</p>
+<p>$$
+n-k\ge\frac n2
+$$</p>
+<p>のように、扱いやすい形へあえて粗くすることがある。</p>
+<h3>5. 必要な計算からは逃げない。ただし、その前に見通しを立てる</h3>
+<p>長い計算をすべて力任せに行うのではなく、</p>
+<ul>
+<li>何を示したいのか</li>
+<li>どの程度の評価が必要か</li>
+<li>何次項まで必要か</li>
+<li>今の方法で届くのか</li>
+</ul>
+<p>を先に見る。</p>
+<p>そのうえで、必要だと分かった計算は淡々と進める。</p>
+<hr>
+<h2>今日の一言</h2>
+<p>$$
+\boxed{
+\text{評価は、正確さより「目的に届く強さ」で選ぶ}
+}
+$$</p>
+<p>解答を再現するだけでは見えなかったが、類題で迷い、さらに発展問題で行き詰まったことで、不等式による「評価」の意味が少し見えてきた。</p>
+</article>
+    </section>
+</main>
+
+<footer>Math Study Log © 2026</footer>
+<dialog class="lightbox" aria-label="答案画像の拡大">
+  <button class="text-link lightbox-close" type="button">閉じる</button>
+  <img alt="">
+</dialog>
+<script>
+const lightbox = document.querySelector(".lightbox");
+document.querySelectorAll(".sheet-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    const source = button.querySelector("img");
+    const enlarged = lightbox.querySelector("img");
+    enlarged.src = source.src;
+    enlarged.alt = source.alt;
+    lightbox.showModal();
+  });
+});
+lightbox.querySelector("button").addEventListener("click", () => lightbox.close());
+lightbox.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") lightbox.close();
+});
+lightbox.addEventListener("click", (event) => {
+  if (event.target === lightbox) lightbox.close();
+});
+</script>
+
+</body>
+</html>

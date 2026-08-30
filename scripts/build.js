@@ -323,6 +323,10 @@ function loadStudyContent(record, study) {
       ? parseSessionFrontMatter(fs.readFileSync(stagePath, "utf8"))
       : null];
   }));
+  const retryExtraPath = path.join(studyContentDir, "session-r-extra.md");
+  const retryExtraSession = fs.existsSync(retryExtraPath)
+    ? parseSessionFrontMatter(fs.readFileSync(retryExtraPath, "utf8"))
+    : null;
   const allowedKeys = new Set([
     "studyId",
     "date",
@@ -374,12 +378,12 @@ function loadStudyContent(record, study) {
 
     title = meta.title.trim();
   } else {
-    if (!fs.existsSync(sessionPath) && !stageSessions.f && !stageSessions.r) {
-      throw new Error(`SESSIONがありません（session.md / session-f.md / session-r.md）: ${studyContentDir}`);
+    if (!fs.existsSync(sessionPath) && !stageSessions.f && !stageSessions.r && !retryExtraSession) {
+      throw new Error(`SESSIONがありません（session.md / session-f.md / session-r.md / session-r-extra.md）: ${studyContentDir}`);
     }
 
     title = sessionTitleFromMarkdown(
-      fs.existsSync(sessionPath) ? session : stageSessions.f || stageSessions.r,
+      fs.existsSync(sessionPath) ? session : stageSessions.f || stageSessions.r || retryExtraSession,
       record,
       study
     );
@@ -390,7 +394,8 @@ function loadStudyContent(record, study) {
     id: expectedStudyId,
     title,
     sessionMarkdown: session.markdown,
-    stageSessions
+    stageSessions,
+    retryExtraSession
   };
 }
 
@@ -1189,6 +1194,12 @@ function studyPageStyles() {
 .study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
 .legacy-note { margin-bottom: 18px; }
 .legacy-session { margin-top: 40px; }
+.retry-extra {
+  width: min(900px, 100%);
+  margin: 28px auto 0;
+}
+.retry-extra .session-content { padding: 0; border: 0; }
+.retry-extra .session-content > :first-child { margin-top: 0; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
 .lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
 .lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
@@ -1215,13 +1226,19 @@ function createStudyPage(record, study, view = "study") {
     const sessionHtml = session?.markdown.trim()
       ? renderSessionMarkdown({ sessionMarkdown: session.markdown })
       : `<p class="study-empty">${label}のSESSIONはまだありません。</p>`;
+    const retryExtra = showSession && stage === "r" && study.retryExtraSession?.markdown.trim()
+      ? `<section class="retry-extra study-column" aria-label="オリジナル問題の追加SESSION">
+      <h2 class="column-heading">SESSION · EXTRA</h2>
+      <article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.retryExtraSession.markdown })}</article>
+    </section>`
+      : "";
     return `<section class="study-stage" data-stage="${stage}" aria-labelledby="stage-${stage}">
       <h2 class="stage-heading" id="stage-${stage}">${label}</h2>
       <div class="study-pair">
 ${showLog ? `        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage)}</div>` : ""}
 ${showSession ? `        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>` : ""}
       </div>
-    </section>`;
+    </section>${retryExtra}`;
   }).join("\n");
   if (legacySession) {
     // 未移行の記事は失わず別枠で保持するが、推測でいずれかのパートに割り当てない。
@@ -1821,7 +1838,7 @@ function createQuestionIndexPage(questions) {
 function hasCategoryContent(study, kind) {
   return kind === "log"
     ? study.images.length > 0
-    : [study.sessionMarkdown, study.stageSessions.f?.markdown, study.stageSessions.r?.markdown]
+    : [study.sessionMarkdown, study.stageSessions.f?.markdown, study.stageSessions.r?.markdown, study.retryExtraSession?.markdown]
         .some((source) => Boolean(source?.trim()));
 }
 
