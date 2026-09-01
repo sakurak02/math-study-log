@@ -285,19 +285,92 @@ function descriptionForStudy(study) {
   return defaultDescription;
 }
 
-function socialMetaTags({ title, description, url, image, type = "article" }) {
+function imageMetadata(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) return null;
+
+  const buffer = fs.readFileSync(filePath);
+  const extension = path.extname(filePath).toLowerCase();
+
+  if (
+    extension === ".png" &&
+    buffer.length >= 24 &&
+    buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+  ) {
+    return {
+      width: buffer.readUInt32BE(16),
+      height: buffer.readUInt32BE(20),
+      type: "image/png"
+    };
+  }
+
+  if (
+    [".jpg", ".jpeg"].includes(extension) &&
+    buffer.length >= 4 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8
+  ) {
+    const startOfFrameMarkers = new Set([
+      0xc0, 0xc1, 0xc2, 0xc3,
+      0xc5, 0xc6, 0xc7,
+      0xc9, 0xca, 0xcb,
+      0xcd, 0xce, 0xcf
+    ]);
+    let offset = 2;
+
+    while (offset < buffer.length) {
+      while (offset < buffer.length && buffer[offset] === 0xff) offset++;
+      if (offset >= buffer.length) break;
+
+      const marker = buffer[offset++];
+      if (marker === 0xd9 || marker === 0xda) break;
+      if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+      if (offset + 2 > buffer.length) break;
+
+      const segmentLength = buffer.readUInt16BE(offset);
+      if (segmentLength < 2 || offset + segmentLength > buffer.length) break;
+
+      if (startOfFrameMarkers.has(marker) && segmentLength >= 7) {
+        return {
+          width: buffer.readUInt16BE(offset + 5),
+          height: buffer.readUInt16BE(offset + 3),
+          type: "image/jpeg"
+        };
+      }
+
+      offset += segmentLength;
+    }
+  }
+
+  return null;
+}
+
+function socialMetaTags({
+  title,
+  description,
+  url,
+  image,
+  type = "article",
+  imageMeta = null
+}) {
   const values = { title, description, url, image };
 
   for (const [name, value] of Object.entries(values)) {
     if (!value) throw new Error(`SNSメタタグの${name}が空です`);
   }
 
+  const imageMetaTags = imageMeta
+    ? `
+<meta property="og:image:width" content="${escapeHtml(imageMeta.width)}">
+<meta property="og:image:height" content="${escapeHtml(imageMeta.height)}">
+<meta property="og:image:type" content="${escapeHtml(imageMeta.type)}">`
+    : "";
+
   return `<meta name="description" content="${escapeHtml(description)}">
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:url" content="${escapeHtml(url)}">
 <meta property="og:type" content="${escapeHtml(type)}">
-<meta property="og:image" content="${escapeHtml(image)}">
+<meta property="og:image" content="${escapeHtml(image)}">${imageMetaTags}
 <meta property="og:image:alt" content="${escapeHtml(title)}">
 <meta property="og:site_name" content="${siteName}">
 <meta property="og:locale" content="ja_JP">
@@ -828,6 +901,7 @@ ${socialMetaTags({
   description: defaultDescription,
   url: `${siteUrl}/`,
   image: siteOgImageUrl,
+  imageMeta: imageMetadata(path.join(publicDir, "og-image.png")),
   type: "website"
 })}
 <link rel="canonical" href="${siteUrl}/">
@@ -1313,7 +1387,9 @@ function createStudyPage(record, study, view = "study") {
   const pageUrl = view === "study"
     ? `${siteUrl}/records/${dateKey(record.date)}/${study.number}/`
     : `${siteUrl}/records/${dateKey(record.date)}/${study.number}/${pageFile}`;
-  const cardImageUrl = `${siteUrl}/records/${dateKey(record.date)}/${study.number}/images/${encodeURIComponent(study.images[0])}`;
+  const cardImageFile = study.images[0];
+  const cardImageUrl = `${siteUrl}/records/${dateKey(record.date)}/${study.number}/images/${encodeURIComponent(cardImageFile)}`;
+  const cardImageMeta = imageMetadata(imageSources.get(cardImageFile));
   const cardTitle = `${study.title} | 数学学習記録`;
   const cardDescription = descriptionForStudy(study);
   const legacySession = showSession && study.sessionMarkdown.trim()
@@ -1360,7 +1436,8 @@ ${showSession ? `        <div class="study-column" data-column="session"><h3 cla
       title: cardTitle,
       description: cardDescription,
       url: pageUrl,
-      image: cardImageUrl
+      image: cardImageUrl,
+      imageMeta: cardImageMeta
     })}\n${showSession ? mathJaxHead(true) : ""}\n<link rel="canonical" href="${pageUrl}">`,
     extraStyles: studyPageStyles() + (view === "study" ? "" : "\n.study-pair { grid-template-columns: minmax(0, 1fr); }\n.header-inner, main { max-width: 900px; }"),
     bodyScripts: showLog ? `<dialog class="lightbox" aria-label="答案画像の拡大">

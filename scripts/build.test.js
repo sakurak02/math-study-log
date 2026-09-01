@@ -78,11 +78,14 @@ test("build publishes first/retry pages in numeric order and keeps study sets se
 });
 
 test("study and homepage OGP use absolute URLs, the first displayed LOG, and SESSION description", (t) => {
+  const realJpeg = fs.readFileSync(
+    path.join(projectDir, "content/records/20260829/001/images/20260829-001f-1.jpg")
+  );
   const build = fixture(t, {
     "content/records/20260828/001/session-f.md": "# OGP title\n\nA concise SESSION description for the social card.",
     [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry",
     [`${defaultImagesDir}/20260828-001f-2.jpg`]: "first page 2",
-    [`${defaultImagesDir}/20260828-001f-1.jpg`]: "first page 1"
+    [`${defaultImagesDir}/20260828-001f-1.jpg`]: realJpeg
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -94,6 +97,9 @@ test("study and homepage OGP use absolute URLs, the first displayed LOG, and SES
   assert.match(head, /<meta property="og:url" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/">/);
   assert.match(head, /<meta property="og:type" content="article">/);
   assert.match(head, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001f-1\.jpg">/);
+  assert.match(head, /<meta property="og:image:width" content="1668">/);
+  assert.match(head, /<meta property="og:image:height" content="2157">/);
+  assert.match(head, /<meta property="og:image:type" content="image\/jpeg">/);
   assert.match(head, /<meta name="twitter:card" content="summary_large_image">/);
   assert.match(head, /<meta name="twitter:title" content="OGP title \| 数学学習記録">/);
   assert.match(head, /<meta name="twitter:description" content="A concise SESSION description for the social card\.">/);
