@@ -10,6 +10,10 @@ const contentRecordsDir = path.join(rootDir, "content", "records");
 const contentQuestionDir = path.join(rootDir, "content", "question");
 const publicQuestionDir = path.join(publicDir, "question");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
+const siteName = "Math Study Log";
+const defaultDescription =
+  "64歳から数学を学び直す学習記録。間違い・迷い・修正までそのまま残しています。";
+const siteOgImageUrl = `${siteUrl}/og-image.png`;
 const gaMeasurementId = "G-LTZZZFVRKP";
 const markdown = new MarkdownIt({
   html: false,
@@ -34,13 +38,13 @@ fs.mkdirSync(recordsDir, { recursive: true });
 fs.mkdirSync(publicQuestionDir, { recursive: true });
 
 /*
-公開LOG画像: YYYYMMDD-NNNf-M.jpg / YYYYMMDD-NNNr-M.jpg
+公開LOG画像: YYYYMMDD-NNNf[-M].jpg / YYYYMMDD-NNNr[-M].jpg
 f = 最初の答案、r = 公開に採用した1回分の再挑戦答案。
-Mはリトライ回数ではなく画像ページ番号。1枚でも必ず -1 を付ける。
+Mはリトライ回数ではなく画像ページ番号。1枚だけなら省略できる。
 */
 
 const imagePattern =
-  /^(\d{4})(\d{2})(\d{2})-(\d{3})(f|r)-([1-9]\d*)\.jpg$/;
+  /^(\d{4})(\d{2})(\d{2})-(\d{3})(f|r)(?:-([1-9]\d*))?\.jpg$/;
 
 function isImageFile(entry) {
   return entry.isFile() && /\.(?:jpe?g|png|gif|webp|avif|bmp|tiff?|heic|svg)$/i.test(entry.name);
@@ -52,9 +56,9 @@ function validateRecordImage(file, sourcePath, expectedDate, expectedSequence) {
   if (!match) {
     throw new Error(
       `LOG画像の命名形式が不正です: ${sourcePath}\n` +
-      "新形式: YYYYMMDD-NNNf-M.jpg または YYYYMMDD-NNNr-M.jpg。" +
+      "形式: YYYYMMDD-NNNf[-M].jpg または YYYYMMDD-NNNr[-M].jpg。" +
       "種別は小文字のf/rのみ、拡張子は.jpg、Mは1以上の整数（先頭の0なし）です。" +
-      "1枚でもページ番号 -1 が必須です。旧命名形式は使用できません。"
+      "複数ページの場合は -1 から始めてください。"
     );
   }
 
@@ -151,13 +155,23 @@ function collectRecordImageSources() {
 const imageSources = collectRecordImageSources();
 const imageFiles = [...imageSources.keys()];
 
-// 各答案は1ページ目から公開する。単独の -2 なども受け付けない。
+// 各答案は「枝番なし1枚」または「-1から始まる複数ページ」のどちらかに統一する。
 for (const file of imageFiles) {
-  const firstPage = file.replace(/-\d+\.jpg$/, "-1.jpg");
-  if (!imageSources.has(firstPage)) {
+  const match = file.match(imagePattern);
+  const stem = file.replace(/(?:-\d+)?\.jpg$/, "");
+  const unnumbered = `${stem}.jpg`;
+  const firstPage = `${stem}-1.jpg`;
+
+  if (match[6] && !imageSources.has(firstPage)) {
     throw new Error(
       `LOG画像の1ページ目がありません: ${imageSources.get(file)}\n` +
       `必要な画像名: ${firstPage}。ページ番号はリトライ回数ではありません。`
+    );
+  }
+
+  if (match[6] && imageSources.has(unnumbered)) {
+    throw new Error(
+      `枝番なし画像とページ番号付き画像は併用できません: ${unnumbered} / ${file}`
     );
   }
 }
@@ -176,7 +190,7 @@ for (const file of imageFiles) {
   const date = `${match[1]}-${match[2]}-${match[3]}`;
   const problemNumber = Number(match[4]);
   const imageStage = match[5];
-  const imageNumber = BigInt(match[6]);
+  const imageNumber = match[6] ? BigInt(match[6]) : 1n;
 
   if (!grouped.has(date)) {
     grouped.set(date, []);
@@ -219,6 +233,79 @@ function escapeHtml(value = "") {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function truncateDescription(value, maxLength = 140) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+
+  return normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength - 1).trimEnd()}…`
+    : normalized;
+}
+
+function descriptionFromMarkdown(source) {
+  if (!source?.trim()) return "";
+
+  const tokens = markdown.parse(source, {});
+
+  for (let index = 0; index < tokens.length - 1; index++) {
+    if (tokens[index].type !== "paragraph_open") continue;
+
+    const inline = tokens[index + 1];
+    if (inline?.type !== "inline") continue;
+
+    const text = (inline.children || [])
+      .map((child) => {
+        if (["text", "code_inline"].includes(child.type)) return child.content;
+        if (["softbreak", "hardbreak"].includes(child.type)) return " ";
+        return "";
+      })
+      .join("");
+    const description = truncateDescription(text);
+
+    if (description) return description;
+  }
+
+  return "";
+}
+
+function descriptionForStudy(study) {
+  const sources = [
+    study.sessionMarkdown,
+    study.stageSessions.f?.markdown,
+    study.stageSessions.r?.markdown,
+    study.retryExtraSession?.markdown
+  ];
+
+  for (const source of sources) {
+    const description = descriptionFromMarkdown(source);
+    if (description) return description;
+  }
+
+  return defaultDescription;
+}
+
+function socialMetaTags({ title, description, url, image, type = "article" }) {
+  const values = { title, description, url, image };
+
+  for (const [name, value] of Object.entries(values)) {
+    if (!value) throw new Error(`SNSメタタグの${name}が空です`);
+  }
+
+  return `<meta name="description" content="${escapeHtml(description)}">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(description)}">
+<meta property="og:url" content="${escapeHtml(url)}">
+<meta property="og:type" content="${escapeHtml(type)}">
+<meta property="og:image" content="${escapeHtml(image)}">
+<meta property="og:image:alt" content="${escapeHtml(title)}">
+<meta property="og:site_name" content="${siteName}">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${escapeHtml(description)}">
+<meta name="twitter:image" content="${escapeHtml(image)}">
+<meta name="twitter:image:alt" content="${escapeHtml(title)}">`;
 }
 
 function problemCount(record) {
@@ -736,6 +823,14 @@ ${createMonthCalendar(year, month, monthRecords)}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数学学習記録 | Math Study Log</title>
+${socialMetaTags({
+  title: "数学学習記録 | Math Study Log",
+  description: defaultDescription,
+  url: `${siteUrl}/`,
+  image: siteOgImageUrl,
+  type: "website"
+})}
+<link rel="canonical" href="${siteUrl}/">
 
 ${gaTag()}
 
@@ -1137,7 +1232,7 @@ function renderStageLog(record, study, stage) {
   const images = study.images.filter((file) => file.match(imagePattern)[5] === stage);
   // 未登録でも左には説明文を置かず、答案画像と操作用ラベルだけを表示する。
   return images.map((file) => {
-    const page = file.match(imagePattern)[6];
+    const page = file.match(imagePattern)[6] || "1";
     const alt = `${formatDotDate(record.date)} ${study.number} ${label} ページ${page}`;
     return `<figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="${escapeHtml(alt)}を拡大">
@@ -1215,6 +1310,12 @@ function createStudyPage(record, study, view = "study") {
   const showLog = view !== "session";
   const showSession = view !== "log";
   const pageFile = view === "study" ? "index.html" : `${view}.html`;
+  const pageUrl = view === "study"
+    ? `${siteUrl}/records/${dateKey(record.date)}/${study.number}/`
+    : `${siteUrl}/records/${dateKey(record.date)}/${study.number}/${pageFile}`;
+  const cardImageUrl = `${siteUrl}/records/${dateKey(record.date)}/${study.number}/images/${encodeURIComponent(study.images[0])}`;
+  const cardTitle = `${study.title} | 数学学習記録`;
+  const cardDescription = descriptionForStudy(study);
   const legacySession = showSession && study.sessionMarkdown.trim()
     ? `<p class="legacy-note">未分類の旧SESSIONです。対応表示にはsession-f.md（教材問題）とsession-r.md（オリジナル問題）を使用してください。</p><article class="session-content">${renderSessionMarkdown(study)}</article>`
     : "";
@@ -1255,7 +1356,12 @@ ${showSession ? `        <div class="study-column" data-column="session"><h3 cla
       : `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="../../../${view}/index.html">${view.toUpperCase()} 一覧</a>\n    <a class="text-link" href="./index.html">学習セット全体</a>`,
     content,
     displayYear: record.date.slice(0, 4),
-    headExtra: `${showSession ? mathJaxHead(true) : ""}\n<link rel="canonical" href="${siteUrl}/records/${dateKey(record.date)}/${study.number}/${pageFile}">`,
+    headExtra: `${socialMetaTags({
+      title: cardTitle,
+      description: cardDescription,
+      url: pageUrl,
+      image: cardImageUrl
+    })}\n${showSession ? mathJaxHead(true) : ""}\n<link rel="canonical" href="${pageUrl}">`,
     extraStyles: studyPageStyles() + (view === "study" ? "" : "\n.study-pair { grid-template-columns: minmax(0, 1fr); }\n.header-inner, main { max-width: 900px; }"),
     bodyScripts: showLog ? `<dialog class="lightbox" aria-label="答案画像の拡大">
   <button class="text-link lightbox-close" type="button">閉じる</button>

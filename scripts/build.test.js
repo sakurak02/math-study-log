@@ -77,14 +77,51 @@ test("build publishes first/retry pages in numeric order and keeps study sets se
   assert.match(result.stdout, /Images     : 8/);
 });
 
+test("study and homepage OGP use absolute URLs, the first displayed LOG, and SESSION description", (t) => {
+  const build = fixture(t, {
+    "content/records/20260828/001/session-f.md": "# OGP title\n\nA concise SESSION description for the social card.",
+    [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry",
+    [`${defaultImagesDir}/20260828-001f-2.jpg`]: "first page 2",
+    [`${defaultImagesDir}/20260828-001f-1.jpg`]: "first page 1"
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+
+  const page = build.read("public/records/20260828/001/index.html");
+  const head = page.split("</head>")[0];
+  assert.match(head, /<meta property="og:title" content="OGP title \| 数学学習記録">/);
+  assert.match(head, /<meta property="og:description" content="A concise SESSION description for the social card\.">/);
+  assert.match(head, /<meta property="og:url" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/">/);
+  assert.match(head, /<meta property="og:type" content="article">/);
+  assert.match(head, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001f-1\.jpg">/);
+  assert.match(head, /<meta name="twitter:card" content="summary_large_image">/);
+  assert.match(head, /<meta name="twitter:title" content="OGP title \| 数学学習記録">/);
+  assert.match(head, /<meta name="twitter:description" content="A concise SESSION description for the social card\.">/);
+  assert.match(head, /<meta name="twitter:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001f-1\.jpg">/);
+
+  const homeHead = build.read("public/index.html").split("</head>")[0];
+  assert.match(homeHead, /<meta property="og:type" content="website">/);
+  assert.match(homeHead, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/og-image\.png">/);
+});
+
+test("an unnumbered retry-only LOG becomes both the first displayed image and social image", (t) => {
+  const build = fixture(t, {
+    "content/records/20260828/001/session-r.md": "# Retry only\n\nRetry description.",
+    [`${defaultImagesDir}/20260828-001r.jpg`]: "retry"
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const page = build.read("public/records/20260828/001/index.html");
+  assert.match(page, /src="\.\/images\/20260828-001r\.jpg"/);
+  assert.match(page, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001r\.jpg">/);
+});
+
 const invalidNames = [
   "20260828-001-f.jpg",
   "20260828-001-r.jpg",
   "20260828-001-1-r.jpg",
   "20260828-001.jpg",
   "20260828-001-1.jpg",
-  "20260828-001f.jpg",
-  "20260828-001r.jpg",
   "20260828-001x-1.jpg",
   "20260828-001F-1.jpg",
   "20260828-001r-0.jpg",
@@ -143,17 +180,18 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
     assert.doesNotMatch(page, /href="\.\/(?:log|session)\.html"/);
     for (const kind of ["log", "session"]) {
       const categoryPage = build.read(`public/records/20260828/${number}/${kind}.html`);
+      const categoryBody = categoryPage.split("<body>")[1];
       assert.doesNotMatch(categoryPage, /http-equiv="refresh"/);
       assert.match(categoryPage, /href="\.\/index\.html"/);
       assert.ok(categoryPage.includes(`data-column="${kind}"`));
       assert.ok(!categoryPage.includes(`data-column="${kind === "log" ? "session" : "log"}"`));
       if (kind === "log") {
-        assert.doesNotMatch(categoryPage, /First explanation|Retry explanation/);
+        assert.doesNotMatch(categoryBody, /First explanation|Retry explanation/);
         assert.match(categoryPage, /class="sheet"/);
         assert.doesNotMatch(categoryPage, /class="retry-extra/);
       } else {
-        assert.match(categoryPage, /First explanation/);
-        assert.match(categoryPage, /Retry explanation/);
+        assert.match(categoryBody, /First explanation/);
+        assert.match(categoryBody, /Retry explanation/);
         assert.doesNotMatch(categoryPage, /class="sheet"|class="lightbox"/);
       }
     }
@@ -222,7 +260,7 @@ test("homepage buttons lead to separate category lists and exclude articles with
     }
   }
   assert.match(build.read("public/records/20260828/004/session.html"), /Legacy explanation/);
-  assert.doesNotMatch(build.read("public/records/20260828/004/log.html"), /Legacy explanation/);
+  assert.doesNotMatch(build.read("public/records/20260828/004/log.html").split("<body>")[1], /Legacy explanation/);
 });
 
 test("unmigrated legacy SESSION never restores the all-LOG/all-SESSION columns", (t) => {
@@ -233,7 +271,8 @@ test("unmigrated legacy SESSION never restores the all-LOG/all-SESSION columns",
   });
   assert.equal(build.run().status, 0);
   const page = build.read("public/records/20260828/001/index.html");
-  assert.equal((page.match(/Legacy paragraph\./g) || []).length, 1);
+  const body = page.split("<body>")[1];
+  assert.equal((body.match(/Legacy paragraph\./g) || []).length, 1);
   assert.match(page, /未分類の旧SESSION/);
   assert.match(page, /<h2>FIRST SESSION<\/h2>/);
   assert.match(page, /Legacy answer\./);
@@ -250,8 +289,9 @@ test("mixed old and split SESSION files do not hide or duplicate the legacy arti
   });
   assert.equal(build.run().status, 0);
   const page = build.read("public/records/20260828/001/index.html");
+  const body = page.split("<body>")[1];
   assert.match(page, /<h1>Original title<\/h1>/);
-  assert.equal((page.match(/Original full article\./g) || []).length, 1);
+  assert.equal((body.match(/Original full article\./g) || []).length, 1);
   assert.match(page, /New first explanation\./);
   assert.match(page, /オリジナル問題のSESSIONはまだありません/);
   assert.doesNotMatch(page, /のLOGはまだありません/);
@@ -334,7 +374,7 @@ for (const file of invalidNames) {
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /LOG画像の命名形式が不正/);
     assert.ok(result.stderr.includes(path.join(defaultImagesDir, file)));
-    assert.match(result.stderr, /YYYYMMDD-NNNf-M\.jpg/);
+    assert.match(result.stderr, /YYYYMMDD-NNNf\[-M\]\.jpg/);
   });
 }
 
