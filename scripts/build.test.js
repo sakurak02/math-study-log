@@ -108,6 +108,14 @@ test("study and homepage OGP use absolute URLs, the first displayed LOG, and SES
   const homeHead = build.read("public/index.html").split("</head>")[0];
   assert.match(homeHead, /<meta property="og:type" content="website">/);
   assert.match(homeHead, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/og-image\.png">/);
+
+  for (const file of ["public/index.html", "public/records/20260828/001/index.html"]) {
+    const html = build.read(file);
+    assert.equal((html.match(/class="some-clouds-link"/g) || []).length, 1);
+    assert.match(html, /<a class="some-clouds-link" href="https:\/\/sakurak02\.github\.io\/some-clouds\/">some clouds<\/a>/);
+    assert.doesNotMatch(html, /class="some-clouds-link"[^>]*target=/);
+    assert.match(html, /\.some-clouds-link \{[\s\S]*position: absolute;[\s\S]*top: 3px;[\s\S]*left: 12px;[\s\S]*color: #000;/);
+  }
 });
 
 test("an unnumbered retry-only LOG becomes both the first displayed image and social image", (t) => {

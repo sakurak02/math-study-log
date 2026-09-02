@@ -839,6 +839,28 @@ function createMonthCalendar(year, month, monthRecords) {
   return cells;
 }
 
+function someCloudsLink() {
+  return `<a class="some-clouds-link" href="https://sakurak02.github.io/some-clouds/">some clouds</a>`;
+}
+
+function someCloudsLinkStyles() {
+  return `.some-clouds-link {
+  position: absolute;
+  top: 3px;
+  left: 12px;
+  z-index: 2;
+  color: #000;
+  font: 400 10px/1.2 "JetBrains Mono", monospace;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  opacity: 0.62;
+}
+
+.some-clouds-link:hover {
+  opacity: 0.82;
+}`;
+}
+
 /*
 トップページ
 */
@@ -941,6 +963,8 @@ body {
   font-size: 16px;
   line-height: 1.6;
 }
+
+${someCloudsLinkStyles()}
 
 header {
   border-bottom: 1px solid var(--line);
@@ -1241,6 +1265,8 @@ footer {
 
 <body>
 
+${someCloudsLink()}
+
 <header>
   <div class="header-inner">
     <div class="header-title">MATH STUDY LOG</div>
@@ -1519,6 +1545,8 @@ body {
   line-height: 1.7;
 }
 
+${someCloudsLinkStyles()}
+
 header {
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.9);
@@ -1681,6 +1709,8 @@ footer {
 </head>
 
 <body>
+
+${someCloudsLink()}
 
 <header>
   <div class="header-inner">
