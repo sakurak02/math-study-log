@@ -197,8 +197,8 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
       const categoryBody = categoryPage.split("<body>")[1];
       assert.doesNotMatch(categoryPage, /http-equiv="refresh"/);
       assert.match(categoryPage, /href="\.\/index\.html"/);
-      assert.ok(categoryPage.includes(`data-column="${kind}"`));
-      assert.ok(!categoryPage.includes(`data-column="${kind === "log" ? "session" : "log"}"`));
+      assert.ok(categoryBody.includes(`data-column="${kind}"`));
+      assert.ok(!categoryBody.includes(`data-column="${kind === "log" ? "session" : "log"}"`));
       if (kind === "log") {
         assert.doesNotMatch(categoryBody, /First explanation|Retry explanation/);
         assert.match(categoryPage, /class="sheet"/);
@@ -379,6 +379,52 @@ test("existing migrated articles show textbook and original content in separate 
     assert.doesNotMatch(page, /class="legacy-session|FIRST|RETRY/);
     assert.equal((page.match(/class="study-pair"/g) || []).length, 2);
   }
+});
+
+test("responsive study pages swap summary LOGs for inline Markdown LOGs without broken paths", (t) => {
+  const day = "20260829";
+  const dir = `content/records/${day}/001`;
+  const files = {
+    [`${dir}/session-f.md`]: fs.readFileSync(path.join(projectDir, dir, "session-f.md"), "utf8"),
+    [`${dir}/session-r.md`]: fs.readFileSync(path.join(projectDir, dir, "session-r.md"), "utf8"),
+    [`${dir}/session-r-extra.md`]: fs.readFileSync(path.join(projectDir, dir, "session-r-extra.md"), "utf8")
+  };
+  for (const image of ["20260829-001f-1.jpg", "20260829-001f-2.jpg", "20260829-001r-1.jpg", "20260829-001r-2.jpg"]) {
+    files[`${dir}/images/${image}`] = image;
+  }
+
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const page = build.read("public/records/20260829/001/index.html");
+  const first = page.split('data-stage="f"')[1].split('data-stage="r"')[0];
+  const retry = page.split('data-stage="r"')[1].split('</main>')[0];
+
+  for (const [stageHtml, stage, pages] of [[first, "f", [1, 2]], [retry, "r", [1, 2]]]) {
+    assert.match(stageHtml, /class="study-column mobile-hidden" data-column="log"/);
+    for (const imagePage of pages) {
+      const filename = `${day}-001${stage}-${imagePage}.jpg`;
+      assert.equal((stageHtml.match(new RegExp(`src="\\./images/${filename.replace(".", "\\.")}"`, "g")) || []).length, 2);
+      assert.match(stageHtml, new RegExp(`<img class="session-log-image" src="\\./images/${filename.replace(".", "\\.")}"`));
+    }
+    assert.equal((stageHtml.match(/class="study-sheet has-inline-session-image"/g) || []).length, 2);
+  }
+
+  assert.ok(first.indexOf("20260829-001f-1.jpg") < first.indexOf("最初は"));
+  assert.ok(first.indexOf("最初は") < first.indexOf("復習｜補助変数"));
+  assert.ok(first.lastIndexOf("20260829-001f-2.jpg") > first.indexOf("復習｜補助変数"));
+  assert.ok(retry.indexOf("20260829-001r-1.jpg") < retry.indexOf("今回は"));
+  assert.ok(retry.lastIndexOf("20260829-001r-2.jpg") > retry.indexOf("発展・寄り道"));
+  assert.ok(retry.indexOf('class="retry-extra study-column"') > retry.indexOf('data-column="session"'));
+  assert.doesNotMatch(page, /<img[^>]+src="20260829-001[fr]-[12]\.jpg"/);
+  assert.match(page, /\.session-content \.session-log-image,[\s\S]*display: none;/);
+  assert.match(page, /@media \(max-width: 900px\)[\s\S]*\.study-column\[data-column="log"\]\.mobile-hidden,[\s\S]*display: none;/);
+  assert.match(page, /\.session-content \.session-log-image \{[\s\S]*display: block;[\s\S]*width: 100%;[\s\S]*max-width: 100%;[\s\S]*height: auto;/);
+
+  const logOnly = build.read("public/records/20260829/001/log.html");
+  const logOnlyBody = logOnly.split("<body>")[1];
+  assert.doesNotMatch(logOnlyBody, /mobile-hidden|has-inline-session-image/);
+  assert.doesNotMatch(logOnlyBody, /class="session-log-image"/);
 });
 
 for (const file of invalidNames) {

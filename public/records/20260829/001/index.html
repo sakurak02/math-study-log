@@ -348,6 +348,8 @@ mjx-container[display="true"] {
 }
 .study-column .session-content { padding: 0; border: 0; }
 .study-column .session-content > :first-child { margin-top: 0; }
+.session-content .session-log-image,
+.session-content .session-log-image-block { display: none; }
 .study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
@@ -376,6 +378,19 @@ mjx-container[display="true"] {
 @media (max-width: 900px) {
   .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .study-column { padding: 14px; }
+  .study-column[data-column="log"].mobile-hidden,
+  .study-sheet.has-inline-session-image { display: none; }
+  .session-content .session-log-image-block {
+    display: block;
+    margin: 20px 0;
+  }
+  .session-content .session-log-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+  }
   .header-inner, main { width: calc(100% - 24px); }
 }
 
@@ -427,13 +442,13 @@ mjx-container[display="true"] {
   <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
       <h2 class="stage-heading" id="stage-f">教材問題</h2>
       <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+        <div class="study-column mobile-hidden" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet has-inline-session-image">
       <button class="sheet-button" type="button" aria-label="2026.08.29 001 教材問題 ページ1を拡大">
         <img class="sheet" src="./images/20260829-001f-1.jpg" alt="2026.08.29 001 教材問題 ページ1" loading="lazy">
       </button>
       <figcaption>教材問題 · 1</figcaption>
     </figure>
-<figure class="study-sheet">
+<figure class="study-sheet has-inline-session-image">
       <button class="sheet-button" type="button" aria-label="2026.08.29 001 教材問題 ページ2を拡大">
         <img class="sheet" src="./images/20260829-001f-2.jpg" alt="2026.08.29 001 教材問題 ページ2" loading="lazy">
       </button>
@@ -445,7 +460,7 @@ mjx-container[display="true"] {
 そのために二項展開の一部を利用する、というのが今回の中心テーマだった。</p>
 <hr>
 <h2>LOG｜最初の取り組み</h2>
-<p><img src="20260828-001f-1.jpg" alt="最初の答案"></p>
+<p class="session-log-image-block"><img class="session-log-image" src="./images/20260829-001f-1.jpg" alt="最初の答案"></p>
 <p>最初は、与えられた不等式に何を代入すればよいかは分かったものの、</p>
 <blockquote>
 <p>なぜその値を選ぶのか</p>
@@ -455,7 +470,7 @@ mjx-container[display="true"] {
 <p>そこで、解答をもう一度「逆向き」に考え直した。</p>
 <hr>
 <h2>復習｜補助変数は「思いつく」のではなく逆算する</h2>
-<p><img src="20260828-001f-2.jpg" alt="復習メモ"></p>
+<p class="session-log-image-block"><img class="session-log-image" src="./images/20260829-001f-2.jpg" alt="復習メモ"></p>
 <p>証明したい形に $n$ 乗根が含まれている場合、そのまま扱うのではなく、</p>
 <p>$$
 (1+x)^n&gt;n
@@ -526,13 +541,13 @@ $$</p>
 <section class="study-stage" data-stage="r" aria-labelledby="stage-r">
       <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
       <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
+        <div class="study-column mobile-hidden" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet has-inline-session-image">
       <button class="sheet-button" type="button" aria-label="2026.08.29 001 オリジナル問題 ページ1を拡大">
         <img class="sheet" src="./images/20260829-001r-1.jpg" alt="2026.08.29 001 オリジナル問題 ページ1" loading="lazy">
       </button>
       <figcaption>オリジナル問題 · 1</figcaption>
     </figure>
-<figure class="study-sheet">
+<figure class="study-sheet has-inline-session-image">
       <button class="sheet-button" type="button" aria-label="2026.08.29 001 オリジナル問題 ページ2を拡大">
         <img class="sheet" src="./images/20260829-001r-2.jpg" alt="2026.08.29 001 オリジナル問題 ページ2" loading="lazy">
       </button>
@@ -545,7 +560,7 @@ $$</p>
 \left(1+\sqrt{\frac3n}\right)^n&gt;n
 $$</p>
 <p>が十分大きな $n$ で成り立つことを示す。</p>
-<p><img src="20260829-001r-1.jpg" alt="オリジナル問題の答案"></p>
+<p class="session-log-image-block"><img class="session-log-image" src="./images/20260829-001r-1.jpg" alt="オリジナル問題の答案"></p>
 <p>今回は、</p>
 <p>$$
 (1+x)^n
@@ -652,7 +667,7 @@ $$</p>
 \left(1+\frac2{\sqrt n}\right)^n&gt;n^2
 $$</p>
 <p>を十分大きな $n$ で示せるか考えてみた。</p>
-<p><img src="20260829-001r-2.jpg" alt="発展問題の思考ログ"></p>
+<p class="session-log-image-block"><img class="session-log-image" src="./images/20260829-001r-2.jpg" alt="発展問題の思考ログ"></p>
 <p>最初は同じ不等式をそのまま使おうとした。</p>
 <p>途中で、</p>
 <p>$$

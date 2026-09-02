@@ -348,6 +348,8 @@ mjx-container[display="true"] {
 }
 .study-column .session-content { padding: 0; border: 0; }
 .study-column .session-content > :first-child { margin-top: 0; }
+.session-content .session-log-image,
+.session-content .session-log-image-block { display: none; }
 .study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
@@ -376,6 +378,19 @@ mjx-container[display="true"] {
 @media (max-width: 900px) {
   .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .study-column { padding: 14px; }
+  .study-column[data-column="log"].mobile-hidden,
+  .study-sheet.has-inline-session-image { display: none; }
+  .session-content .session-log-image-block {
+    display: block;
+    margin: 20px 0;
+  }
+  .session-content .session-log-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+  }
   .header-inner, main { width: calc(100% - 24px); }
 }
 .study-pair { grid-template-columns: minmax(0, 1fr); }

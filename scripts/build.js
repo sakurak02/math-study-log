@@ -612,6 +612,80 @@ function renderMarkdown(source, inlineDollarMath = false) {
   return html;
 }
 
+function recordImageFilenameFromUrl(url) {
+  if (
+    !url ||
+    /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(url) ||
+    url.startsWith("/") ||
+    url.startsWith("#")
+  ) {
+    return null;
+  }
+
+  const cleanUrl = url.split(/[?#]/, 1)[0].replace(/\\/g, "/");
+  const encodedFilename = cleanUrl.slice(cleanUrl.lastIndexOf("/") + 1);
+  let filename;
+
+  try {
+    filename = decodeURIComponent(encodedFilename);
+  } catch {
+    filename = encodedFilename;
+  }
+
+  return imagePattern.test(filename) ? filename : null;
+}
+
+function sessionLogImageReferences(source, availableImages) {
+  if (!source?.trim()) return new Set();
+
+  const available = new Set(availableImages || []);
+  const references = new Set();
+  const tokens = markdown.parse(source, {});
+
+  for (const token of tokens) {
+    for (const child of token.children || []) {
+      if (child.type !== "image") continue;
+
+      const filename = recordImageFilenameFromUrl(child.attrGet("src"));
+      if (!filename) continue;
+
+      if (!available.has(filename)) {
+        throw new Error(
+          `SESSION内のLOG画像が記事の実画像と一致しません: ${filename}`
+        );
+      }
+
+      references.add(filename);
+    }
+  }
+
+  return references;
+}
+
+function resolveSessionLogImages(html, references) {
+  let resolved = html.replace(
+    /<img\b[^>]*\bsrc="([^"]+)"[^>]*>/g,
+    (imageTag, source) => {
+      const filename = recordImageFilenameFromUrl(source);
+      if (!filename || !references.has(filename)) return imageTag;
+
+      return imageTag
+        .replace("<img", '<img class="session-log-image"')
+        .replace(
+          /\bsrc="[^"]+"/,
+          `src="./images/${encodeURIComponent(filename)}"`
+        );
+    }
+  );
+
+  resolved = resolved.replace(
+    /<p>\s*(<img class="session-log-image"[^>]*>)\s*<\/p>/g,
+    '<p class="session-log-image-block">$1</p>'
+  );
+
+  return resolved;
+}
+
 function renderSessionMarkdown(study) {
   const allowedHtml = [];
   const protectHtml = (html) => {
@@ -619,6 +693,10 @@ function renderSessionMarkdown(study) {
     allowedHtml.push({ token, html });
     return `\n\n${token}\n\n`;
   };
+  const imageReferences = sessionLogImageReferences(
+    study.sessionMarkdown,
+    study.images
+  );
   const source = study.sessionMarkdown
     .trim()
     .replace(
@@ -642,7 +720,7 @@ function renderSessionMarkdown(study) {
     );
   }
 
-  return html;
+  return resolveSessionLogImages(html, imageReferences);
 }
 
 function isValidDateString(value) {
@@ -1326,7 +1404,7 @@ ${monthSections}
 
 const studyPartLabels = { f: "教材問題", r: "オリジナル問題" };
 
-function renderStageLog(record, study, stage) {
+function renderStageLog(record, study, stage, inlineSessionImages = new Set()) {
   const label = studyPartLabels[stage];
   // 収集済み画像の順序・命名チェックは変更せず、種別だけで振り分ける。
   const images = study.images.filter((file) => file.match(imagePattern)[5] === stage);
@@ -1334,7 +1412,10 @@ function renderStageLog(record, study, stage) {
   return images.map((file) => {
     const page = file.match(imagePattern)[6] || "1";
     const alt = `${formatDotDate(record.date)} ${study.number} ${label} ページ${page}`;
-    return `<figure class="study-sheet">
+    const mobileDuplicateClass = inlineSessionImages.has(file)
+      ? " has-inline-session-image"
+      : "";
+    return `<figure class="study-sheet${mobileDuplicateClass}">
       <button class="sheet-button" type="button" aria-label="${escapeHtml(alt)}を拡大">
         <img class="sheet" src="./images/${encodeURIComponent(file)}" alt="${escapeHtml(alt)}" loading="lazy">
       </button>
@@ -1374,6 +1455,8 @@ function studyPageStyles() {
 }
 .study-column .session-content { padding: 0; border: 0; }
 .study-column .session-content > :first-child { margin-top: 0; }
+.session-content .session-log-image,
+.session-content .session-log-image-block { display: none; }
 .study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
@@ -1402,6 +1485,19 @@ function studyPageStyles() {
 @media (max-width: 900px) {
   .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .study-column { padding: 14px; }
+  .study-column[data-column="log"].mobile-hidden,
+  .study-sheet.has-inline-session-image { display: none; }
+  .session-content .session-log-image-block {
+    display: block;
+    margin: 20px 0;
+  }
+  .session-content .session-log-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+  }
   .header-inner, main { width: calc(100% - 24px); }
 }`;
 }
@@ -1418,6 +1514,15 @@ function createStudyPage(record, study, view = "study") {
   const cardImageMeta = imageMetadata(imageSources.get(cardImageFile));
   const cardTitle = `${study.title} | 数学学習記録`;
   const cardDescription = descriptionForStudy(study);
+  const legacyImageReferences = showSession
+    ? sessionLogImageReferences(study.sessionMarkdown, study.images)
+    : new Set();
+  const retryExtraImageReferences = showSession
+    ? sessionLogImageReferences(
+        study.retryExtraSession?.markdown,
+        study.images
+      )
+    : new Set();
   const legacySession = showSession && study.sessionMarkdown.trim()
     ? `<p class="legacy-note">未分類の旧SESSIONです。対応表示にはsession-f.md（教材問題）とsession-r.md（オリジナル問題）を使用してください。</p><article class="session-content">${renderSessionMarkdown(study)}</article>`
     : "";
@@ -1426,19 +1531,39 @@ function createStudyPage(record, study, view = "study") {
   let content = ["f", "r"].map((stage) => {
     const label = studyPartLabels[stage];
     const session = study.stageSessions[stage];
+    const stageImages = study.images.filter(
+      (file) => file.match(imagePattern)[5] === stage
+    );
+    const sessionContext = {
+      sessionMarkdown: session?.markdown || "",
+      images: stageImages
+    };
+    const stageImageReferences = showSession
+      ? sessionLogImageReferences(session?.markdown, stageImages)
+      : new Set();
+    const inlineSessionImages = showSession
+      ? new Set([
+          ...stageImageReferences,
+          ...legacyImageReferences,
+          ...retryExtraImageReferences
+        ].filter((file) => stageImages.includes(file)))
+      : new Set();
+    const hideMobileLogColumn =
+      stageImages.length > 0 &&
+      stageImages.every((file) => inlineSessionImages.has(file));
     const sessionHtml = session?.markdown.trim()
-      ? renderSessionMarkdown({ sessionMarkdown: session.markdown })
+      ? renderSessionMarkdown(sessionContext)
       : `<p class="study-empty">${label}のSESSIONはまだありません。</p>`;
     const retryExtra = showSession && stage === "r" && study.retryExtraSession?.markdown.trim()
       ? `<section class="retry-extra study-column" aria-label="オリジナル問題の追加SESSION">
       <h2 class="column-heading">SESSION · EXTRA</h2>
-      <article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.retryExtraSession.markdown })}</article>
+      <article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.retryExtraSession.markdown, images: study.images })}</article>
     </section>`
       : "";
     return `<section class="study-stage" data-stage="${stage}" aria-labelledby="stage-${stage}">
       <h2 class="stage-heading" id="stage-${stage}">${label}</h2>
       <div class="study-pair">
-${showLog ? `        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage)}</div>` : ""}
+${showLog ? `        <div class="study-column${hideMobileLogColumn ? " mobile-hidden" : ""}" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage, inlineSessionImages)}</div>` : ""}
 ${showSession ? `        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>` : ""}
       </div>
     </section>${retryExtra}`;
