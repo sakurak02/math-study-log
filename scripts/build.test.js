@@ -444,7 +444,7 @@ test("existing migrated articles show textbook and original content in separate 
   }
 });
 
-test("responsive study pages swap summary LOGs for inline Markdown LOGs without broken paths", (t) => {
+test("20260829 shows each summary LOG once before SESSION without Markdown image duplicates", (t) => {
   const day = "20260829";
   const dir = `content/records/${day}/001`;
   const files = {
@@ -464,25 +464,25 @@ test("responsive study pages swap summary LOGs for inline Markdown LOGs without 
   const retry = page.split('data-stage="r"')[1].split('</main>')[0];
 
   for (const [stageHtml, stage, pages] of [[first, "f", [1, 2]], [retry, "r", [1, 2]]]) {
-    assert.match(stageHtml, /class="study-column mobile-hidden" data-column="log"/);
+    assert.match(stageHtml, /class="study-column" data-column="log"/);
+    assert.doesNotMatch(stageHtml, /class="study-column mobile-hidden" data-column="log"/);
+    assert.ok(stageHtml.indexOf('data-column="log"') < stageHtml.indexOf('data-column="session"'));
     for (const imagePage of pages) {
       const filename = `${day}-001${stage}-${imagePage}.webp`;
-      assert.equal((stageHtml.match(new RegExp(`src="\\./images/${filename.replace(".", "\\.")}"`, "g")) || []).length, 2);
-      assert.match(stageHtml, new RegExp(`<img class="session-log-image" src="\\./images/${filename.replace(".", "\\.")}"`));
+      assert.equal((stageHtml.match(new RegExp(`src="\\./images/${filename.replace(".", "\\.")}"`, "g")) || []).length, 1);
     }
-    assert.equal((stageHtml.match(/class="study-sheet has-inline-session-image"/g) || []).length, 2);
+    assert.equal((stageHtml.match(/class="study-sheet"/g) || []).length, 2);
+    assert.doesNotMatch(stageHtml, /has-inline-session-image|session-log-image/);
   }
 
-  assert.ok(first.indexOf("20260829-001f-1.webp") < first.indexOf("最初は"));
-  assert.ok(first.indexOf("最初は") < first.indexOf("復習｜補助変数"));
-  assert.ok(first.lastIndexOf("20260829-001f-2.webp") > first.indexOf("復習｜補助変数"));
-  assert.ok(retry.indexOf("20260829-001r-1.webp") < retry.indexOf("今回は"));
-  assert.ok(retry.lastIndexOf("20260829-001r-2.webp") > retry.indexOf("発展・寄り道"));
+  assert.ok(first.indexOf("20260829-001f-1.webp") < first.indexOf("20260829-001f-2.webp"));
+  assert.ok(first.indexOf("20260829-001f-2.webp") < first.indexOf("最初は"));
+  assert.ok(retry.indexOf("20260829-001r-1.webp") < retry.indexOf("20260829-001r-2.webp"));
+  assert.ok(retry.indexOf("20260829-001r-2.webp") < retry.indexOf("今回は"));
   assert.ok(retry.indexOf('class="retry-extra study-column"') > retry.indexOf('data-column="session"'));
-  assert.doesNotMatch(page, /<img[^>]+src="20260829-001[fr]-[12]\.webp"/);
-  assert.match(page, /\.session-content \.session-log-image,[\s\S]*display: none;/);
-  assert.match(page, /@media \(max-width: 900px\)[\s\S]*\.study-column\[data-column="log"\]\.mobile-hidden,[\s\S]*display: none;/);
-  assert.match(page, /\.session-content \.session-log-image \{[\s\S]*display: block;[\s\S]*width: 100%;[\s\S]*max-width: 100%;[\s\S]*height: auto;/);
+  assert.doesNotMatch(page, /class="session-log-image"/);
+  assert.match(page, /\.study-pair \{[\s\S]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
+  assert.match(page, /@media \(max-width: 900px\)[\s\S]*\.study-pair \{ grid-template-columns: minmax\(0, 1fr\);/);
 
   const logOnly = build.read("public/records/20260829/001/log.html");
   const logOnlyBody = logOnly.split("<body>")[1];
