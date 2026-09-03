@@ -38,13 +38,13 @@ fs.mkdirSync(recordsDir, { recursive: true });
 fs.mkdirSync(publicQuestionDir, { recursive: true });
 
 /*
-公開LOG画像: YYYYMMDD-NNNf[-M].jpg / YYYYMMDD-NNNr[-M].jpg
+公開LOG画像: YYYYMMDD-NNNf[-M].webp / YYYYMMDD-NNNr[-M].webp
 f = 最初の答案、r = 公開に採用した1回分の再挑戦答案。
 Mはリトライ回数ではなく画像ページ番号。1枚だけなら省略できる。
 */
 
 const imagePattern =
-  /^(\d{4})(\d{2})(\d{2})-(\d{3})(f|r)(?:-([1-9]\d*))?\.jpg$/;
+  /^(\d{4})(\d{2})(\d{2})-(\d{3})(f|r)(?:-([1-9]\d*))?\.webp$/;
 
 function isImageFile(entry) {
   return entry.isFile() && /\.(?:jpe?g|png|gif|webp|avif|bmp|tiff?|heic|svg)$/i.test(entry.name);
@@ -56,8 +56,8 @@ function validateRecordImage(file, sourcePath, expectedDate, expectedSequence) {
   if (!match) {
     throw new Error(
       `LOG画像の命名形式が不正です: ${sourcePath}\n` +
-      "形式: YYYYMMDD-NNNf[-M].jpg または YYYYMMDD-NNNr[-M].jpg。" +
-      "種別は小文字のf/rのみ、拡張子は.jpg、Mは1以上の整数（先頭の0なし）です。" +
+      "形式: YYYYMMDD-NNNf[-M].webp または YYYYMMDD-NNNr[-M].webp。" +
+      "種別は小文字のf/rのみ、拡張子は.webp、Mは1以上の整数（先頭の0なし）です。" +
       "複数ページの場合は -1 から始めてください。"
     );
   }
@@ -158,9 +158,9 @@ const imageFiles = [...imageSources.keys()];
 // 各答案は「枝番なし1枚」または「-1から始まる複数ページ」のどちらかに統一する。
 for (const file of imageFiles) {
   const match = file.match(imagePattern);
-  const stem = file.replace(/(?:-\d+)?\.jpg$/, "");
-  const unnumbered = `${stem}.jpg`;
-  const firstPage = `${stem}-1.jpg`;
+  const stem = file.replace(/(?:-\d+)?\.webp$/, "");
+  const unnumbered = `${stem}.webp`;
+  const firstPage = `${stem}-1.webp`;
 
   if (match[6] && !imageSources.has(firstPage)) {
     throw new Error(
@@ -301,6 +301,62 @@ function imageMetadata(filePath) {
       height: buffer.readUInt32BE(20),
       type: "image/png"
     };
+  }
+
+  if (
+    extension === ".webp" &&
+    buffer.length >= 20 &&
+    buffer.toString("ascii", 0, 4) === "RIFF" &&
+    buffer.toString("ascii", 8, 12) === "WEBP"
+  ) {
+    let offset = 12;
+
+    while (offset + 8 <= buffer.length) {
+      const chunkType = buffer.toString("ascii", offset, offset + 4);
+      const chunkLength = buffer.readUInt32LE(offset + 4);
+      const dataOffset = offset + 8;
+      const chunkEnd = dataOffset + chunkLength;
+
+      if (chunkEnd > buffer.length) break;
+
+      if (chunkType === "VP8X" && chunkLength >= 10) {
+        return {
+          width: 1 + buffer.readUIntLE(dataOffset + 4, 3),
+          height: 1 + buffer.readUIntLE(dataOffset + 7, 3),
+          type: "image/webp"
+        };
+      }
+
+      if (
+        chunkType === "VP8 " &&
+        chunkLength >= 10 &&
+        buffer[dataOffset + 3] === 0x9d &&
+        buffer[dataOffset + 4] === 0x01 &&
+        buffer[dataOffset + 5] === 0x2a
+      ) {
+        return {
+          width: buffer.readUInt16LE(dataOffset + 6) & 0x3fff,
+          height: buffer.readUInt16LE(dataOffset + 8) & 0x3fff,
+          type: "image/webp"
+        };
+      }
+
+      if (
+        chunkType === "VP8L" &&
+        chunkLength >= 5 &&
+        buffer[dataOffset] === 0x2f
+      ) {
+        const bits = buffer.readUInt32LE(dataOffset + 1);
+
+        return {
+          width: 1 + (bits & 0x3fff),
+          height: 1 + ((bits >>> 14) & 0x3fff),
+          type: "image/webp"
+        };
+      }
+
+      offset = chunkEnd + (chunkLength % 2);
+    }
   }
 
   if (
@@ -2249,6 +2305,13 @@ records.forEach((record, index) => {
     const studyImagesDir = path.join(studyDir, "images");
 
     fs.mkdirSync(studyImagesDir, { recursive: true });
+
+    // 生成先に旧拡張子の画像を残さず、現在のLOG画像だけを公開する。
+    for (const entry of fs.readdirSync(studyImagesDir, { withFileTypes: true })) {
+      if (isImageFile(entry)) {
+        fs.unlinkSync(path.join(studyImagesDir, entry.name));
+      }
+    }
 
     for (const image of study.images) {
       fs.copyFileSync(

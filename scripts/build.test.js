@@ -8,6 +8,43 @@ const { test } = require("node:test");
 const projectDir = path.resolve(__dirname, "..");
 const defaultImagesDir = "content/records/20260828/001/images";
 
+function createVp8xWebp(width, height) {
+  const buffer = Buffer.alloc(30);
+  buffer.write("RIFF", 0, "ascii");
+  buffer.writeUInt32LE(22, 4);
+  buffer.write("WEBP", 8, "ascii");
+  buffer.write("VP8X", 12, "ascii");
+  buffer.writeUInt32LE(10, 16);
+  buffer.writeUIntLE(width - 1, 24, 3);
+  buffer.writeUIntLE(height - 1, 27, 3);
+  return buffer;
+}
+
+function createVp8Webp(width, height) {
+  const buffer = Buffer.alloc(30);
+  buffer.write("RIFF", 0, "ascii");
+  buffer.writeUInt32LE(22, 4);
+  buffer.write("WEBP", 8, "ascii");
+  buffer.write("VP8 ", 12, "ascii");
+  buffer.writeUInt32LE(10, 16);
+  buffer.set([0, 0, 0, 0x9d, 0x01, 0x2a], 20);
+  buffer.writeUInt16LE(width, 26);
+  buffer.writeUInt16LE(height, 28);
+  return buffer;
+}
+
+function createVp8lWebp(width, height) {
+  const buffer = Buffer.alloc(26);
+  buffer.write("RIFF", 0, "ascii");
+  buffer.writeUInt32LE(18, 4);
+  buffer.write("WEBP", 8, "ascii");
+  buffer.write("VP8L", 12, "ascii");
+  buffer.writeUInt32LE(5, 16);
+  buffer[20] = 0x2f;
+  buffer.writeUInt32LE((((height - 1) << 14) | (width - 1)) >>> 0, 21);
+  return buffer;
+}
+
 function fixture(t, files) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "math-study-log-test-"));
   t.after(() => {
@@ -34,25 +71,29 @@ function fixture(t, files) {
     },
     read(file) {
       return fs.readFileSync(path.join(tempDir, file), "utf8");
+    },
+    exists(file) {
+      return fs.existsSync(path.join(tempDir, file));
     }
   };
 }
 
 test("build publishes first/retry pages in numeric order and keeps study sets separate", (t) => {
   const ordered = [
-    "20260828-001f-1.jpg",
-    "20260828-001f-2.jpg",
-    "20260828-001f-10.jpg",
-    "20260828-001r-1.jpg",
-    "20260828-001r-2.jpg",
-    "20260828-001r-10.jpg"
+    "20260828-001f-1.webp",
+    "20260828-001f-2.webp",
+    "20260828-001f-10.webp",
+    "20260828-001r-1.webp",
+    "20260828-001r-2.webp",
+    "20260828-001r-10.webp"
   ];
   const files = {
     "content/records/20260828/001/session.md": "# Sample session\n\nUnchanged content.",
     "content/records/20260828/002/session.md": "# Second set",
-    "content/records/20260828/002/images/20260828-002f-1.jpg": "second set",
+    "content/records/20260828/002/images/20260828-002f-1.webp": "second set",
     "content/records/20260827/001/session.md": "# Previous day",
-    "content/records/20260827/001/images/20260827-001r-1.jpg": "selected retry",
+    "content/records/20260827/001/images/20260827-001r-1.webp": "selected retry",
+    "public/records/20260828/001/images/20260828-001f-1.jpg": "stale generated JPEG",
     [`${defaultImagesDir}/notes.txt`]: "not an image",
     // QUESTION images retain their independent naming convention.
     "content/question/example/meta.json": JSON.stringify({ title: "Question", date: "2026-08-28" }),
@@ -68,9 +109,10 @@ test("build publishes first/retry pages in numeric order and keeps study sets se
   for (const file of ordered) {
     assert.equal(build.read(`public/records/20260828/001/images/${file}`), file);
   }
-  assert.match(build.read("public/records/20260828/002/index.html"), /20260828-002f-1\.jpg/);
-  assert.match(build.read("public/records/20260827/001/index.html"), /20260827-001r-1\.jpg/);
+  assert.match(build.read("public/records/20260828/002/index.html"), /20260828-002f-1\.webp/);
+  assert.match(build.read("public/records/20260827/001/index.html"), /20260827-001r-1\.webp/);
   assert.match(log, /Unchanged content\./);
+  assert.equal(build.exists("public/records/20260828/001/images/20260828-001f-1.jpg"), false);
   assert.equal(build.read("public/question/example/images/free-name.png"), "question image");
   assert.match(result.stdout, /Study days : 2/);
   assert.match(result.stdout, /Problems   : 3/);
@@ -78,14 +120,12 @@ test("build publishes first/retry pages in numeric order and keeps study sets se
 });
 
 test("study and homepage OGP use absolute URLs, the first displayed LOG, and SESSION description", (t) => {
-  const realJpeg = fs.readFileSync(
-    path.join(projectDir, "content/records/20260829/001/images/20260829-001f-1.jpg")
-  );
+  const realWebp = createVp8xWebp(1668, 2157);
   const build = fixture(t, {
     "content/records/20260828/001/session-f.md": "# OGP title\n\nA concise SESSION description for the social card.",
-    [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry",
-    [`${defaultImagesDir}/20260828-001f-2.jpg`]: "first page 2",
-    [`${defaultImagesDir}/20260828-001f-1.jpg`]: realJpeg
+    [`${defaultImagesDir}/20260828-001r-1.webp`]: "retry",
+    [`${defaultImagesDir}/20260828-001f-2.webp`]: "first page 2",
+    [`${defaultImagesDir}/20260828-001f-1.webp`]: realWebp
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -96,14 +136,14 @@ test("study and homepage OGP use absolute URLs, the first displayed LOG, and SES
   assert.match(head, /<meta property="og:description" content="A concise SESSION description for the social card\.">/);
   assert.match(head, /<meta property="og:url" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/">/);
   assert.match(head, /<meta property="og:type" content="article">/);
-  assert.match(head, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001f-1\.jpg">/);
+  assert.match(head, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001f-1\.webp">/);
   assert.match(head, /<meta property="og:image:width" content="1668">/);
   assert.match(head, /<meta property="og:image:height" content="2157">/);
-  assert.match(head, /<meta property="og:image:type" content="image\/jpeg">/);
+  assert.match(head, /<meta property="og:image:type" content="image\/webp">/);
   assert.match(head, /<meta name="twitter:card" content="summary_large_image">/);
   assert.match(head, /<meta name="twitter:title" content="OGP title \| 数学学習記録">/);
   assert.match(head, /<meta name="twitter:description" content="A concise SESSION description for the social card\.">/);
-  assert.match(head, /<meta name="twitter:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001f-1\.jpg">/);
+  assert.match(head, /<meta name="twitter:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001f-1\.webp">/);
 
   const homeHead = build.read("public/index.html").split("</head>")[0];
   assert.match(homeHead, /<meta property="og:type" content="website">/);
@@ -118,31 +158,54 @@ test("study and homepage OGP use absolute URLs, the first displayed LOG, and SES
   }
 });
 
+for (const [format, webp] of [
+  ["VP8 lossy", createVp8Webp(640, 480)],
+  ["VP8L lossless", createVp8lWebp(321, 654)]
+]) {
+  test(`OGP reads ${format} WebP dimensions and MIME type`, (t) => {
+    const build = fixture(t, {
+      "content/records/20260828/001/session.md": "# WebP metadata",
+      [`${defaultImagesDir}/20260828-001f-1.webp`]: webp
+    });
+    const result = build.run();
+    assert.equal(result.status, 0, result.stderr);
+
+    const head = build.read("public/records/20260828/001/index.html").split("</head>")[0];
+    const width = format === "VP8 lossy" ? 640 : 321;
+    const height = format === "VP8 lossy" ? 480 : 654;
+    assert.match(head, new RegExp(`<meta property="og:image:width" content="${width}">`));
+    assert.match(head, new RegExp(`<meta property="og:image:height" content="${height}">`));
+    assert.match(head, /<meta property="og:image:type" content="image\/webp">/);
+  });
+}
+
 test("an unnumbered retry-only LOG becomes both the first displayed image and social image", (t) => {
   const build = fixture(t, {
     "content/records/20260828/001/session-r.md": "# Retry only\n\nRetry description.",
-    [`${defaultImagesDir}/20260828-001r.jpg`]: "retry"
+    [`${defaultImagesDir}/20260828-001r.webp`]: "retry"
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
   const page = build.read("public/records/20260828/001/index.html");
-  assert.match(page, /src="\.\/images\/20260828-001r\.jpg"/);
-  assert.match(page, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001r\.jpg">/);
+  assert.match(page, /src="\.\/images\/20260828-001r\.webp"/);
+  assert.match(page, /<meta property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/records\/20260828\/001\/images\/20260828-001r\.webp">/);
 });
 
 const invalidNames = [
-  "20260828-001-f.jpg",
-  "20260828-001-r.jpg",
-  "20260828-001-1-r.jpg",
-  "20260828-001.jpg",
-  "20260828-001-1.jpg",
-  "20260828-001x-1.jpg",
-  "20260828-001F-1.jpg",
-  "20260828-001r-0.jpg",
-  "20260828-001r--1.jpg",
-  "20260828-001r-1.5.jpg",
-  "20260828-001r-01.jpg",
-  "20260828-001r-1r.jpg",
+  "20260828-001-f.webp",
+  "20260828-001-r.webp",
+  "20260828-001-1-r.webp",
+  "20260828-001.webp",
+  "20260828-001-1.webp",
+  "20260828-001x-1.webp",
+  "20260828-001F-1.webp",
+  "20260828-001r-0.webp",
+  "20260828-001r--1.webp",
+  "20260828-001r-1.5.webp",
+  "20260828-001r-01.webp",
+  "20260828-001r-1r.webp",
+  "20260828-001r-1.WEBP",
+  "20260828-001r-1.jpg",
   "20260828-001r-1.JPG",
   "20260828-001r-1.png",
   "20260828-001r-1.jpeg"
@@ -158,7 +221,7 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
       files[`${dir}/session-r-extra.md`] = `# 発展解説\n\nExtended explanation with $x=1$.\n\n- first item\n- second item\n\n> important quote\n\n<details>\n<summary>Extra answer</summary>\n\n$$x^2=1$$\n\n</details>`;
     }
     for (const suffix of ["f-1", "f-10", "f-3", "f-2", "r-1", "r-10", "r-3", "r-2"]) {
-      files[`${dir}/images/20260828-${number}${suffix}.jpg`] = suffix;
+      files[`${dir}/images/20260828-${number}${suffix}.webp`] = suffix;
     }
   }
   const build = fixture(t, files);
@@ -180,7 +243,7 @@ test("split SESSION files pair each stage, preserve math/details, and link indep
     assert.doesNotMatch(retryStage, /First explanation|Extended explanation/);
     for (const [section, stage, pages] of [[first, "f", [1, 2, 3, 10]], [retry, "r", [1, 2, 3, 10]]]) {
       assert.deepEqual([...section.matchAll(/src="\.\/images\/([^"]+)"/g)].map(m => m[1]),
-        pages.map(p => `20260828-${number}${stage}-${p}.jpg`));
+        pages.map(p => `20260828-${number}${stage}-${p}.webp`));
       assert.ok(section.indexOf('data-column="log"') < section.indexOf('data-column="session"'));
       const left = section.match(/data-column="log">([\s\S]*?)<\/div>/)[1];
       assert.doesNotMatch(left, /explanation|Hint|<article|<p>|<details>|\$a/);
@@ -249,7 +312,7 @@ test("homepage buttons lead to separate category lists and exclude articles with
   };
   for (const [number, title] of [["001", "Both categories"], ["002", "Log only"], ["003", "Empty session"], ["004", "Legacy session"]]) {
     const dir = `content/records/20260828/${number}`;
-    files[`${dir}/images/20260828-${number}f-1.jpg`] = "log image";
+    files[`${dir}/images/20260828-${number}f-1.webp`] = "log image";
     files[`${dir}/meta.json`] = JSON.stringify({ studyId: `20260828-${number}`, date: "2026-08-28", sequence: number, title });
   }
   const build = fixture(t, files);
@@ -280,8 +343,8 @@ test("homepage buttons lead to separate category lists and exclude articles with
 test("unmigrated legacy SESSION never restores the all-LOG/all-SESSION columns", (t) => {
   const build = fixture(t, {
     "content/records/20260828/001/session.md": "# Existing title\n\nLegacy paragraph.\n\n## FIRST SESSION\n\nDo not split headings.\n\n<details>\n<summary>Answer</summary>\n\nLegacy answer.\n\n</details>",
-    [`${defaultImagesDir}/20260828-001f-1.jpg`]: "first",
-    [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry"
+    [`${defaultImagesDir}/20260828-001f-1.webp`]: "first",
+    [`${defaultImagesDir}/20260828-001r-1.webp`]: "retry"
   });
   assert.equal(build.run().status, 0);
   const page = build.read("public/records/20260828/001/index.html");
@@ -299,7 +362,7 @@ test("mixed old and split SESSION files do not hide or duplicate the legacy arti
   const build = fixture(t, {
     "content/records/20260828/001/session.md": "# Original title\n\nOriginal full article.",
     "content/records/20260828/001/session-f.md": "# New first title\n\nNew first explanation.",
-    [`${defaultImagesDir}/20260828-001f-1.jpg`]: "first"
+    [`${defaultImagesDir}/20260828-001f-1.webp`]: "first"
   });
   assert.equal(build.run().status, 0);
   const page = build.read("public/records/20260828/001/index.html");
@@ -314,7 +377,7 @@ test("mixed old and split SESSION files do not hide or duplicate the legacy arti
 test("original SESSION alone works, while the textbook LOG column stays empty", (t) => {
   const build = fixture(t, {
     "content/records/20260828/001/session-r.md": "# Retry title\n\nRetry only.",
-    [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry"
+    [`${defaultImagesDir}/20260828-001r-1.webp`]: "retry"
   });
   assert.equal(build.run().status, 0);
   const page = build.read("public/records/20260828/001/index.html");
@@ -330,7 +393,7 @@ test("meta title still takes precedence with split SESSION files", (t) => {
   const build = fixture(t, {
     "content/records/20260828/001/meta.json": JSON.stringify({ studyId: "20260828-001", date: "2026-08-28", sequence: "001", title: "Metadata title" }),
     "content/records/20260828/001/session-f.md": "# Stage title",
-    [`${defaultImagesDir}/20260828-001f-1.jpg`]: "first"
+    [`${defaultImagesDir}/20260828-001f-1.webp`]: "first"
   });
   assert.equal(build.run().status, 0);
   assert.match(build.read("public/records/20260828/001/index.html"), /<h1>Metadata title<\/h1>/);
@@ -339,7 +402,7 @@ test("meta title still takes precedence with split SESSION files", (t) => {
 test("session-r-extra alone remains optional content and can supply a fallback title", (t) => {
   const build = fixture(t, {
     "content/records/20260828/001/session-r-extra.md": "# Extra fallback title\n\nExtra-only explanation.",
-    [`${defaultImagesDir}/20260828-001r-1.jpg`]: "retry"
+    [`${defaultImagesDir}/20260828-001r-1.webp`]: "retry"
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -361,7 +424,7 @@ test("existing migrated articles show textbook and original content in separate 
     const dir = `content/records/${day}/001`;
     for (const stage of ["f", "r"]) {
       files[`${dir}/session-${stage}.md`] = fs.readFileSync(path.join(projectDir, dir, `session-${stage}.md`), "utf8");
-      files[`${dir}/images/${day}-001${stage}-1.jpg`] = stage;
+      files[`${dir}/images/${day}-001${stage}-1.webp`] = stage;
     }
   }
   const build = fixture(t, files);
@@ -389,7 +452,7 @@ test("responsive study pages swap summary LOGs for inline Markdown LOGs without 
     [`${dir}/session-r.md`]: fs.readFileSync(path.join(projectDir, dir, "session-r.md"), "utf8"),
     [`${dir}/session-r-extra.md`]: fs.readFileSync(path.join(projectDir, dir, "session-r-extra.md"), "utf8")
   };
-  for (const image of ["20260829-001f-1.jpg", "20260829-001f-2.jpg", "20260829-001r-1.jpg", "20260829-001r-2.jpg"]) {
+  for (const image of ["20260829-001f-1.webp", "20260829-001f-2.webp", "20260829-001r-1.webp", "20260829-001r-2.webp"]) {
     files[`${dir}/images/${image}`] = image;
   }
 
@@ -403,20 +466,20 @@ test("responsive study pages swap summary LOGs for inline Markdown LOGs without 
   for (const [stageHtml, stage, pages] of [[first, "f", [1, 2]], [retry, "r", [1, 2]]]) {
     assert.match(stageHtml, /class="study-column mobile-hidden" data-column="log"/);
     for (const imagePage of pages) {
-      const filename = `${day}-001${stage}-${imagePage}.jpg`;
+      const filename = `${day}-001${stage}-${imagePage}.webp`;
       assert.equal((stageHtml.match(new RegExp(`src="\\./images/${filename.replace(".", "\\.")}"`, "g")) || []).length, 2);
       assert.match(stageHtml, new RegExp(`<img class="session-log-image" src="\\./images/${filename.replace(".", "\\.")}"`));
     }
     assert.equal((stageHtml.match(/class="study-sheet has-inline-session-image"/g) || []).length, 2);
   }
 
-  assert.ok(first.indexOf("20260829-001f-1.jpg") < first.indexOf("最初は"));
+  assert.ok(first.indexOf("20260829-001f-1.webp") < first.indexOf("最初は"));
   assert.ok(first.indexOf("最初は") < first.indexOf("復習｜補助変数"));
-  assert.ok(first.lastIndexOf("20260829-001f-2.jpg") > first.indexOf("復習｜補助変数"));
-  assert.ok(retry.indexOf("20260829-001r-1.jpg") < retry.indexOf("今回は"));
-  assert.ok(retry.lastIndexOf("20260829-001r-2.jpg") > retry.indexOf("発展・寄り道"));
+  assert.ok(first.lastIndexOf("20260829-001f-2.webp") > first.indexOf("復習｜補助変数"));
+  assert.ok(retry.indexOf("20260829-001r-1.webp") < retry.indexOf("今回は"));
+  assert.ok(retry.lastIndexOf("20260829-001r-2.webp") > retry.indexOf("発展・寄り道"));
   assert.ok(retry.indexOf('class="retry-extra study-column"') > retry.indexOf('data-column="session"'));
-  assert.doesNotMatch(page, /<img[^>]+src="20260829-001[fr]-[12]\.jpg"/);
+  assert.doesNotMatch(page, /<img[^>]+src="20260829-001[fr]-[12]\.webp"/);
   assert.match(page, /\.session-content \.session-log-image,[\s\S]*display: none;/);
   assert.match(page, /@media \(max-width: 900px\)[\s\S]*\.study-column\[data-column="log"\]\.mobile-hidden,[\s\S]*display: none;/);
   assert.match(page, /\.session-content \.session-log-image \{[\s\S]*display: block;[\s\S]*width: 100%;[\s\S]*max-width: 100%;[\s\S]*height: auto;/);
@@ -434,13 +497,27 @@ for (const file of invalidNames) {
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /LOG画像の命名形式が不正/);
     assert.ok(result.stderr.includes(path.join(defaultImagesDir, file)));
-    assert.match(result.stderr, /YYYYMMDD-NNNf\[-M\]\.jpg/);
+    assert.match(result.stderr, /YYYYMMDD-NNNf\[-M\]\.webp/);
   });
 }
 
+test("a JPEG beside the matching WebP is rejected instead of counted twice", (t) => {
+  const build = fixture(t, {
+    "content/records/20260828/001/session.md": "# Session",
+    [`${defaultImagesDir}/20260828-001f-1.webp`]: createVp8xWebp(800, 1200),
+    [`${defaultImagesDir}/20260828-001f-1.jpg`]: "old JPEG"
+  });
+  const result = build.run();
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /LOG画像の命名形式が不正/);
+  assert.ok(result.stderr.includes(path.join(defaultImagesDir, "20260828-001f-1.jpg")));
+  assert.doesNotMatch(result.stdout, /Images\s+:\s+2/);
+});
+
 for (const [file, reason] of [
-  ["20260827-001f-1.jpg", "日付"],
-  ["20260828-002r-1.jpg", "学習セット番号"]
+  ["20260827-001f-1.webp", "日付"],
+  ["20260828-002r-1.webp", "学習セット番号"]
 ]) {
   test(`build rejects mismatched ${reason}`, (t) => {
     const build = fixture(t, { [`${defaultImagesDir}/${file}`]: "image" });
@@ -453,17 +530,17 @@ for (const [file, reason] of [
 
 test("each answer requires page 1, including a single selected retry image", (t) => {
   const build = fixture(t, {
-    [`${defaultImagesDir}/20260828-001f-1.jpg`]: "first",
-    [`${defaultImagesDir}/20260828-001r-2.jpg`]: "retry"
+    [`${defaultImagesDir}/20260828-001f-1.webp`]: "first",
+    [`${defaultImagesDir}/20260828-001r-2.webp`]: "retry"
   });
   const result = build.run();
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /LOG画像の1ページ目がありません/);
-  assert.match(result.stderr, /必要な画像名: 20260828-001r-1\.jpg/);
+  assert.match(result.stderr, /必要な画像名: 20260828-001r-1\.webp/);
 });
 
 test("legacy public/images input also rejects old filenames", (t) => {
-  const build = fixture(t, { "public/images/20260828-001-r.jpg": "old name" });
+  const build = fixture(t, { "public/images/20260828-001-r.webp": "old name" });
   const result = build.run();
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /LOG画像の命名形式が不正/);
@@ -471,7 +548,7 @@ test("legacy public/images input also rejects old filenames", (t) => {
 
 for (const identical of [true, false]) {
   test(`duplicate image sources ${identical ? "are deduplicated" : "reject different contents"}`, (t) => {
-    const file = "20260828-001f-1.jpg";
+    const file = "20260828-001f-1.webp";
     const build = fixture(t, {
       "content/records/20260828/001/session.md": "# Session",
       [`${defaultImagesDir}/${file}`]: "image",
