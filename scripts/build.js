@@ -16,6 +16,7 @@ const defaultDescription =
   "64歳から数学を学び直す学習記録。間違い・迷い・修正までそのまま残しています。";
 const siteOgImageUrl = `${siteUrl}/og-image.png`;
 const gaMeasurementId = "G-LTZZZFVRKP";
+const visibleCalendarMonthCount = 3;
 const markdown = new MarkdownIt({
   html: false,
   linkify: true,
@@ -1396,8 +1397,10 @@ function createIndexPage() {
     months.get(key).push(record);
   }
 
-  const monthSections = [...months.entries()]
-    .sort((a, b) => b[0].localeCompare(a[0]))
+  const sortedMonths = [...months.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]));
+
+  const createMonthSections = (monthEntries) => monthEntries
     .map(([key, monthRecords]) => {
       const [year, month] = key.split("-").map(Number);
 
@@ -1413,6 +1416,24 @@ ${createMonthCalendar(year, month, monthRecords)}
   </section>`;
     })
     .join("\n");
+
+  const recentMonthSections = createMonthSections(
+    sortedMonths.slice(0, visibleCalendarMonthCount)
+  );
+  const pastMonthSections = createMonthSections(
+    sortedMonths.slice(visibleCalendarMonthCount)
+  );
+  const calendarSections = `
+  <div class="recent-calendars">
+${recentMonthSections}
+  </div>
+${pastMonthSections ? `
+  <details class="past-calendars">
+    <summary>過去のカレンダー</summary>
+    <div class="past-calendar-list">
+${pastMonthSections}
+    </div>
+  </details>` : ""}`;
 
   const displayYear = latest
     ? latest.date.slice(0, 4)
@@ -1504,6 +1525,32 @@ main {
 
 .month-section {
   margin-bottom: 26px;
+}
+
+.past-calendars {
+  margin: -4px 0 26px;
+}
+
+.past-calendars > summary {
+  width: fit-content;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.past-calendars > summary:hover,
+.past-calendars > summary:focus-visible {
+  color: var(--ink);
+}
+
+.past-calendars[open] > summary {
+  margin-bottom: 20px;
+}
+
+.past-calendar-list .month-section:last-child {
+  margin-bottom: 0;
 }
 
 .month-head {
@@ -2024,7 +2071,7 @@ ${someCloudsLink()}
 
 <main>
 
-${monthSections}
+${calendarSections}
 
   <div class="section-divider"></div>
 

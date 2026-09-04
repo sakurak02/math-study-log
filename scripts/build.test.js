@@ -403,6 +403,53 @@ test("calendar groups classifications, follows master order, and exposes respons
   assert.match(home, /classList\.toggle\("detail-open", shouldOpen\)/);
 });
 
+test("calendar shows every available month when there are no more than three", (t) => {
+  const build = fixture(t, {
+    "content/records/20260828/001/session-f.md": "# August",
+    "content/records/20260828/001/images/20260828-001f-1.webp": "August",
+    "content/records/20260903/001/session-f.md": "# September",
+    "content/records/20260903/001/images/20260903-001f-1.webp": "September"
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+
+  assert.deepEqual(
+    [...home.matchAll(/class="month-title">([^<]+)<\/div>/g)].map((match) => match[1]),
+    ["2026年9月", "2026年8月"]
+  );
+  assert.doesNotMatch(home, /class="past-calendars"|過去のカレンダー/);
+});
+
+test("calendar keeps only the latest three months visible and folds older months", (t) => {
+  const files = {};
+  for (const month of ["08", "09", "10", "11", "12"]) {
+    const day = `2026${month}01`;
+    const dir = `content/records/${day}/001`;
+    files[`${dir}/session-f.md`] = `# ${month}月の記事`;
+    files[`${dir}/images/${day}-001f-1.webp`] = month;
+  }
+
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+  const recentStart = home.indexOf('<div class="recent-calendars">');
+  const pastStart = home.indexOf('<details class="past-calendars">');
+  const calendarsEnd = home.indexOf('<div class="section-divider">', pastStart);
+  const recent = home.slice(recentStart, pastStart);
+  const past = home.slice(pastStart, calendarsEnd);
+  const monthTitles = (html) =>
+    [...html.matchAll(/class="month-title">([^<]+)<\/div>/g)].map((match) => match[1]);
+
+  assert.deepEqual(monthTitles(recent), ["2026年12月", "2026年11月", "2026年10月"]);
+  assert.deepEqual(monthTitles(past), ["2026年9月", "2026年8月"]);
+  assert.match(past, /<details class="past-calendars">\s*<summary>過去のカレンダー<\/summary>/);
+  assert.doesNotMatch(past, /<details class="past-calendars" open>/);
+  assert.match(past, /href="\.\/records\/20260901\/index\.html" class="day-link"/);
+  assert.match(past, /href="\.\/records\/20260801\/index\.html" class="day-link"/);
+});
+
 test("SESSION classification comments generate a master-ordered, deduplicated table of contents", (t) => {
   const classificationComment = (subject, category, subcategory) =>
     `<!--\nsubject: ${subject}\ncategory: ${category}\nsubcategory: ${subcategory}\n-->\n\n`;

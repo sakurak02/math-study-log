@@ -116,6 +116,32 @@ main {
   margin-bottom: 26px;
 }
 
+.past-calendars {
+  margin: -4px 0 26px;
+}
+
+.past-calendars > summary {
+  width: fit-content;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.past-calendars > summary:hover,
+.past-calendars > summary:focus-visible {
+  color: var(--ink);
+}
+
+.past-calendars[open] > summary {
+  margin-bottom: 20px;
+}
+
+.past-calendar-list .month-section:last-child {
+  margin-bottom: 0;
+}
+
 .month-head {
   display: flex;
   align-items: baseline;
@@ -635,6 +661,8 @@ footer {
 <main>
 
 
+  <div class="recent-calendars">
+
   <section class="month-section">
     <div class="month-head">
       <div class="month-title">2026年9月</div>
@@ -759,6 +787,8 @@ footer {
 
     </div>
   </section>
+  </div>
+
 
   <div class="section-divider"></div>
 
