@@ -45,10 +45,7 @@
   --ink: #192323;
   --ink-soft: #6b7777;
   --accent: #315f63;
-  --level-1: #e8f0f0;
-  --level-2: #c9dddd;
-  --level-3: #8fb4b5;
-  --level-4: #315f63;
+  --calendar-active: #e8f0f0;
   --empty: #f5f7f7;
 }
 
@@ -149,83 +146,165 @@ main {
 }
 
 .day-cell {
-  height: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 0 9px;
+  position: relative;
+  height: 78px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel);
   color: var(--ink);
-  text-decoration: none;
   transition: 0.18s ease;
-  overflow: hidden;
 }
 
-.day-cell:not(.empty):hover {
+.day-cell.has-record {
+  background: var(--calendar-active);
+}
+
+.day-cell.has-record:hover {
   border-color: var(--accent);
   transform: translateY(-1px);
+  z-index: 5;
 }
 
 .day-cell.empty {
+  display: flex;
+  align-items: flex-start;
+  padding: 7px 9px;
   background: var(--empty);
   color: #a5adad;
+}
+
+.day-link {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 6px 28px 6px 8px;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
 }
 
 .day-number {
   font-family: "JetBrains Mono", monospace;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.25;
 }
 
-.day-count {
-  font-family: "JetBrains Mono", monospace;
+.day-topics {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.day-topic,
+.day-topic-more {
+  display: block;
+  overflow: hidden;
   font-size: 10px;
-  opacity: 0.78;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.level-1 {
-  background: var(--level-1);
+.day-topic-mobile {
+  display: none;
 }
 
-.level-2 {
-  background: var(--level-2);
+.day-topic-more {
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
 }
 
-.level-3 {
-  background: var(--level-3);
-  color: #102425;
-  border-color: #82aaaa;
-}
-
-.level-4 {
-  background: var(--level-4);
-  color: #fff;
-  border-color: var(--level-4);
-}
-
-.level-4 .day-count {
-  opacity: 0.86;
-}
-
-.legend {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 9px;
+.day-detail-toggle {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
   color: var(--ink-soft);
-  font-size: 10px;
+  font: 11px/1 "Noto Sans JP", sans-serif;
+  cursor: pointer;
+  opacity: 0.72;
 }
 
-.legend-box {
-  width: 18px;
-  height: 10px;
-  border-radius: 3px;
+.day-detail-toggle:hover,
+.day-detail-toggle:focus-visible {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.calendar-detail {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  z-index: 20;
+  display: none;
+  width: min(300px, calc(100vw - 24px));
+  padding: 12px 14px;
+  transform: translateX(-50%);
   border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(25, 35, 35, 0.14);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.day-cell:hover .calendar-detail,
+.day-cell:focus-within .calendar-detail,
+.day-cell.detail-open .calendar-detail {
+  display: block;
+}
+
+.day-cell:nth-child(7n + 1) .calendar-detail {
+  left: 0;
+  transform: none;
+}
+
+.day-cell:nth-child(7n) .calendar-detail {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.calendar-detail-date {
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.calendar-detail ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar-detail li + li {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.calendar-detail-path,
+.calendar-detail-title {
+  display: block;
+}
+
+.calendar-detail-path {
+  font-weight: 600;
+}
+
+.calendar-detail-title {
+  color: var(--ink-soft);
 }
 
 .section-divider {
@@ -347,12 +426,20 @@ footer {
   }
 
   .day-cell {
-    height: 42px;
-    padding: 0 6px;
+    height: 68px;
     border-radius: 6px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0;
+  }
+
+  .day-cell.empty {
+    padding: 5px;
+  }
+
+  .day-cell.has-record:hover {
+    transform: none;
+  }
+
+  .day-link {
+    padding: 5px 20px 5px 5px;
   }
 
   .day-number {
@@ -360,9 +447,47 @@ footer {
     line-height: 1.2;
   }
 
-  .day-count {
+  .day-topic,
+  .day-topic-more {
     font-size: 8px;
-    line-height: 1.15;
+    line-height: 1.2;
+  }
+
+  .day-topic-desktop {
+    display: none;
+  }
+
+  .day-topic-mobile {
+    display: inline;
+  }
+
+  .day-detail-toggle {
+    top: 1px;
+    right: 0;
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .calendar-detail {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-height: 48vh;
+    overflow-y: auto;
+    transform: none;
+    font-size: 12px;
+  }
+
+  .day-cell:hover .calendar-detail,
+  .day-cell:focus-within .calendar-detail {
+    display: none;
+  }
+
+  .day-cell.detail-open .calendar-detail {
+    display: block;
   }
 
   .entry-nav {
@@ -393,6 +518,60 @@ footer {
 
 <main>
 
+
+  <section class="month-section">
+    <div class="month-head">
+      <div class="month-title">2026年9月</div>
+    </div>
+
+    <div class="calendar-grid">
+
+      <div class="day-header">日</div>
+      <div class="day-header">月</div>
+      <div class="day-header">火</div>
+      <div class="day-header">水</div>
+      <div class="day-header">木</div>
+      <div class="day-header">金</div>
+      <div class="day-header">土</div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"></div>
+      <div class="day-cell empty"><span class="day-number">1</span></div>
+      <div class="day-cell empty"><span class="day-number">2</span></div>
+      <div class="day-cell has-record">
+        <a href="./records/20260903/index.html" class="day-link" aria-label="3日 数学III・極限の学習記録を開く"><span class="day-number">3</span><span class="day-topics"><span class="day-topic"><span class="day-topic-desktop">数学III・極限</span><span class="day-topic-mobile">III 極</span></span></span></a>
+        <button class="day-detail-toggle" type="button" aria-expanded="false" aria-controls="calendar-detail-20260903" aria-label="3日の分類詳細を表示">ⓘ</button>
+        <div class="calendar-detail" id="calendar-detail-20260903" role="tooltip"><div class="calendar-detail-date">2026年9月3日</div><ul><li><span class="calendar-detail-path">数学III → 極限 → 数列の極限</span><span class="calendar-detail-title">固定点が重解になる分数型漸化式</span></li></ul></div>
+      </div>
+      <div class="day-cell empty"><span class="day-number">4</span></div>
+      <div class="day-cell empty"><span class="day-number">5</span></div>
+      <div class="day-cell empty"><span class="day-number">6</span></div>
+      <div class="day-cell empty"><span class="day-number">7</span></div>
+      <div class="day-cell empty"><span class="day-number">8</span></div>
+      <div class="day-cell empty"><span class="day-number">9</span></div>
+      <div class="day-cell empty"><span class="day-number">10</span></div>
+      <div class="day-cell empty"><span class="day-number">11</span></div>
+      <div class="day-cell empty"><span class="day-number">12</span></div>
+      <div class="day-cell empty"><span class="day-number">13</span></div>
+      <div class="day-cell empty"><span class="day-number">14</span></div>
+      <div class="day-cell empty"><span class="day-number">15</span></div>
+      <div class="day-cell empty"><span class="day-number">16</span></div>
+      <div class="day-cell empty"><span class="day-number">17</span></div>
+      <div class="day-cell empty"><span class="day-number">18</span></div>
+      <div class="day-cell empty"><span class="day-number">19</span></div>
+      <div class="day-cell empty"><span class="day-number">20</span></div>
+      <div class="day-cell empty"><span class="day-number">21</span></div>
+      <div class="day-cell empty"><span class="day-number">22</span></div>
+      <div class="day-cell empty"><span class="day-number">23</span></div>
+      <div class="day-cell empty"><span class="day-number">24</span></div>
+      <div class="day-cell empty"><span class="day-number">25</span></div>
+      <div class="day-cell empty"><span class="day-number">26</span></div>
+      <div class="day-cell empty"><span class="day-number">27</span></div>
+      <div class="day-cell empty"><span class="day-number">28</span></div>
+      <div class="day-cell empty"><span class="day-number">29</span></div>
+      <div class="day-cell empty"><span class="day-number">30</span></div>
+
+    </div>
+  </section>
 
   <section class="month-section">
     <div class="month-head">
@@ -438,23 +617,30 @@ footer {
       <div class="day-cell empty"><span class="day-number">22</span></div>
       <div class="day-cell empty"><span class="day-number">23</span></div>
       <div class="day-cell empty"><span class="day-number">24</span></div>
-      <a href="./records/20260825/index.html" class="day-cell level-1"><span class="day-number">25</span><span class="day-count">1問</span></a>
+      <div class="day-cell has-record">
+        <a href="./records/20260825/index.html" class="day-link" aria-label="25日 数学III・極限の学習記録を開く"><span class="day-number">25</span><span class="day-topics"><span class="day-topic"><span class="day-topic-desktop">数学III・極限</span><span class="day-topic-mobile">III 極</span></span></span></a>
+        <button class="day-detail-toggle" type="button" aria-expanded="false" aria-controls="calendar-detail-20260825" aria-label="25日の分類詳細を表示">ⓘ</button>
+        <div class="calendar-detail" id="calendar-detail-20260825" role="tooltip"><div class="calendar-detail-date">2026年8月25日</div><ul><li><span class="calendar-detail-path">数学III → 極限 → 無限等比数列</span><span class="calendar-detail-title">無限等比数列――公比を見る前に初項を見る</span></li></ul></div>
+      </div>
       <div class="day-cell empty"><span class="day-number">26</span></div>
-      <a href="./records/20260827/index.html" class="day-cell level-1"><span class="day-number">27</span><span class="day-count">1問</span></a>
-      <a href="./records/20260828/index.html" class="day-cell level-1"><span class="day-number">28</span><span class="day-count">1問</span></a>
-      <a href="./records/20260829/index.html" class="day-cell level-1"><span class="day-number">29</span><span class="day-count">1問</span></a>
+      <div class="day-cell has-record">
+        <a href="./records/20260827/index.html" class="day-link" aria-label="27日 数学III・極限の学習記録を開く"><span class="day-number">27</span><span class="day-topics"><span class="day-topic"><span class="day-topic-desktop">数学III・極限</span><span class="day-topic-mobile">III 極</span></span></span></a>
+        <button class="day-detail-toggle" type="button" aria-expanded="false" aria-controls="calendar-detail-20260827" aria-label="27日の分類詳細を表示">ⓘ</button>
+        <div class="calendar-detail" id="calendar-detail-20260827" role="tooltip"><div class="calendar-detail-date">2026年8月27日</div><ul><li><span class="calendar-detail-path">数学III → 極限 → 数列の極限</span><span class="calendar-detail-title">数列の極限――場合分けと定義の確認</span></li></ul></div>
+      </div>
+      <div class="day-cell has-record">
+        <a href="./records/20260828/index.html" class="day-link" aria-label="28日 数学III・極限の学習記録を開く"><span class="day-number">28</span><span class="day-topics"><span class="day-topic"><span class="day-topic-desktop">数学III・極限</span><span class="day-topic-mobile">III 極</span></span></span></a>
+        <button class="day-detail-toggle" type="button" aria-expanded="false" aria-controls="calendar-detail-20260828" aria-label="28日の分類詳細を表示">ⓘ</button>
+        <div class="calendar-detail" id="calendar-detail-20260828" role="tooltip"><div class="calendar-detail-date">2026年8月28日</div><ul><li><span class="calendar-detail-path">数学III → 極限 → 数列の極限</span><span class="calendar-detail-title">漸化式の固定点と数列の極限</span></li></ul></div>
+      </div>
+      <div class="day-cell has-record">
+        <a href="./records/20260829/index.html" class="day-link" aria-label="29日 数学III・極限の学習記録を開く"><span class="day-number">29</span><span class="day-topics"><span class="day-topic"><span class="day-topic-desktop">数学III・極限</span><span class="day-topic-mobile">III 極</span></span></span></a>
+        <button class="day-detail-toggle" type="button" aria-expanded="false" aria-controls="calendar-detail-20260829" aria-label="29日の分類詳細を表示">ⓘ</button>
+        <div class="calendar-detail" id="calendar-detail-20260829" role="tooltip"><div class="calendar-detail-date">2026年8月29日</div><ul><li><span class="calendar-detail-path">数学III → 極限 → 数列の極限</span><span class="calendar-detail-title">不等式で極限を評価する――「十分な評価」と「足りない評価」</span></li></ul></div>
+      </div>
       <div class="day-cell empty"><span class="day-number">30</span></div>
       <div class="day-cell empty"><span class="day-number">31</span></div>
 
-    </div>
-
-    <div class="legend">
-      <span>少</span>
-      <span class="legend-box" style="background:var(--level-1)"></span>
-      <span class="legend-box" style="background:var(--level-2)"></span>
-      <span class="legend-box" style="background:var(--level-3)"></span>
-      <span class="legend-box" style="background:var(--level-4);border-color:var(--level-4)"></span>
-      <span>多</span>
     </div>
   </section>
 
@@ -487,7 +673,7 @@ footer {
 
   <section class="total-section">
     <div class="total-label">TOTAL STUDY DAYS</div>
-    <div class="total-value">4 days</div>
+    <div class="total-value">5 days</div>
   </section>
 
 </main>
@@ -495,6 +681,37 @@ footer {
 <footer>
   Math Study Log © 2026
 </footer>
+
+<script>
+(() => {
+  const closeDetails = (except = null) => {
+    document.querySelectorAll(".day-cell.detail-open").forEach((cell) => {
+      if (cell === except) return;
+      cell.classList.remove("detail-open");
+      cell.querySelector(".day-detail-toggle")?.setAttribute("aria-expanded", "false");
+    });
+  };
+
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest(".day-detail-toggle");
+
+    if (button) {
+      const cell = button.closest(".day-cell");
+      const shouldOpen = !cell.classList.contains("detail-open");
+      closeDetails(cell);
+      cell.classList.toggle("detail-open", shouldOpen);
+      button.setAttribute("aria-expanded", String(shouldOpen));
+      return;
+    }
+
+    if (!event.target.closest(".day-cell.detail-open")) closeDetails();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeDetails();
+  });
+})();
+</script>
 
 </body>
 </html>

@@ -57,6 +57,11 @@ function fixture(t, files) {
     fs.mkdirSync(path.join(tempDir, dir), { recursive: true });
   }
   fs.copyFileSync(path.join(__dirname, "build.js"), path.join(tempDir, "scripts/build.js"));
+  fs.mkdirSync(path.join(tempDir, "content"), { recursive: true });
+  fs.copyFileSync(
+    path.join(projectDir, "content/classification-master.json"),
+    path.join(tempDir, "content/classification-master.json")
+  );
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(tempDir, file);
     fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -339,6 +344,86 @@ test("homepage buttons lead to separate category lists and exclude articles with
   assert.match(build.read("public/records/20260828/004/session.html"), /Legacy explanation/);
   assert.doesNotMatch(build.read("public/records/20260828/004/log.html").split("<body>")[1], /Legacy explanation/);
 });
+
+test("calendar groups classifications, follows master order, and exposes responsive details", (t) => {
+  const classifications = [
+    ["001", "数学III", "極限", "数列の極限", "Limit one"],
+    ["002", "数学III", "極限", "関数の極限", "Limit two"],
+    ["003", "数学C", "ベクトル", "平面ベクトル", "Vector"],
+    ["004", "数学I", "二次関数", "二次関数の最大・最小", "Quadratic"],
+    ["005", "数学B", "数列", "漸化式", "Sequence"]
+  ];
+  const files = {};
+
+  for (const [number, subject, category, topic, title] of classifications) {
+    const dir = `content/records/20260828/${number}`;
+    files[`${dir}/images/20260828-${number}f-1.webp`] = title;
+    files[`${dir}/meta.json`] = JSON.stringify({
+      studyId: `20260828-${number}`,
+      date: "2026-08-28",
+      sequence: number,
+      title,
+      subject,
+      category,
+      topic
+    });
+  }
+
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+
+  assert.deepEqual(
+    [...home.matchAll(/class="day-topic-desktop">([^<]+)<\/span>/g)].map((match) => match[1]),
+    ["数学I・二次関数", "数学B・数列"]
+  );
+  assert.deepEqual(
+    [...home.matchAll(/class="day-topic-mobile">([^<]+)<\/span>/g)].map((match) => match[1]),
+    ["I 二", "B 数"]
+  );
+  assert.match(home, /class="day-topic-more">\+2<\/span>/);
+  assert.doesNotMatch(home, /class="day-count"|>\d+問<|class="legend"/);
+  assert.match(home, /href="\.\/records\/20260828\/index\.html" class="day-link"/);
+  assert.match(home, /class="day-detail-toggle"[^>]+aria-expanded="false"[^>]+aria-controls="calendar-detail-20260828"/);
+  assert.deepEqual(
+    [...home.matchAll(/class="calendar-detail-path">([^<]+)<\/span>/g)].map((match) => match[1]),
+    [
+      "数学I → 二次関数 → 二次関数の最大・最小",
+      "数学B → 数列 → 漸化式",
+      "数学III → 極限 → 関数の極限",
+      "数学III → 極限 → 数列の極限",
+      "数学C → ベクトル → 平面ベクトル"
+    ]
+  );
+  assert.match(home, /\.day-cell:hover \.calendar-detail,[\s\S]*display: block;/);
+  assert.match(home, /@media \(max-width: 600px\)[\s\S]*\.day-topic-desktop \{[\s\S]*display: none;/);
+  assert.match(home, /@media \(max-width: 600px\)[\s\S]*\.day-topic-mobile \{[\s\S]*display: inline;/);
+  assert.match(home, /\.day-cell\.detail-open \.calendar-detail \{[\s\S]*display: block;/);
+  assert.match(home, /classList\.toggle\("detail-open", shouldOpen\)/);
+});
+
+for (const [label, classification, message] of [
+  ["partial classification", { subject: "数学III" }, /subject・category・topicをすべて指定/],
+  ["unknown subject", { subject: "数学X", category: "極限", topic: "数列の極限" }, /分類マスターにない科目/],
+  ["unknown category", { subject: "数学III", category: "数列", topic: "数列の極限" }, /分類マスターにない中分類/]
+]) {
+  test(`build rejects ${label}`, (t) => {
+    const build = fixture(t, {
+      [`${defaultImagesDir}/20260828-001f-1.webp`]: "image",
+      "content/records/20260828/001/meta.json": JSON.stringify({
+        studyId: "20260828-001",
+        date: "2026-08-28",
+        sequence: "001",
+        title: "Classification validation",
+        ...classification
+      })
+    });
+    const result = build.run();
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, message);
+  });
+}
 
 test("unmigrated legacy SESSION never restores the all-LOG/all-SESSION columns", (t) => {
   const build = fixture(t, {

@@ -1,0 +1,61 @@
+{
+  "subjects": [
+    {
+      "name": "数学I",
+      "short": "I",
+      "categories": [
+        { "name": "数と式", "short": "式" },
+        { "name": "図形と計量", "short": "図" },
+        { "name": "二次関数", "short": "二" },
+        { "name": "データの分析", "short": "デ" }
+      ]
+    },
+    {
+      "name": "数学A",
+      "short": "A",
+      "categories": [
+        { "name": "図形の性質", "short": "図" },
+        { "name": "場合の数と確率", "short": "確" },
+        { "name": "数学と人間の活動", "short": "活" }
+      ]
+    },
+    {
+      "name": "数学II",
+      "short": "II",
+      "categories": [
+        { "name": "いろいろな式", "short": "式" },
+        { "name": "図形と方程式", "short": "図" },
+        { "name": "指数関数・対数関数", "short": "指対" },
+        { "name": "三角関数", "short": "三" },
+        { "name": "微分・積分の考え", "short": "微積" }
+      ]
+    },
+    {
+      "name": "数学B",
+      "short": "B",
+      "categories": [
+        { "name": "数列", "short": "数" },
+        { "name": "統計的な推測", "short": "統" },
+        { "name": "数学と社会生活", "short": "社" }
+      ]
+    },
+    {
+      "name": "数学III",
+      "short": "III",
+      "categories": [
+        { "name": "極限", "short": "極" },
+        { "name": "微分法", "short": "微" },
+        { "name": "積分法", "short": "積" }
+      ]
+    },
+    {
+      "name": "数学C",
+      "short": "C",
+      "categories": [
+        { "name": "ベクトル", "short": "ベ" },
+        { "name": "平面上の曲線と複素数平面", "short": "曲複" },
+        { "name": "数学的な表現の工夫", "short": "表" }
+      ]
+    }
+  ]
+}

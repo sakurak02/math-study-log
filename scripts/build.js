@@ -7,6 +7,7 @@ const publicDir = path.join(rootDir, "public");
 const imagesDir = path.join(publicDir, "images");
 const recordsDir = path.join(publicDir, "records");
 const contentRecordsDir = path.join(rootDir, "content", "records");
+const classificationMasterPath = path.join(rootDir, "content", "classification-master.json");
 const contentQuestionDir = path.join(rootDir, "content", "question");
 const publicQuestionDir = path.join(publicDir, "question");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
@@ -20,6 +21,76 @@ const markdown = new MarkdownIt({
   linkify: true,
   typographer: false
 });
+
+function loadClassificationMaster() {
+  let source;
+
+  try {
+    source = JSON.parse(fs.readFileSync(classificationMasterPath, "utf8"));
+  } catch (error) {
+    throw new Error(`分類マスターを読み込めません: ${classificationMasterPath}\n${error.message}`);
+  }
+
+  if (!source || !Array.isArray(source.subjects) || source.subjects.length === 0) {
+    throw new Error(`分類マスターのsubjectsを配列で指定してください: ${classificationMasterPath}`);
+  }
+
+  const subjectByName = new Map();
+
+  source.subjects.forEach((subject, subjectOrder) => {
+    if (
+      !subject ||
+      typeof subject.name !== "string" ||
+      !subject.name.trim() ||
+      typeof subject.short !== "string" ||
+      !subject.short.trim() ||
+      !Array.isArray(subject.categories) ||
+      subject.categories.length === 0
+    ) {
+      throw new Error(`分類マスターの科目定義が不正です: ${classificationMasterPath}`);
+    }
+
+    const name = subject.name.trim();
+    if (subjectByName.has(name)) {
+      throw new Error(`分類マスターに重複した科目があります: ${name}`);
+    }
+
+    const categoryByName = new Map();
+    subject.categories.forEach((category, categoryOrder) => {
+      if (
+        !category ||
+        typeof category.name !== "string" ||
+        !category.name.trim() ||
+        typeof category.short !== "string" ||
+        !category.short.trim()
+      ) {
+        throw new Error(`分類マスターの中分類定義が不正です: ${name}`);
+      }
+
+      const categoryName = category.name.trim();
+      if (categoryByName.has(categoryName)) {
+        throw new Error(`分類マスターに重複した中分類があります: ${name} → ${categoryName}`);
+      }
+
+      categoryByName.set(categoryName, {
+        name: categoryName,
+        short: category.short.trim(),
+        order: categoryOrder
+      });
+    });
+
+    subjectByName.set(name, {
+      name,
+      short: subject.short.trim(),
+      order: subjectOrder,
+      categoryByName
+    });
+  });
+
+  return { subjects: source.subjects, subjectByName };
+}
+
+const classificationMaster = loadClassificationMaster();
 
 function gaTag() {
   return `
@@ -441,14 +512,6 @@ function problemCount(record) {
   return record.problemCount;
 }
 
-function levelClass(count) {
-  if (count >= 6) return "level-4";
-  if (count >= 4) return "level-3";
-  if (count >= 2) return "level-2";
-  if (count >= 1) return "level-1";
-  return "";
-}
-
 function formatJapaneseDate(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);
   return `${year}年${month}月${day}日`;
@@ -501,6 +564,49 @@ function isValidPublicTitle(title) {
   );
 }
 
+function classificationFromMeta(meta, metaPath) {
+  const keys = ["subject", "category", "topic"];
+  const presentKeys = keys.filter((key) => Object.hasOwn(meta, key));
+
+  if (presentKeys.length === 0) return null;
+
+  if (
+    presentKeys.length !== keys.length ||
+    keys.some(
+      (key) =>
+        typeof meta[key] !== "string" ||
+        !meta[key].trim() ||
+        meta[key].length > 80 ||
+        /[\u0000-\u001f\u007f]/.test(meta[key])
+    )
+  ) {
+    throw new Error(`分類情報はsubject・category・topicをすべて指定してください: ${metaPath}`);
+  }
+
+  const subjectName = meta.subject.trim();
+  const categoryName = meta.category.trim();
+  const subject = classificationMaster.subjectByName.get(subjectName);
+
+  if (!subject) {
+    throw new Error(`分類マスターにない科目です: ${subjectName} (${metaPath})`);
+  }
+
+  const category = subject.categoryByName.get(categoryName);
+  if (!category) {
+    throw new Error(`分類マスターにない中分類です: ${subjectName} → ${categoryName} (${metaPath})`);
+  }
+
+  return {
+    subject: subjectName,
+    category: categoryName,
+    topic: meta.topic.trim(),
+    subjectShort: subject.short,
+    categoryShort: category.short,
+    subjectOrder: subject.order,
+    categoryOrder: category.order
+  };
+}
+
 function sessionTitleFromMarkdown(session, record, study) {
   if (isValidPublicTitle(session.title)) {
     return session.title.trim();
@@ -547,11 +653,15 @@ function loadStudyContent(record, study) {
     "studyId",
     "date",
     "sequence",
-    "title"
+    "title",
+    "subject",
+    "category",
+    "topic"
   ]);
 
   const expectedStudyId = `${dateKey(record.date)}-${study.number}`;
   let title;
+  let classification = null;
 
   if (fs.existsSync(metaPath)) {
     let meta;
@@ -593,6 +703,7 @@ function loadStudyContent(record, study) {
     }
 
     title = meta.title.trim();
+    classification = classificationFromMeta(meta, metaPath);
   } else {
     if (!fs.existsSync(sessionPath) && !stageSessions.f && !stageSessions.r && !retryExtraSession) {
       throw new Error(`SESSIONがありません（session.md / session-f.md / session-r.md / session-r-extra.md）: ${studyContentDir}`);
@@ -609,6 +720,7 @@ function loadStudyContent(record, study) {
     ...study,
     id: expectedStudyId,
     title,
+    classification,
     sessionMarkdown: session.markdown,
     stageSessions,
     retryExtraSession
@@ -927,6 +1039,53 @@ function currentStreak(sortedRecords) {
   return streak;
 }
 
+function compareStudiesByClassification(a, b) {
+  const first = a.classification;
+  const second = b.classification;
+
+  if (first && !second) return -1;
+  if (!first && second) return 1;
+  if (!first && !second) return a.number.localeCompare(b.number);
+
+  return (
+    first.subjectOrder - second.subjectOrder ||
+    first.categoryOrder - second.categoryOrder ||
+    first.topic.localeCompare(second.topic, "ja") ||
+    a.number.localeCompare(b.number)
+  );
+}
+
+function calendarClassificationData(record) {
+  const studies = studiesForRecord(record).sort(compareStudiesByClassification);
+  const groupMap = new Map();
+
+  for (const study of studies) {
+    const classification = study.classification;
+    const key = classification
+      ? `${classification.subject}\u0000${classification.category}`
+      : "\u0000unclassified";
+
+    if (!groupMap.has(key)) {
+      groupMap.set(key, classification
+        ? {
+            desktop: `${classification.subject}・${classification.category}`,
+            mobile: `${classification.subjectShort} ${classification.categoryShort}`
+          }
+        : { desktop: "未分類", mobile: "未" });
+    }
+  }
+
+  return {
+    summaries: [...groupMap.values()],
+    details: studies.map((study) => ({
+      path: study.classification
+        ? `${study.classification.subject} → ${study.classification.category} → ${study.classification.topic}`
+        : "未分類",
+      title: study.title
+    }))
+  };
+}
+
 /*
 月間カレンダー
 */
@@ -960,11 +1119,32 @@ function createMonthCalendar(year, month, monthRecords) {
     const record = recordMap.get(day);
 
     if (record) {
-      const count = problemCount(record);
+      const classification = calendarClassificationData(record);
+      const visibleSummaries = classification.summaries.slice(0, 2);
+      const remaining = Math.max(0, classification.summaries.length - visibleSummaries.length);
+      const detailId = `calendar-detail-${dateKey(record.date)}`;
+      const summaryHtml = visibleSummaries
+        .map(
+          (item) => `<span class="day-topic"><span class="day-topic-desktop">${escapeHtml(item.desktop)}</span><span class="day-topic-mobile">${escapeHtml(item.mobile)}</span></span>`
+        )
+        .join("");
+      const moreHtml = remaining > 0
+        ? `<span class="day-topic-more">+${remaining}</span>`
+        : "";
+      const detailHtml = classification.details
+        .map(
+          (item) => `<li><span class="calendar-detail-path">${escapeHtml(item.path)}</span><span class="calendar-detail-title">${escapeHtml(item.title)}</span></li>`
+        )
+        .join("");
+      const accessibleSummary = classification.summaries
+        .map((item) => item.desktop)
+        .join("、");
 
-      cells += `      <a href="./records/${dateKey(record.date)}/index.html" class="day-cell ${levelClass(
-        count
-      )}"><span class="day-number">${day}</span><span class="day-count">${count}問</span></a>\n`;
+      cells += `      <div class="day-cell has-record">
+        <a href="./records/${dateKey(record.date)}/index.html" class="day-link" aria-label="${day}日 ${escapeHtml(accessibleSummary)}の学習記録を開く"><span class="day-number">${day}</span><span class="day-topics">${summaryHtml}${moreHtml}</span></a>
+        <button class="day-detail-toggle" type="button" aria-expanded="false" aria-controls="${detailId}" aria-label="${day}日の分類詳細を表示">ⓘ</button>
+        <div class="calendar-detail" id="${detailId}" role="tooltip"><div class="calendar-detail-date">${escapeHtml(formatJapaneseDate(record.date))}</div><ul>${detailHtml}</ul></div>
+      </div>\n`;
     } else {
       cells += `      <div class="day-cell empty"><span class="day-number">${day}</span></div>\n`;
     }
@@ -993,6 +1173,39 @@ function someCloudsLinkStyles() {
 .some-clouds-link:hover {
   opacity: 0.82;
 }`;
+}
+
+function calendarInteractionScript() {
+  return `<script>
+(() => {
+  const closeDetails = (except = null) => {
+    document.querySelectorAll(".day-cell.detail-open").forEach((cell) => {
+      if (cell === except) return;
+      cell.classList.remove("detail-open");
+      cell.querySelector(".day-detail-toggle")?.setAttribute("aria-expanded", "false");
+    });
+  };
+
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest(".day-detail-toggle");
+
+    if (button) {
+      const cell = button.closest(".day-cell");
+      const shouldOpen = !cell.classList.contains("detail-open");
+      closeDetails(cell);
+      cell.classList.toggle("detail-open", shouldOpen);
+      button.setAttribute("aria-expanded", String(shouldOpen));
+      return;
+    }
+
+    if (!event.target.closest(".day-cell.detail-open")) closeDetails();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeDetails();
+  });
+})();
+</script>`;
 }
 
 /*
@@ -1028,15 +1241,6 @@ function createIndexPage() {
 
     <div class="calendar-grid">
 ${createMonthCalendar(year, month, monthRecords)}
-    </div>
-
-    <div class="legend">
-      <span>少</span>
-      <span class="legend-box" style="background:var(--level-1)"></span>
-      <span class="legend-box" style="background:var(--level-2)"></span>
-      <span class="legend-box" style="background:var(--level-3)"></span>
-      <span class="legend-box" style="background:var(--level-4);border-color:var(--level-4)"></span>
-      <span>多</span>
     </div>
   </section>`;
     })
@@ -1076,10 +1280,7 @@ ${gaTag()}
   --ink: #192323;
   --ink-soft: #6b7777;
   --accent: #315f63;
-  --level-1: #e8f0f0;
-  --level-2: #c9dddd;
-  --level-3: #8fb4b5;
-  --level-4: #315f63;
+  --calendar-active: #e8f0f0;
   --empty: #f5f7f7;
 }
 
@@ -1166,83 +1367,165 @@ main {
 }
 
 .day-cell {
-  height: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 0 9px;
+  position: relative;
+  height: 78px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--panel);
   color: var(--ink);
-  text-decoration: none;
   transition: 0.18s ease;
-  overflow: hidden;
 }
 
-.day-cell:not(.empty):hover {
+.day-cell.has-record {
+  background: var(--calendar-active);
+}
+
+.day-cell.has-record:hover {
   border-color: var(--accent);
   transform: translateY(-1px);
+  z-index: 5;
 }
 
 .day-cell.empty {
+  display: flex;
+  align-items: flex-start;
+  padding: 7px 9px;
   background: var(--empty);
   color: #a5adad;
+}
+
+.day-link {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 6px 28px 6px 8px;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
 }
 
 .day-number {
   font-family: "JetBrains Mono", monospace;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.25;
 }
 
-.day-count {
-  font-family: "JetBrains Mono", monospace;
+.day-topics {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.day-topic,
+.day-topic-more {
+  display: block;
+  overflow: hidden;
   font-size: 10px;
-  opacity: 0.78;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.level-1 {
-  background: var(--level-1);
+.day-topic-mobile {
+  display: none;
 }
 
-.level-2 {
-  background: var(--level-2);
+.day-topic-more {
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
 }
 
-.level-3 {
-  background: var(--level-3);
-  color: #102425;
-  border-color: #82aaaa;
-}
-
-.level-4 {
-  background: var(--level-4);
-  color: #fff;
-  border-color: var(--level-4);
-}
-
-.level-4 .day-count {
-  opacity: 0.86;
-}
-
-.legend {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-top: 9px;
+.day-detail-toggle {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
   color: var(--ink-soft);
-  font-size: 10px;
+  font: 11px/1 "Noto Sans JP", sans-serif;
+  cursor: pointer;
+  opacity: 0.72;
 }
 
-.legend-box {
-  width: 18px;
-  height: 10px;
-  border-radius: 3px;
+.day-detail-toggle:hover,
+.day-detail-toggle:focus-visible {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.calendar-detail {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  z-index: 20;
+  display: none;
+  width: min(300px, calc(100vw - 24px));
+  padding: 12px 14px;
+  transform: translateX(-50%);
   border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(25, 35, 35, 0.14);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.day-cell:hover .calendar-detail,
+.day-cell:focus-within .calendar-detail,
+.day-cell.detail-open .calendar-detail {
+  display: block;
+}
+
+.day-cell:nth-child(7n + 1) .calendar-detail {
+  left: 0;
+  transform: none;
+}
+
+.day-cell:nth-child(7n) .calendar-detail {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.calendar-detail-date {
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.calendar-detail ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendar-detail li + li {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.calendar-detail-path,
+.calendar-detail-title {
+  display: block;
+}
+
+.calendar-detail-path {
+  font-weight: 600;
+}
+
+.calendar-detail-title {
+  color: var(--ink-soft);
 }
 
 .section-divider {
@@ -1364,12 +1647,20 @@ footer {
   }
 
   .day-cell {
-    height: 42px;
-    padding: 0 6px;
+    height: 68px;
     border-radius: 6px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0;
+  }
+
+  .day-cell.empty {
+    padding: 5px;
+  }
+
+  .day-cell.has-record:hover {
+    transform: none;
+  }
+
+  .day-link {
+    padding: 5px 20px 5px 5px;
   }
 
   .day-number {
@@ -1377,9 +1668,47 @@ footer {
     line-height: 1.2;
   }
 
-  .day-count {
+  .day-topic,
+  .day-topic-more {
     font-size: 8px;
-    line-height: 1.15;
+    line-height: 1.2;
+  }
+
+  .day-topic-desktop {
+    display: none;
+  }
+
+  .day-topic-mobile {
+    display: inline;
+  }
+
+  .day-detail-toggle {
+    top: 1px;
+    right: 0;
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .calendar-detail {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-height: 48vh;
+    overflow-y: auto;
+    transform: none;
+    font-size: 12px;
+  }
+
+  .day-cell:hover .calendar-detail,
+  .day-cell:focus-within .calendar-detail {
+    display: none;
+  }
+
+  .day-cell.detail-open .calendar-detail {
+    display: block;
   }
 
   .entry-nav {
@@ -1449,6 +1778,8 @@ ${monthSections}
 <footer>
   Math Study Log © ${displayYear}
 </footer>
+
+${calendarInteractionScript()}
 
 </body>
 </html>`;
