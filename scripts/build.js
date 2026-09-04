@@ -607,6 +607,71 @@ function classificationFromMeta(meta, metaPath) {
   };
 }
 
+function extractSessionClassification(source, sourcePath) {
+  const comment = source.match(
+    /^\uFEFF?[ \t]*(?:\r?\n[ \t]*)*<!--[ \t]*\r?\n([\s\S]*?)\r?\n--[ \t]*>[ \t]*(?:\r?\n)?/
+  );
+
+  if (!comment) return { markdown: source, classification: null };
+
+  const supportedKeys = new Set(["subject", "category", "subcategory"]);
+  const values = {};
+  let hasClassificationKey = false;
+
+  for (const rawLine of comment[1].split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const pair = line.match(/^([a-z]+)[ \t]*:[ \t]*(.*)$/i);
+    if (!pair || !supportedKeys.has(pair[1].toLowerCase())) {
+      if (/^(?:subject|category|subcategory)\b/i.test(line)) {
+        throw new Error(`SESSION分類コメントの形式が不正です: ${sourcePath}`);
+      }
+      continue;
+    }
+
+    const key = pair[1].toLowerCase();
+    if (Object.hasOwn(values, key)) {
+      throw new Error(`SESSION分類コメントに重複した項目があります: ${key} (${sourcePath})`);
+    }
+
+    values[key] = pair[2].trim();
+    hasClassificationKey = true;
+  }
+
+  if (!hasClassificationKey) {
+    return { markdown: source, classification: null };
+  }
+
+  const classification = classificationFromMeta(
+    {
+      subject: values.subject,
+      category: values.category,
+      topic: values.subcategory
+    },
+    sourcePath
+  );
+
+  return {
+    markdown: source.slice(comment[0].length),
+    classification
+  };
+}
+
+function parseSessionDocument(source, sourcePath) {
+  const beforeFrontMatter = extractSessionClassification(source, sourcePath);
+  const session = parseSessionFrontMatter(beforeFrontMatter.markdown);
+  const afterFrontMatter = beforeFrontMatter.classification
+    ? { markdown: session.markdown, classification: null }
+    : extractSessionClassification(session.markdown, sourcePath);
+
+  return {
+    title: session.title,
+    markdown: afterFrontMatter.markdown,
+    classification: beforeFrontMatter.classification || afterFrontMatter.classification
+  };
+}
+
 function sessionTitleFromMarkdown(session, record, study) {
   if (isValidPublicTitle(session.title)) {
     return session.title.trim();
@@ -638,16 +703,16 @@ function loadStudyContent(record, study) {
   const sessionSource = fs.existsSync(sessionPath)
     ? fs.readFileSync(sessionPath, "utf8")
     : "";
-  const session = parseSessionFrontMatter(sessionSource);
+  const session = parseSessionDocument(sessionSource, sessionPath);
   const stageSessions = Object.fromEntries(["f", "r"].map((stage) => {
     const stagePath = path.join(studyContentDir, `session-${stage}.md`);
     return [stage, fs.existsSync(stagePath)
-      ? parseSessionFrontMatter(fs.readFileSync(stagePath, "utf8"))
+      ? parseSessionDocument(fs.readFileSync(stagePath, "utf8"), stagePath)
       : null];
   }));
   const retryExtraPath = path.join(studyContentDir, "session-r-extra.md");
   const retryExtraSession = fs.existsSync(retryExtraPath)
-    ? parseSessionFrontMatter(fs.readFileSync(retryExtraPath, "utf8"))
+    ? parseSessionDocument(fs.readFileSync(retryExtraPath, "utf8"), retryExtraPath)
     : null;
   const allowedKeys = new Set([
     "studyId",
@@ -660,8 +725,22 @@ function loadStudyContent(record, study) {
   ]);
 
   const expectedStudyId = `${dateKey(record.date)}-${study.number}`;
+  const sessionClassifications = [session, stageSessions.f, stageSessions.r, retryExtraSession]
+    .map((item) => item?.classification)
+    .filter(Boolean);
+  const classificationSignatures = new Set(
+    sessionClassifications.map(
+      (item) => `${item.subject}\u0000${item.category}\u0000${item.topic}`
+    )
+  );
+
+  if (classificationSignatures.size > 1) {
+    throw new Error(`同じ学習記録内のSESSION分類が一致しません: ${studyContentDir}`);
+  }
+
+  const sessionClassification = sessionClassifications[0] || null;
   let title;
-  let classification = null;
+  let metaClassification = null;
 
   if (fs.existsSync(metaPath)) {
     let meta;
@@ -703,7 +782,7 @@ function loadStudyContent(record, study) {
     }
 
     title = meta.title.trim();
-    classification = classificationFromMeta(meta, metaPath);
+    metaClassification = classificationFromMeta(meta, metaPath);
   } else {
     if (!fs.existsSync(sessionPath) && !stageSessions.f && !stageSessions.r && !retryExtraSession) {
       throw new Error(`SESSIONがありません（session.md / session-f.md / session-r.md / session-r-extra.md）: ${studyContentDir}`);
@@ -720,7 +799,7 @@ function loadStudyContent(record, study) {
     ...study,
     id: expectedStudyId,
     title,
-    classification,
+    classification: sessionClassification || metaClassification,
     sessionMarkdown: session.markdown,
     stageSessions,
     retryExtraSession
@@ -1175,7 +1254,87 @@ function someCloudsLinkStyles() {
 }`;
 }
 
-function calendarInteractionScript() {
+function createTableOfContents() {
+  const seenStudies = new Set();
+  const classifiedStudies = [];
+
+  for (const record of records) {
+    for (const study of studiesForRecord(record)) {
+      if (!study.classification || seenStudies.has(study.id)) continue;
+      seenStudies.add(study.id);
+      classifiedStudies.push({ record, study });
+    }
+  }
+
+  classifiedStudies.sort(
+    (a, b) =>
+      a.record.date.localeCompare(b.record.date) ||
+      a.study.number.localeCompare(b.study.number)
+  );
+
+  const subjectsHtml = classificationMaster.subjects
+    .map((subject) => {
+      const categoriesHtml = subject.categories
+        .map((category) => {
+          const categoryEntries = classifiedStudies.filter(
+            ({ study }) =>
+              study.classification.subject === subject.name &&
+              study.classification.category === category.name
+          );
+
+          if (categoryEntries.length === 0) return "";
+
+          const subcategoryMap = new Map();
+          for (const entry of categoryEntries) {
+            const subcategory = entry.study.classification.topic;
+            if (!subcategoryMap.has(subcategory)) subcategoryMap.set(subcategory, []);
+            subcategoryMap.get(subcategory).push(entry);
+          }
+
+          const subcategoriesHtml = [...subcategoryMap.entries()]
+            .sort(([a], [b]) => a.localeCompare(b, "ja"))
+            .map(([subcategory, entries]) => {
+              const articlesHtml = entries
+                .map(({ record, study }) => `
+                  <li class="toc-article">
+                    <a href="./records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/">${escapeHtml(study.title)}</a>
+                    <time datetime="${record.date}">${record.date.replace(/-/g, "/")}</time>
+                  </li>`)
+                .join("");
+
+              return `
+              <section class="toc-subcategory">
+                <h4>${escapeHtml(subcategory)}</h4>
+                <ul>${articlesHtml}
+                </ul>
+              </section>`;
+            })
+            .join("");
+
+          return `
+          <section class="toc-category">
+            <h3>${escapeHtml(category.name)}</h3>${subcategoriesHtml}
+          </section>`;
+        })
+        .join("");
+
+      const subjectContent = categoriesHtml || '<p class="toc-empty">記事はまだありません。</p>';
+
+      return `
+      <details class="toc-subject">
+        <summary>${escapeHtml(subject.name)}</summary>${subjectContent}
+      </details>`;
+    })
+    .join("");
+
+  return `
+  <section class="toc-section" id="study-toc" aria-label="科目・分野別の目次" hidden>
+    <div class="toc-list">${subjectsHtml}
+    </div>
+  </section>`;
+}
+
+function homepageInteractionScript() {
   return `<script>
 (() => {
   const closeDetails = (except = null) => {
@@ -1203,6 +1362,15 @@ function calendarInteractionScript() {
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeDetails();
+  });
+
+  const tocToggle = document.querySelector(".toc-toggle");
+  const toc = document.querySelector("#study-toc");
+
+  tocToggle?.addEventListener("click", () => {
+    const shouldOpen = toc.hasAttribute("hidden");
+    toc.toggleAttribute("hidden", !shouldOpen);
+    tocToggle.setAttribute("aria-expanded", String(shouldOpen));
   });
 })();
 </script>`;
@@ -1249,6 +1417,7 @@ ${createMonthCalendar(year, month, monthRecords)}
   const displayYear = latest
     ? latest.date.slice(0, 4)
     : new Date().getFullYear();
+  const tableOfContents = createTableOfContents();
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -1535,18 +1704,21 @@ main {
 
 .entry-nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
 .entry-card {
   display: block;
+  width: 100%;
   padding: 15px 16px 14px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--panel);
   color: var(--ink);
+  font: inherit;
   text-decoration: none;
+  cursor: pointer;
   transition: 0.18s ease;
 }
 
@@ -1569,6 +1741,97 @@ main {
   letter-spacing: 0.08em;
   color: var(--accent);
   text-align: center;
+}
+
+.toc-section {
+  margin-top: 12px;
+  padding: 8px 18px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.toc-section[hidden] {
+  display: none;
+}
+
+.toc-subject + .toc-subject {
+  border-top: 1px solid var(--line);
+}
+
+.toc-subject > summary {
+  padding: 11px 2px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toc-subject[open] > summary {
+  color: var(--accent);
+}
+
+.toc-category {
+  margin: 0 0 14px 22px;
+}
+
+.toc-category h3 {
+  margin-bottom: 7px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.toc-subcategory {
+  margin-left: 20px;
+}
+
+.toc-subcategory + .toc-subcategory {
+  margin-top: 11px;
+}
+
+.toc-subcategory h4 {
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toc-subcategory ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toc-article {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0 4px 18px;
+  font-size: 12px;
+}
+
+.toc-article a {
+  color: var(--ink);
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.toc-article a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.toc-article time {
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font: 10px/1.5 "JetBrains Mono", monospace;
+}
+
+.toc-empty {
+  margin: 0 0 12px 22px;
+  color: var(--ink-soft);
+  font-size: 12px;
 }
 
 .about-section {
@@ -1719,6 +1982,28 @@ footer {
     padding: 12px 13px;
   }
 
+  .toc-section {
+    padding: 6px 12px;
+  }
+
+  .toc-category {
+    margin-left: 14px;
+  }
+
+  .toc-subcategory {
+    margin-left: 12px;
+  }
+
+  .toc-article {
+    display: block;
+    padding-left: 10px;
+  }
+
+  .toc-article time {
+    display: block;
+    margin-top: 2px;
+  }
+
   .about-title {
     font-size: 18px;
   }
@@ -1753,7 +2038,12 @@ ${monthSections}
     <a class="entry-card" href="./question/index.html">
       <div class="entry-kicker">QUESTION</div>
     </a>
+    <button class="entry-card toc-toggle" type="button" aria-expanded="false" aria-controls="study-toc">
+      <div class="entry-kicker">目次</div>
+    </button>
   </nav>
+
+${tableOfContents}
 
   <div class="section-divider"></div>
 
@@ -1779,7 +2069,7 @@ ${monthSections}
   Math Study Log © ${displayYear}
 </footer>
 
-${calendarInteractionScript()}
+${homepageInteractionScript()}
 
 </body>
 </html>`;

@@ -403,6 +403,92 @@ test("calendar groups classifications, follows master order, and exposes respons
   assert.match(home, /classList\.toggle\("detail-open", shouldOpen\)/);
 });
 
+test("SESSION classification comments generate a master-ordered, deduplicated table of contents", (t) => {
+  const classificationComment = (subject, category, subcategory) =>
+    `<!--\nsubject: ${subject}\ncategory: ${category}\nsubcategory: ${subcategory}\n-->\n\n`;
+  const entries = [
+    ["20260820", "001", "数学III", "積分法", "定積分", "積分の記事"],
+    ["20260821", "001", "数学III", "微分法", "導関数", "微分の記事"],
+    ["20260822", "001", "数学III", "極限", "数列の極限", "極限の記事（古）"],
+    ["20260823", "001", "数学III", "極限", "関数の極限", "関数の極限の記事"],
+    ["20260824", "001", "数学III", "極限", "数列の極限", "極限の記事（新）"]
+  ];
+  const files = {};
+
+  for (const [day, number, subject, category, subcategory, title] of entries) {
+    const dir = `content/records/${day}/${number}`;
+    const comment = classificationComment(subject, category, subcategory);
+    files[`${dir}/images/${day}-${number}f-1.webp`] = title;
+    files[`${dir}/session-f.md`] = `${comment}# ${title}\n\n本文`;
+  }
+
+  const duplicateDir = "content/records/20260824/001";
+  const duplicateComment = classificationComment("数学III", "極限", "数列の極限");
+  files[`${duplicateDir}/session-r.md`] = `${duplicateComment}# RETRY補足\n\n補足本文`;
+  files[`${duplicateDir}/session-r-extra.md`] = `${duplicateComment}追加解説本文`;
+  files[`${duplicateDir}/meta.json`] = JSON.stringify({
+    studyId: "20260824-001",
+    date: "2026-08-24",
+    sequence: "001",
+    title: "極限の記事（新）",
+    subject: "数学B",
+    category: "数列",
+    topic: "漸化式"
+  });
+
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+  const toc = home.slice(home.indexOf('<section class="toc-section"'), home.indexOf('<div class="section-divider">', home.indexOf('<section class="toc-section"')));
+
+  assert.deepEqual(
+    [...toc.matchAll(/<details class="toc-subject">\s*<summary>([^<]+)<\/summary>/g)].map((match) => match[1]),
+    ["数学I", "数学A", "数学II", "数学B", "数学III", "数学C"]
+  );
+  assert.deepEqual(
+    [...home.matchAll(/<div class="entry-kicker">([^<]+)<\/div>/g)].slice(0, 4).map((match) => match[1]),
+    ["LOG", "SESSION", "QUESTION", "目次"]
+  );
+  assert.match(home, /<button class="entry-card toc-toggle" type="button" aria-expanded="false" aria-controls="study-toc">/);
+  assert.match(home, /<section class="toc-section" id="study-toc"[^>]+hidden>/);
+  assert.match(home, /\.entry-nav \{[\s\S]*grid-template-columns: repeat\(4, 1fr\);/);
+  assert.match(home, /@media \(max-width: 600px\)[\s\S]*\.entry-nav \{[\s\S]*grid-template-columns: 1fr;/);
+  assert.match(home, /toc\.toggleAttribute\("hidden", !shouldOpen\)/);
+
+  const mathThree = toc.split('<summary>数学III</summary>')[1].split('</details>')[0];
+  assert.ok(mathThree.indexOf("<h3>極限</h3>") < mathThree.indexOf("<h3>微分法</h3>"));
+  assert.ok(mathThree.indexOf("<h3>微分法</h3>") < mathThree.indexOf("<h3>積分法</h3>"));
+  assert.doesNotMatch(toc, /<h3>数列<\/h3>|<h3>図形と計量<\/h3>/);
+  assert.match(mathThree, /<h4>数列の極限<\/h4>/);
+  assert.match(mathThree, /<h4>関数の極限<\/h4>/);
+
+  const sequenceLimit = mathThree.split('<h4>数列の極限</h4>')[1].split('</section>')[0];
+  assert.ok(sequenceLimit.indexOf("極限の記事（古）") < sequenceLimit.indexOf("極限の記事（新）"));
+  assert.match(sequenceLimit, /href="\.\/records\/20260822\/001\/"/);
+  assert.match(sequenceLimit, /<time datetime="2026-08-22">2026\/08\/22<\/time>/);
+  assert.equal((toc.match(/極限の記事（新）/g) || []).length, 1);
+  assert.equal((toc.match(/href="\.\/records\/20260824\/001\/"/g) || []).length, 1);
+  assert.doesNotMatch(toc, /数学B →|<h3>数列<\/h3>/);
+
+  const article = build.read("public/records/20260824/001/index.html");
+  assert.doesNotMatch(article, /subject: 数学III|category: 極限|subcategory: 数列の極限/);
+  assert.match(article, /本文/);
+  assert.match(article, /補足本文/);
+  assert.match(article, /追加解説本文/);
+});
+
+test("build rejects conflicting classifications in one record's SESSION files", (t) => {
+  const build = fixture(t, {
+    [`${defaultImagesDir}/20260828-001f-1.webp`]: "image",
+    "content/records/20260828/001/session-f.md": "<!--\nsubject: 数学III\ncategory: 極限\nsubcategory: 数列の極限\n-->\n\n# First",
+    "content/records/20260828/001/session-r.md": "<!--\nsubject: 数学B\ncategory: 数列\nsubcategory: 漸化式\n-->\n\n# Retry"
+  });
+  const result = build.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /同じ学習記録内のSESSION分類が一致しません/);
+});
+
 for (const [label, classification, message] of [
   ["partial classification", { subject: "数学III" }, /subject・category・topicをすべて指定/],
   ["unknown subject", { subject: "数学X", category: "極限", topic: "数列の極限" }, /分類マスターにない科目/],

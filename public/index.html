@@ -314,18 +314,21 @@ main {
 
 .entry-nav {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
 .entry-card {
   display: block;
+  width: 100%;
   padding: 15px 16px 14px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--panel);
   color: var(--ink);
+  font: inherit;
   text-decoration: none;
+  cursor: pointer;
   transition: 0.18s ease;
 }
 
@@ -348,6 +351,97 @@ main {
   letter-spacing: 0.08em;
   color: var(--accent);
   text-align: center;
+}
+
+.toc-section {
+  margin-top: 12px;
+  padding: 8px 18px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.toc-section[hidden] {
+  display: none;
+}
+
+.toc-subject + .toc-subject {
+  border-top: 1px solid var(--line);
+}
+
+.toc-subject > summary {
+  padding: 11px 2px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toc-subject[open] > summary {
+  color: var(--accent);
+}
+
+.toc-category {
+  margin: 0 0 14px 22px;
+}
+
+.toc-category h3 {
+  margin-bottom: 7px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.toc-subcategory {
+  margin-left: 20px;
+}
+
+.toc-subcategory + .toc-subcategory {
+  margin-top: 11px;
+}
+
+.toc-subcategory h4 {
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.toc-subcategory ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toc-article {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0 4px 18px;
+  font-size: 12px;
+}
+
+.toc-article a {
+  color: var(--ink);
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.toc-article a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.toc-article time {
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font: 10px/1.5 "JetBrains Mono", monospace;
+}
+
+.toc-empty {
+  margin: 0 0 12px 22px;
+  color: var(--ink-soft);
+  font-size: 12px;
 }
 
 .about-section {
@@ -496,6 +590,28 @@ footer {
 
   .entry-card {
     padding: 12px 13px;
+  }
+
+  .toc-section {
+    padding: 6px 12px;
+  }
+
+  .toc-category {
+    margin-left: 14px;
+  }
+
+  .toc-subcategory {
+    margin-left: 12px;
+  }
+
+  .toc-article {
+    display: block;
+    padding-left: 10px;
+  }
+
+  .toc-article time {
+    display: block;
+    margin-top: 2px;
   }
 
   .about-title {
@@ -656,7 +772,67 @@ footer {
     <a class="entry-card" href="./question/index.html">
       <div class="entry-kicker">QUESTION</div>
     </a>
+    <button class="entry-card toc-toggle" type="button" aria-expanded="false" aria-controls="study-toc">
+      <div class="entry-kicker">目次</div>
+    </button>
   </nav>
+
+
+  <section class="toc-section" id="study-toc" aria-label="科目・分野別の目次" hidden>
+    <div class="toc-list">
+      <details class="toc-subject">
+        <summary>数学I</summary><p class="toc-empty">記事はまだありません。</p>
+      </details>
+      <details class="toc-subject">
+        <summary>数学A</summary><p class="toc-empty">記事はまだありません。</p>
+      </details>
+      <details class="toc-subject">
+        <summary>数学II</summary><p class="toc-empty">記事はまだありません。</p>
+      </details>
+      <details class="toc-subject">
+        <summary>数学B</summary><p class="toc-empty">記事はまだありません。</p>
+      </details>
+      <details class="toc-subject">
+        <summary>数学III</summary>
+          <section class="toc-category">
+            <h3>極限</h3>
+              <section class="toc-subcategory">
+                <h4>数列の極限</h4>
+                <ul>
+                  <li class="toc-article">
+                    <a href="./records/20260827/001/">数列の極限――場合分けと定義の確認</a>
+                    <time datetime="2026-08-27">2026/08/27</time>
+                  </li>
+                  <li class="toc-article">
+                    <a href="./records/20260828/001/">漸化式の固定点と数列の極限</a>
+                    <time datetime="2026-08-28">2026/08/28</time>
+                  </li>
+                  <li class="toc-article">
+                    <a href="./records/20260829/001/">不等式で極限を評価する――「十分な評価」と「足りない評価」</a>
+                    <time datetime="2026-08-29">2026/08/29</time>
+                  </li>
+                  <li class="toc-article">
+                    <a href="./records/20260903/001/">固定点が重解になる分数型漸化式</a>
+                    <time datetime="2026-09-03">2026/09/03</time>
+                  </li>
+                </ul>
+              </section>
+              <section class="toc-subcategory">
+                <h4>無限等比数列</h4>
+                <ul>
+                  <li class="toc-article">
+                    <a href="./records/20260825/001/">無限等比数列――公比を見る前に初項を見る</a>
+                    <time datetime="2026-08-25">2026/08/25</time>
+                  </li>
+                </ul>
+              </section>
+          </section>
+      </details>
+      <details class="toc-subject">
+        <summary>数学C</summary><p class="toc-empty">記事はまだありません。</p>
+      </details>
+    </div>
+  </section>
 
   <div class="section-divider"></div>
 
@@ -709,6 +885,15 @@ footer {
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeDetails();
+  });
+
+  const tocToggle = document.querySelector(".toc-toggle");
+  const toc = document.querySelector("#study-toc");
+
+  tocToggle?.addEventListener("click", () => {
+    const shouldOpen = toc.hasAttribute("hidden");
+    toc.toggleAttribute("hidden", !shouldOpen);
+    tocToggle.setAttribute("aria-expanded", String(shouldOpen));
   });
 })();
 </script>
