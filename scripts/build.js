@@ -109,14 +109,8 @@ fs.mkdirSync(imagesDir, { recursive: true });
 fs.mkdirSync(recordsDir, { recursive: true });
 fs.mkdirSync(publicQuestionDir, { recursive: true });
 
-/*
-公開LOG画像: YYYYMMDD-NNNf[-M].webp / YYYYMMDD-NNNr[-M].webp
-f = 最初の答案、r = 公開に採用した1回分の再挑戦答案。
-Mはリトライ回数ではなく画像ページ番号。1枚だけなら省略できる。
-*/
-
-const imagePattern =
-  /^(\d{4})(\d{2})(\d{2})-(\d{3})(f|r)(?:-([1-9]\d*))?\.webp$/;
+/* 公開LOG画像: YYYYMMDD-NNN-M.webp（Mは必ず1から開始） */
+const imagePattern = /^(\d{4})(\d{2})(\d{2})-(\d{3})-([1-9]\d*)\.webp$/;
 
 function isImageFile(entry) {
   return entry.isFile() && /\.(?:jpe?g|png|gif|webp|avif|bmp|tiff?|heic|svg)$/i.test(entry.name);
@@ -128,9 +122,7 @@ function validateRecordImage(file, sourcePath, expectedDate, expectedSequence) {
   if (!match) {
     throw new Error(
       `LOG画像の命名形式が不正です: ${sourcePath}\n` +
-      "形式: YYYYMMDD-NNNf[-M].webp または YYYYMMDD-NNNr[-M].webp。" +
-      "種別は小文字のf/rのみ、拡張子は.webp、Mは1以上の整数（先頭の0なし）です。" +
-      "複数ページの場合は -1 から始めてください。"
+      "形式: YYYYMMDD-NNN-M.webp。Mは1以上の整数（先頭の0なし）で、必ず-1から始めてください。"
     );
   }
 
@@ -227,25 +219,18 @@ function collectRecordImageSources() {
 const imageSources = collectRecordImageSources();
 const imageFiles = [...imageSources.keys()];
 
-// 各答案は「枝番なし1枚」または「-1から始まる複数ページ」のどちらかに統一する。
+// 各問題のLOGは必ず-1から始める。
 for (const file of imageFiles) {
   const match = file.match(imagePattern);
-  const stem = file.replace(/(?:-\d+)?\.webp$/, "");
-  const unnumbered = `${stem}.webp`;
-  const firstPage = `${stem}-1.webp`;
+  const firstPage = `${match[1]}${match[2]}${match[3]}-${match[4]}-1.webp`;
 
-  if (match[6] && !imageSources.has(firstPage)) {
+  if (!imageSources.has(firstPage)) {
     throw new Error(
       `LOG画像の1ページ目がありません: ${imageSources.get(file)}\n` +
       `必要な画像名: ${firstPage}。ページ番号はリトライ回数ではありません。`
     );
   }
 
-  if (match[6] && imageSources.has(unnumbered)) {
-    throw new Error(
-      `枝番なし画像とページ番号付き画像は併用できません: ${unnumbered} / ${file}`
-    );
-  }
 }
 
 /*
@@ -261,8 +246,7 @@ for (const file of imageFiles) {
 
   const date = `${match[1]}-${match[2]}-${match[3]}`;
   const problemNumber = Number(match[4]);
-  const imageStage = match[5];
-  const imageNumber = match[6] ? BigInt(match[6]) : 1n;
+  const imageNumber = BigInt(match[5]);
 
   if (!grouped.has(date)) {
     grouped.set(date, []);
@@ -271,8 +255,7 @@ for (const file of imageFiles) {
   grouped.get(date).push({
     file,
     problemNumber,
-    imageNumber,
-    imageStage
+    imageNumber
   });
 }
 
@@ -290,8 +273,6 @@ const records = [...grouped.entries()]
       .sort(
         (a, b) =>
           a.problemNumber - b.problemNumber ||
-          ({ f: 0, r: 1 }[a.imageStage] -
-            { f: 0, r: 1 }[b.imageStage]) ||
           (a.imageNumber < b.imageNumber ? -1 : a.imageNumber > b.imageNumber ? 1 : 0) ||
           a.file.localeCompare(b.file)
       )
@@ -344,9 +325,8 @@ function descriptionFromMarkdown(source) {
 function descriptionForStudy(study) {
   const sources = [
     study.sessionMarkdown,
-    study.stageSessions.f?.markdown,
-    study.stageSessions.r?.markdown,
-    study.retryExtraSession?.markdown
+    study.questionMarkdown,
+    study.answerMarkdown
   ];
 
   for (const source of sources) {
@@ -705,15 +685,13 @@ function loadStudyContent(record, study) {
     ? fs.readFileSync(sessionPath, "utf8")
     : "";
   const session = parseSessionDocument(sessionSource, sessionPath);
-  const stageSessions = Object.fromEntries(["f", "r"].map((stage) => {
-    const stagePath = path.join(studyContentDir, `session-${stage}.md`);
-    return [stage, fs.existsSync(stagePath)
-      ? parseSessionDocument(fs.readFileSync(stagePath, "utf8"), stagePath)
-      : null];
-  }));
-  const retryExtraPath = path.join(studyContentDir, "session-r-extra.md");
-  const retryExtraSession = fs.existsSync(retryExtraPath)
-    ? parseSessionDocument(fs.readFileSync(retryExtraPath, "utf8"), retryExtraPath)
+  const questionPath = path.join(studyContentDir, "question.md");
+  const answerPath = path.join(studyContentDir, "answer.md");
+  const question = fs.existsSync(questionPath)
+    ? parseSessionDocument(fs.readFileSync(questionPath, "utf8"), questionPath)
+    : null;
+  const answer = fs.existsSync(answerPath)
+    ? parseSessionDocument(fs.readFileSync(answerPath, "utf8"), answerPath)
     : null;
   const allowedKeys = new Set([
     "studyId",
@@ -726,7 +704,7 @@ function loadStudyContent(record, study) {
   ]);
 
   const expectedStudyId = `${dateKey(record.date)}-${study.number}`;
-  const sessionClassifications = [session, stageSessions.f, stageSessions.r, retryExtraSession]
+  const sessionClassifications = [session, question, answer]
     .map((item) => item?.classification)
     .filter(Boolean);
   const classificationSignatures = new Set(
@@ -785,15 +763,16 @@ function loadStudyContent(record, study) {
     title = meta.title.trim();
     metaClassification = classificationFromMeta(meta, metaPath);
   } else {
-    if (!fs.existsSync(sessionPath) && !stageSessions.f && !stageSessions.r && !retryExtraSession) {
-      throw new Error(`SESSIONがありません（session.md / session-f.md / session-r.md / session-r-extra.md）: ${studyContentDir}`);
-    }
+    title = sessionTitleFromMarkdown(session, record, study);
+  }
 
-    title = sessionTitleFromMarkdown(
-      fs.existsSync(sessionPath) ? session : stageSessions.f || stageSessions.r || retryExtraSession,
-      record,
-      study
-    );
+  const missingFiles = [
+    [sessionPath, "session.md"],
+    [questionPath, "question.md"],
+    [answerPath, "answer.md"]
+  ].filter(([filePath]) => !fs.existsSync(filePath));
+  if (missingFiles.length > 0) {
+    throw new Error(`新形式の必須ファイルがありません: ${missingFiles.map(([, name]) => name).join(", ")} (${studyContentDir})`);
   }
 
   return {
@@ -802,8 +781,8 @@ function loadStudyContent(record, study) {
     title,
     classification: sessionClassification || metaClassification,
     sessionMarkdown: session.markdown,
-    stageSessions,
-    retryExtraSession
+    questionMarkdown: question.markdown,
+    answerMarkdown: answer.markdown
   };
 }
 
@@ -2126,61 +2105,51 @@ ${homepageInteractionScript()}
 日別ページ
 */
 
-const studyPartLabels = { f: "教材問題", r: "オリジナル問題" };
-
-function renderStageLog(record, study, stage, inlineSessionImages = new Set()) {
-  const label = studyPartLabels[stage];
-  // 収集済み画像の順序・命名チェックは変更せず、種別だけで振り分ける。
-  const images = study.images.filter((file) => file.match(imagePattern)[5] === stage);
-  // 未登録でも左には説明文を置かず、答案画像と操作用ラベルだけを表示する。
-  return images.map((file) => {
-    const page = file.match(imagePattern)[6] || "1";
-    const alt = `${formatDotDate(record.date)} ${study.number} ${label} ページ${page}`;
-    const mobileDuplicateClass = inlineSessionImages.has(file)
-      ? " has-inline-session-image"
-      : "";
-    return `<figure class="study-sheet${mobileDuplicateClass}">
+function renderLogImage(record, study, file) {
+    const page = file.match(imagePattern)[5];
+    const alt = `${formatDotDate(record.date)} ${study.number} LOG ページ${page}`;
+    return `<figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="${escapeHtml(alt)}を拡大">
         <img class="sheet" src="./images/${encodeURIComponent(file)}" alt="${escapeHtml(alt)}" loading="lazy">
       </button>
-      <figcaption>${label} · ${page}</figcaption>
+      <figcaption>LOG · ${page}</figcaption>
     </figure>`;
-  }).join("\n");
+}
+
+function renderStudyLog(record, study) {
+  const [first, ...rest] = study.images;
+  const firstHtml = renderLogImage(record, study, first);
+  if (rest.length === 0) return firstHtml;
+
+  return `${firstHtml}
+    <details class="more-logs">
+      <summary>more</summary>
+      <div class="more-log-list">${rest.map((file) => renderLogImage(record, study, file)).join("\n")}</div>
+    </details>`;
+}
+
+function withoutFirstHeading(source) {
+  return source.replace(/^#(?!#)[ \t]+[^\r\n]+(?:\r?\n|$)/m, "").trim();
 }
 
 function studyPageStyles() {
   return `${sessionPageStyles()}
-.header-inner, main { width: min(1440px, calc(100% - 48px)); }
-.study-stage + .study-stage { margin-top: 40px; }
-.stage-heading {
-  margin-bottom: 14px;
-  color: var(--accent);
-  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
-}
-/* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
-.study-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: stretch;
-  gap: 24px;
-}
-.study-column {
+.study-flow { display: grid; gap: 28px; }
+.study-section {
   min-width: 0;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
 }
-.column-heading {
+.section-heading {
   margin-bottom: 18px;
-  color: var(--ink-soft);
-  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  color: var(--accent);
+  font: 600 13px/1.5 "JetBrains Mono", monospace;
   letter-spacing: 0.1em;
 }
-.study-column .session-content { padding: 0; border: 0; }
-.study-column .session-content > :first-child { margin-top: 0; }
-.session-content .session-log-image,
-.session-content .session-log-image-block { display: none; }
+.study-section .session-content { padding: 0; border: 0; }
+.study-section .session-content > :first-child { margin-top: 0; }
 .study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
@@ -2193,36 +2162,24 @@ function studyPageStyles() {
 .sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
 .study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
-.study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
-.legacy-note { margin-bottom: 18px; }
-.legacy-session { margin-top: 40px; }
-.retry-extra {
-  width: min(900px, 100%);
-  margin: 28px auto 0;
+.more-logs { margin-top: 18px; border-top: 1px solid var(--line); }
+.more-logs > summary {
+  padding: 14px 0 2px;
+  color: var(--accent);
+  cursor: pointer;
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
 }
-.retry-extra .session-content { padding: 0; border: 0; }
-.retry-extra .session-content > :first-child { margin-top: 0; }
+.more-log-list { padding-top: 18px; }
+.session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+.session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
 .lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
 .lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
 .lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
 @media (max-width: 900px) {
-  .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .study-column { padding: 14px; }
-  .study-column[data-column="log"].mobile-hidden,
-  .study-sheet.has-inline-session-image { display: none; }
-  .session-content .session-log-image-block {
-    display: block;
-    margin: 20px 0;
-  }
-  .session-content .session-log-image {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    margin: 0;
-  }
-  .header-inner, main { width: calc(100% - 24px); }
+  .study-flow { gap: 18px; }
+  .study-section { padding: 14px; }
 }`;
 }
 
@@ -2238,68 +2195,20 @@ function createStudyPage(record, study, view = "study") {
   const cardImageMeta = imageMetadata(imageSources.get(cardImageFile));
   const cardTitle = `${study.title} | 数学学習記録`;
   const cardDescription = descriptionForStudy(study);
-  const legacyImageReferences = showSession
-    ? sessionLogImageReferences(study.sessionMarkdown, study.images)
-    : new Set();
-  const retryExtraImageReferences = showSession
-    ? sessionLogImageReferences(
-        study.retryExtraSession?.markdown,
-        study.images
-      )
-    : new Set();
-  const legacySession = showSession && study.sessionMarkdown.trim()
-    ? `<p class="legacy-note">未分類の旧SESSIONです。対応表示にはsession-f.md（教材問題）とsession-r.md（オリジナル問題）を使用してください。</p><article class="session-content">${renderSessionMarkdown(study)}</article>`
-    : "";
-
-  // 常にパート単位の独立したグリッドを2段作る。左右を別々の縦列にしない。
-  let content = ["f", "r"].map((stage) => {
-    const label = studyPartLabels[stage];
-    const session = study.stageSessions[stage];
-    const stageImages = study.images.filter(
-      (file) => file.match(imagePattern)[5] === stage
-    );
-    const sessionContext = {
-      sessionMarkdown: session?.markdown || "",
-      images: stageImages
-    };
-    const stageImageReferences = showSession
-      ? sessionLogImageReferences(session?.markdown, stageImages)
-      : new Set();
-    const inlineSessionImages = showSession
-      ? new Set([
-          ...stageImageReferences,
-          ...legacyImageReferences,
-          ...retryExtraImageReferences
-        ].filter((file) => stageImages.includes(file)))
-      : new Set();
-    const hideMobileLogColumn =
-      stageImages.length > 0 &&
-      stageImages.every((file) => inlineSessionImages.has(file));
-    const sessionHtml = session?.markdown.trim()
-      ? renderSessionMarkdown(sessionContext)
-      : `<p class="study-empty">${label}のSESSIONはまだありません。</p>`;
-    const retryExtra = showSession && stage === "r" && study.retryExtraSession?.markdown.trim()
-      ? `<section class="retry-extra study-column" aria-label="オリジナル問題の追加SESSION">
-      <h2 class="column-heading">SESSION · EXTRA</h2>
-      <article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.retryExtraSession.markdown, images: study.images })}</article>
-    </section>`
-      : "";
-    return `<section class="study-stage" data-stage="${stage}" aria-labelledby="stage-${stage}">
-      <h2 class="stage-heading" id="stage-${stage}">${label}</h2>
-      <div class="study-pair">
-${showLog ? `        <div class="study-column${hideMobileLogColumn ? " mobile-hidden" : ""}" data-column="log"><h3 class="column-heading">LOG</h3>${renderStageLog(record, study, stage, inlineSessionImages)}</div>` : ""}
-${showSession ? `        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content">${sessionHtml}</article></div>` : ""}
-      </div>
-    </section>${retryExtra}`;
-  }).join("\n");
-  if (legacySession) {
-    // 未移行の記事は失わず別枠で保持するが、推測でいずれかのパートに割り当てない。
-    content += `<section class="legacy-session study-column" aria-label="未分類の旧SESSION"><h2 class="column-heading">SESSION · 未分類</h2>${legacySession}</section>`;
-  }
+  const sessionSection = `<section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.sessionMarkdown, images: [] })}</article></section>`;
+  const questionSection = `<section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.questionMarkdown), images: [] })}</article></section>`;
+  const logSection = `<section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2>${renderStudyLog(record, study)}</section>`;
+  const answerSource = withoutFirstHeading(study.answerMarkdown).replace(/<summary>\s*模範解答\s*<\/summary>/g, "<summary>MODEL ANSWER</summary>");
+  const answerSection = `<section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: answerSource, images: [] })}</article></section>`;
+  const content = view === "log"
+    ? `<div class="study-flow">${logSection}</div>`
+    : view === "session"
+      ? `<div class="study-flow">${sessionSection}</div>`
+      : `<div class="study-flow">${sessionSection}${questionSection}${logSection}${answerSection}</div>`;
 
   return createSimpleRecordPage({
     documentTitle: `${view === "study" ? "" : `${view.toUpperCase()} | `}${study.title} | 学習記録 ${study.number} - ${formatJapaneseDate(record.date)}`,
-    kicker: view === "study" ? "STUDY · LOG & SESSION" : view.toUpperCase(),
+    kicker: view === "study" ? "MATH STUDY LOG" : view.toUpperCase(),
     title: study.title,
     date: `${formatDotDate(record.date)} / ${study.number}`,
     actions: view === "study"
@@ -2314,7 +2223,7 @@ ${showSession ? `        <div class="study-column" data-column="session"><h3 cla
       image: cardImageUrl,
       imageMeta: cardImageMeta
     })}\n${showSession ? mathJaxHead(true) : ""}\n<link rel="canonical" href="${pageUrl}">`,
-    extraStyles: studyPageStyles() + (view === "study" ? "" : "\n.study-pair { grid-template-columns: minmax(0, 1fr); }\n.header-inner, main { max-width: 900px; }"),
+    extraStyles: studyPageStyles(),
     bodyScripts: showLog ? `<dialog class="lightbox" aria-label="答案画像の拡大">
   <button class="text-link lightbox-close" type="button">閉じる</button>
   <img alt="">
@@ -2900,8 +2809,7 @@ function createQuestionIndexPage(questions) {
 function hasCategoryContent(study, kind) {
   return kind === "log"
     ? study.images.length > 0
-    : [study.sessionMarkdown, study.stageSessions.f?.markdown, study.stageSessions.r?.markdown, study.retryExtraSession?.markdown]
-        .some((source) => Boolean(source?.trim()));
+    : Boolean(study.sessionMarkdown?.trim());
 }
 
 function createArchivePage(kind, entries) {

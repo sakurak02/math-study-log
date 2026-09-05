@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SESSION | 無限等比数列――公比を見る前に初項を見る | 学習記録 001 - 2026年8月25日</title>
+<title>LOG | 評価が正しくても、目標に届くとは限らない | 学習記録 002 - 2026年8月29日</title>
 
 
 <!-- Google tag (gtag.js) -->
@@ -18,36 +18,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<meta name="description" content="無限等比数列では、公比の収束条件だけでなく、最初に初項が 0 になる場合を確認することが大切です。">
-<meta property="og:title" content="無限等比数列――公比を見る前に初項を見る | 数学学習記録">
-<meta property="og:description" content="無限等比数列では、公比の収束条件だけでなく、最初に初項が 0 になる場合を確認することが大切です。">
-<meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260825/001/session.html">
+<meta name="description" content="001では、二項展開の二次項までを使えば目標に届きました。">
+<meta property="og:title" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
+<meta property="og:description" content="001では、二項展開の二次項までを使えば目標に届きました。">
+<meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260829/002/log.html">
 <meta property="og:type" content="article">
-<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260825/001/images/20260825-001-1.webp">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260829/002/images/20260829-002-1.webp">
 <meta property="og:image:width" content="1668">
-<meta property="og:image:height" content="2154">
+<meta property="og:image:height" content="2157">
 <meta property="og:image:type" content="image/webp">
-<meta property="og:image:alt" content="無限等比数列――公比を見る前に初項を見る | 数学学習記録">
+<meta property="og:image:alt" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
 <meta property="og:site_name" content="Math Study Log">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="無限等比数列――公比を見る前に初項を見る | 数学学習記録">
-<meta name="twitter:description" content="無限等比数列では、公比の収束条件だけでなく、最初に初項が 0 になる場合を確認することが大切です。">
-<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260825/001/images/20260825-001-1.webp">
-<meta name="twitter:image:alt" content="無限等比数列――公比を見る前に初項を見る | 数学学習記録">
-<script>
-window.MathJax = {
-  tex: {
-    inlineMath: [["\\(", "\\)"], ["$", "$"]],
-    displayMath: [["\\[", "\\]"], ["$$", "$$"]]
-  },
-  options: {
-    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
-  }
-};
-</script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260825/001/session.html">
+<meta name="twitter:title" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
+<meta name="twitter:description" content="001では、二項展開の二次項までを使えば目標に届きました。">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260829/002/images/20260829-002-1.webp">
+<meta name="twitter:image:alt" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
+
+<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260829/002/log.html">
 
 <style>
 :root {
@@ -400,38 +389,51 @@ mjx-container[display="true"] {
 
 <header>
   <div class="header-inner">
-    <div class="page-kicker">SESSION</div>
-    <h1>無限等比数列――公比を見る前に初項を見る</h1>
-<div class="page-date">2026.08.25 / 001</div>
+    <div class="page-kicker">LOG</div>
+    <h1>評価が正しくても、目標に届くとは限らない</h1>
+<div class="page-date">2026.08.29 / 002</div>
   </div>
 </header>
 
 <main>
   <nav class="page-actions" aria-label="ページメニュー">
     <a class="text-link" href="../../../index.html">TOP</a>
-    <a class="text-link" href="../../../session/index.html">SESSION 一覧</a>
+    <a class="text-link" href="../../../log/index.html">LOG 一覧</a>
     <a class="text-link" href="./index.html">学習セット全体</a>
   </nav>
 
-  <div class="study-flow"><section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content"><h1>無限等比数列――公比を見る前に初項を見る</h1>
-<h2>今日のポイント</h2>
-<p>無限等比数列では、公比の収束条件だけでなく、<strong>最初に初項が 0 になる場合を確認する</strong>ことが大切です。</p>
-<p>一般に</p>
-<p>$$
-a_n=ar^{n-1}
-$$</p>
-<p>では、$a=0$ なら全項が 0 なので、公比の値にかかわらず数列は 0 に収束します。</p>
-<p>そのうえで $a\neq0$ の場合に、公比について収束条件を調べます。</p>
-<h2>今日のつまずき</h2>
-<p>今回は、公比の条件に意識が向き、初項が 0 になる場合を独立して確認する視点が弱くなっていました。</p>
-<p>覚えておきたい順序は、</p>
-<p><strong>初項を見る → そのあと公比を見る</strong></p>
-<p>です。</p>
-<p>公式だけでなく、数列全体の構造を見ることを意識します。</p>
-</article></section></div>
+  <div class="study-flow"><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.29 002 LOG ページ1を拡大">
+        <img class="sheet" src="./images/20260829-002-1.webp" alt="2026.08.29 002 LOG ページ1" loading="lazy">
+      </button>
+      <figcaption>LOG · 1</figcaption>
+    </figure></section></div>
 </main>
 
 <footer>Math Study Log © 2026</footer>
+<dialog class="lightbox" aria-label="答案画像の拡大">
+  <button class="text-link lightbox-close" type="button">閉じる</button>
+  <img alt="">
+</dialog>
+<script>
+const lightbox = document.querySelector(".lightbox");
+document.querySelectorAll(".sheet-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    const source = button.querySelector("img");
+    const enlarged = lightbox.querySelector("img");
+    enlarged.src = source.src;
+    enlarged.alt = source.alt;
+    lightbox.showModal();
+  });
+});
+lightbox.querySelector("button").addEventListener("click", () => lightbox.close());
+lightbox.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") lightbox.close();
+});
+lightbox.addEventListener("click", (event) => {
+  if (event.target === lightbox) lightbox.close();
+});
+</script>
 
 </body>
 </html>

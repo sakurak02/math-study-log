@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LOG | 不等式で極限を評価する――「十分な評価」と「足りない評価」 | 学習記録 001 - 2026年8月29日</title>
+<title>LOG | 不等式で極限を評価する――直接比較する | 学習記録 001 - 2026年8月29日</title>
 
 
 <!-- Google tag (gtag.js) -->
@@ -18,23 +18,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<meta name="description" content="今回は、数列の極限を不等式で評価する問題に取り組んだ。">
-<meta property="og:title" content="不等式で極限を評価する――「十分な評価」と「足りない評価」 | 数学学習記録">
-<meta property="og:description" content="今回は、数列の極限を不等式で評価する問題に取り組んだ。">
+<meta name="description" content="直接極限を求めにくい数列では、不等式を使って別の式で下から評価することがあります。">
+<meta property="og:title" content="不等式で極限を評価する――直接比較する | 数学学習記録">
+<meta property="og:description" content="直接極限を求めにくい数列では、不等式を使って別の式で下から評価することがあります。">
 <meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260829/001/log.html">
 <meta property="og:type" content="article">
-<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260829/001/images/20260829-001f-1.webp">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260829/001/images/20260829-001-1.webp">
 <meta property="og:image:width" content="1668">
 <meta property="og:image:height" content="2157">
 <meta property="og:image:type" content="image/webp">
-<meta property="og:image:alt" content="不等式で極限を評価する――「十分な評価」と「足りない評価」 | 数学学習記録">
+<meta property="og:image:alt" content="不等式で極限を評価する――直接比較する | 数学学習記録">
 <meta property="og:site_name" content="Math Study Log">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="不等式で極限を評価する――「十分な評価」と「足りない評価」 | 数学学習記録">
-<meta name="twitter:description" content="今回は、数列の極限を不等式で評価する問題に取り組んだ。">
-<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260829/001/images/20260829-001f-1.webp">
-<meta name="twitter:image:alt" content="不等式で極限を評価する――「十分な評価」と「足りない評価」 | 数学学習記録">
+<meta name="twitter:title" content="不等式で極限を評価する――直接比較する | 数学学習記録">
+<meta name="twitter:description" content="直接極限を求めにくい数列では、不等式を使って別の式で下から評価することがあります。">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260829/001/images/20260829-001-1.webp">
+<meta name="twitter:image:alt" content="不等式で極限を評価する――直接比較する | 数学学習記録">
 
 <link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260829/001/log.html">
 
@@ -308,37 +308,22 @@ mjx-container[display="true"] {
   overflow-y: hidden;
   padding: 4px 0;
 }
-.header-inner, main { width: min(1440px, calc(100% - 48px)); }
-.study-stage + .study-stage { margin-top: 40px; }
-.stage-heading {
-  margin-bottom: 14px;
-  color: var(--accent);
-  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
-}
-/* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
-.study-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: stretch;
-  gap: 24px;
-}
-.study-column {
+.study-flow { display: grid; gap: 28px; }
+.study-section {
   min-width: 0;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
 }
-.column-heading {
+.section-heading {
   margin-bottom: 18px;
-  color: var(--ink-soft);
-  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  color: var(--accent);
+  font: 600 13px/1.5 "JetBrains Mono", monospace;
   letter-spacing: 0.1em;
 }
-.study-column .session-content { padding: 0; border: 0; }
-.study-column .session-content > :first-child { margin-top: 0; }
-.session-content .session-log-image,
-.session-content .session-log-image-block { display: none; }
+.study-section .session-content { padding: 0; border: 0; }
+.study-section .session-content > :first-child { margin-top: 0; }
 .study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
@@ -351,39 +336,25 @@ mjx-container[display="true"] {
 .sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
 .study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
-.study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
-.legacy-note { margin-bottom: 18px; }
-.legacy-session { margin-top: 40px; }
-.retry-extra {
-  width: min(900px, 100%);
-  margin: 28px auto 0;
+.more-logs { margin-top: 18px; border-top: 1px solid var(--line); }
+.more-logs > summary {
+  padding: 14px 0 2px;
+  color: var(--accent);
+  cursor: pointer;
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
 }
-.retry-extra .session-content { padding: 0; border: 0; }
-.retry-extra .session-content > :first-child { margin-top: 0; }
+.more-log-list { padding-top: 18px; }
+.session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+.session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
 .lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
 .lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
 .lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
 @media (max-width: 900px) {
-  .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .study-column { padding: 14px; }
-  .study-column[data-column="log"].mobile-hidden,
-  .study-sheet.has-inline-session-image { display: none; }
-  .session-content .session-log-image-block {
-    display: block;
-    margin: 20px 0;
-  }
-  .session-content .session-log-image {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    margin: 0;
-  }
-  .header-inner, main { width: calc(100% - 24px); }
+  .study-flow { gap: 18px; }
+  .study-section { padding: 14px; }
 }
-.study-pair { grid-template-columns: minmax(0, 1fr); }
-.header-inner, main { max-width: 900px; }
 
 @media (max-width: 600px) {
   .header-inner,
@@ -419,7 +390,7 @@ mjx-container[display="true"] {
 <header>
   <div class="header-inner">
     <div class="page-kicker">LOG</div>
-    <h1>不等式で極限を評価する――「十分な評価」と「足りない評価」</h1>
+    <h1>不等式で極限を評価する――直接比較する</h1>
 <div class="page-date">2026.08.29 / 001</div>
   </div>
 </header>
@@ -431,42 +402,12 @@ mjx-container[display="true"] {
     <a class="text-link" href="./index.html">学習セット全体</a>
   </nav>
 
-  <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
-      <h2 class="stage-heading" id="stage-f">教材問題</h2>
-      <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.29 001 教材問題 ページ1を拡大">
-        <img class="sheet" src="./images/20260829-001f-1.webp" alt="2026.08.29 001 教材問題 ページ1" loading="lazy">
+  <div class="study-flow"><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.29 001 LOG ページ1を拡大">
+        <img class="sheet" src="./images/20260829-001-1.webp" alt="2026.08.29 001 LOG ページ1" loading="lazy">
       </button>
-      <figcaption>教材問題 · 1</figcaption>
-    </figure>
-<figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.29 001 教材問題 ページ2を拡大">
-        <img class="sheet" src="./images/20260829-001f-2.webp" alt="2026.08.29 001 教材問題 ページ2" loading="lazy">
-      </button>
-      <figcaption>教材問題 · 2</figcaption>
-    </figure></div>
-
-      </div>
-    </section>
-<section class="study-stage" data-stage="r" aria-labelledby="stage-r">
-      <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
-      <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.29 001 オリジナル問題 ページ1を拡大">
-        <img class="sheet" src="./images/20260829-001r-1.webp" alt="2026.08.29 001 オリジナル問題 ページ1" loading="lazy">
-      </button>
-      <figcaption>オリジナル問題 · 1</figcaption>
-    </figure>
-<figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.29 001 オリジナル問題 ページ2を拡大">
-        <img class="sheet" src="./images/20260829-001r-2.webp" alt="2026.08.29 001 オリジナル問題 ページ2" loading="lazy">
-      </button>
-      <figcaption>オリジナル問題 · 2</figcaption>
-    </figure></div>
-
-      </div>
-    </section>
+      <figcaption>LOG · 1</figcaption>
+    </figure></section></div>
 </main>
 
 <footer>Math Study Log © 2026</footer>

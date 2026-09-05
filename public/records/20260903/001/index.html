@@ -18,12 +18,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<meta name="description" content="今日は、分数型の漸化式で固定点を利用する方法を確認しました。">
+<meta name="description" content="分数型の漸化式でも、まず">
 <meta property="og:title" content="固定点が重解になる分数型漸化式 | 数学学習記録">
-<meta property="og:description" content="今日は、分数型の漸化式で固定点を利用する方法を確認しました。">
+<meta property="og:description" content="分数型の漸化式でも、まず">
 <meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260903/001/">
 <meta property="og:type" content="article">
-<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260903/001/images/20260903-001f-1.webp">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260903/001/images/20260903-001-1.webp">
 <meta property="og:image:width" content="1668">
 <meta property="og:image:height" content="2157">
 <meta property="og:image:type" content="image/webp">
@@ -32,8 +32,8 @@
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="固定点が重解になる分数型漸化式 | 数学学習記録">
-<meta name="twitter:description" content="今日は、分数型の漸化式で固定点を利用する方法を確認しました。">
-<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260903/001/images/20260903-001f-1.webp">
+<meta name="twitter:description" content="分数型の漸化式でも、まず">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260903/001/images/20260903-001-1.webp">
 <meta name="twitter:image:alt" content="固定点が重解になる分数型漸化式 | 数学学習記録">
 <script>
 window.MathJax = {
@@ -319,37 +319,22 @@ mjx-container[display="true"] {
   overflow-y: hidden;
   padding: 4px 0;
 }
-.header-inner, main { width: min(1440px, calc(100% - 48px)); }
-.study-stage + .study-stage { margin-top: 40px; }
-.stage-heading {
-  margin-bottom: 14px;
-  color: var(--accent);
-  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
-}
-/* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
-.study-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: stretch;
-  gap: 24px;
-}
-.study-column {
+.study-flow { display: grid; gap: 28px; }
+.study-section {
   min-width: 0;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
 }
-.column-heading {
+.section-heading {
   margin-bottom: 18px;
-  color: var(--ink-soft);
-  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  color: var(--accent);
+  font: 600 13px/1.5 "JetBrains Mono", monospace;
   letter-spacing: 0.1em;
 }
-.study-column .session-content { padding: 0; border: 0; }
-.study-column .session-content > :first-child { margin-top: 0; }
-.session-content .session-log-image,
-.session-content .session-log-image-block { display: none; }
+.study-section .session-content { padding: 0; border: 0; }
+.study-section .session-content > :first-child { margin-top: 0; }
 .study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
@@ -362,36 +347,24 @@ mjx-container[display="true"] {
 .sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
 .study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
-.study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
-.legacy-note { margin-bottom: 18px; }
-.legacy-session { margin-top: 40px; }
-.retry-extra {
-  width: min(900px, 100%);
-  margin: 28px auto 0;
+.more-logs { margin-top: 18px; border-top: 1px solid var(--line); }
+.more-logs > summary {
+  padding: 14px 0 2px;
+  color: var(--accent);
+  cursor: pointer;
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
 }
-.retry-extra .session-content { padding: 0; border: 0; }
-.retry-extra .session-content > :first-child { margin-top: 0; }
+.more-log-list { padding-top: 18px; }
+.session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+.session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
 .lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
 .lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
 .lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
 @media (max-width: 900px) {
-  .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .study-column { padding: 14px; }
-  .study-column[data-column="log"].mobile-hidden,
-  .study-sheet.has-inline-session-image { display: none; }
-  .session-content .session-log-image-block {
-    display: block;
-    margin: 20px 0;
-  }
-  .session-content .session-log-image {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    margin: 0;
-  }
-  .header-inner, main { width: calc(100% - 24px); }
+  .study-flow { gap: 18px; }
+  .study-section { padding: 14px; }
 }
 
 @media (max-width: 600px) {
@@ -427,7 +400,7 @@ mjx-container[display="true"] {
 
 <header>
   <div class="header-inner">
-    <div class="page-kicker">STUDY · LOG &amp; SESSION</div>
+    <div class="page-kicker">MATH STUDY LOG</div>
     <h1>固定点が重解になる分数型漸化式</h1>
 <div class="page-date">2026.09.03 / 001</div>
   </div>
@@ -439,229 +412,36 @@ mjx-container[display="true"] {
     <a class="text-link" href="../index.html">2026.09.03 の学習セット</a>
   </nav>
 
-  <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
-      <h2 class="stage-heading" id="stage-f">教材問題</h2>
-      <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.09.03 001 教材問題 ページ1を拡大">
-        <img class="sheet" src="./images/20260903-001f-1.webp" alt="2026.09.03 001 教材問題 ページ1" loading="lazy">
-      </button>
-      <figcaption>教材問題 · 1</figcaption>
-    </figure></div>
-        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h1>固定点が重解になる分数型漸化式</h1>
-<h2>ポイント</h2>
-<p>今日は、分数型の漸化式で固定点を利用する方法を確認しました。</p>
-<p>まず、</p>
-<p>$$
-x=\frac{3x-4}{x-1}
-$$</p>
-<p>とおいて固定点を求めると、</p>
-<p>$$
-x^2-4x+4=0
-$$</p>
-<p>すなわち</p>
-<p>$$
-(x-2)^2=0
-$$</p>
-<p>となり、固定点は</p>
-<p>$$
-\boxed{2}
-$$</p>
-<p>です。</p>
-<p>固定点が $2$ なので、</p>
-<p>$$
-b_n=a_n-2
-$$</p>
-<p>とおきます。</p>
-<p>すると、</p>
-<p>$$
-a_{n+1}-2
-=
-\frac{3a_n-4}{a_n-1}-2
-$$</p>
-<p>より、</p>
-<p>$$
-a_{n+1}-2
-=
-\frac{a_n-2}{a_n-1}.
-$$</p>
-<p>ここで</p>
-<p>$$
-a_n-2=b_n,
-\qquad
-a_n-1=b_n+1
-$$</p>
-<p>なので、</p>
-<p>$$
-\boxed{
-b_{n+1}
-=
-\frac{b_n}{b_n+1}
-}
-$$</p>
-<p>となります。</p>
-<hr>
-<h2>逆数を取る</h2>
-<p>この形のままでは扱いにくいので、逆数を取ると、</p>
-<p>$$
-\frac1{b_{n+1}}
-=
-\frac{b_n+1}{b_n}
-$$</p>
-<p>したがって、</p>
-<p>$$
-\frac1{b_{n+1}}
-=
-1+\frac1{b_n}.
-$$</p>
-<p>よって、</p>
-<p>$$
-\left\{\frac1{b_n}\right\}
-$$</p>
-<p>は等差数列になります。</p>
-<p>初項は、</p>
-<p>$$
-b_1=a_1-2=1
-$$</p>
-<p>なので、</p>
-<p>$$
-\frac1{b_1}=1.
-$$</p>
-<p>したがって、</p>
-<p>$$
-\frac1{b_n}=n
-$$</p>
-<p>より、</p>
-<p>$$
-b_n=\frac1n.
-$$</p>
-<p>よって、</p>
-<p>$$
-\boxed{
-a_n=2+\frac1n
-}
-$$</p>
-<p>となります。</p>
-<p>したがって、</p>
-<p>$$
-\boxed{
-\lim_{n\to\infty}a_n=2
-}
-$$</p>
-<p>です。</p>
-<hr>
+  <div class="study-flow"><section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content"><h1>分数型漸化式――固定点を使って形を変える</h1>
 <h2>今日のポイント</h2>
-<p>今回の特徴は、固定点を求める方程式が</p>
-<p>$$
-(x-2)^2=0
-$$</p>
-<p>となり、固定点が1つだけだったことです。</p>
-<p>このような場合は、</p>
-<p>$$
-a_n-2
-$$</p>
-<p>のように、</p>
-<p><strong>固定点との差を見る</strong></p>
-<p>ことが第一候補になります。</p>
-<p>その結果、</p>
-<p>$$
-b_{n+1}
-=
-\frac{b_n}{b_n+1}
-$$</p>
-<p>という形になり、さらに逆数を取ることで等差数列へ変換できました。</p>
-<hr>
-<h2>つまずき・修正</h2>
-<p>今回は大きなつまずきはありませんでした。</p>
-<p>sakurak02さんは、</p>
-<ol>
-<li>固定点を求める</li>
-<li>固定点との差を取る</li>
-<li>新しい数列の漸化式を作る</li>
-<li>逆数を取る</li>
-<li>等差数列として処理する</li>
-</ol>
-<p>という流れを最後まで正しく進めることができました。</p>
-<p>特に、</p>
-<p>$$
-b_n=a_n-2
-$$</p>
-<p>とおく理由が、単なる置き換えではなく、</p>
-<p><strong>固定点 $2$ を基準にして数列を見るため</strong></p>
-<p>だと理解して進められたのが大切です。</p>
-<hr>
-<h2>補足</h2>
-<p>逆数を取るときは、</p>
-<p>$$
-b_n\neq0
-$$</p>
-<p>であることが必要です。</p>
-<p>今回は、</p>
-<p>$$
-b_1=1&gt;0
-$$</p>
-<p>であり、</p>
-<p>$$
-b_n&gt;0
-$$</p>
-<p>なら</p>
-<p>$$
-b_{n+1}
-=
-\frac{b_n}{b_n+1}&gt;0
-$$</p>
-<p>なので、すべての $n$ について</p>
-<p>$$
-b_n&gt;0
-$$</p>
-<p>です。</p>
-<p>したがって、安心して逆数を取ることができます。</p>
-<hr>
-<h2>今日のまとめ</h2>
-<p>分数型の漸化式では、まず</p>
+<p>分数型の漸化式でも、まず</p>
 <p>$$
 x=f(x)
 $$</p>
-<p>を解いて固定点を探します。</p>
-<p>今回のように固定点が重解</p>
-<p>$$
-(x-\alpha)^2=0
-$$</p>
-<p>として現れた場合は、</p>
+<p>を解いて固定点を探すことが有効です。</p>
+<p>今回は固定点が重解として1つ現れる型を扱いました。</p>
+<p>固定点を $\alpha$ とすると、</p>
 <p>$$
 a_n-\alpha
 $$</p>
-<p>という「固定点との差」を調べると、漸化式が単純になることがあります。</p>
-<p>今日は、</p>
-<p><strong>固定点を求めることが目的ではなく、その固定点を使って漸化式を変形する</strong></p>
-<p>という見方を確認しました。</p>
-</article></div>
-      </div>
-    </section>
-<section class="study-stage" data-stage="r" aria-labelledby="stage-r">
-      <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
-      <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.09.03 001 オリジナル問題 ページ1を拡大">
-        <img class="sheet" src="./images/20260903-001r-1.webp" alt="2026.09.03 001 オリジナル問題 ページ1" loading="lazy">
-      </button>
-      <figcaption>オリジナル問題 · 1</figcaption>
-    </figure>
-<figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.09.03 001 オリジナル問題 ページ2を拡大">
-        <img class="sheet" src="./images/20260903-001r-2.webp" alt="2026.09.03 001 オリジナル問題 ページ2" loading="lazy">
-      </button>
-      <figcaption>オリジナル問題 · 2</figcaption>
-    </figure></div>
-        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h1>2つの固定点から差の比をつくる</h1>
-<h2>オリジナル問題</h2>
-<p>数列 $\{a_n\}$ を</p>
+<p>という「固定点との差」を考え、そこからさらに扱いやすい数列へ変形します。</p>
+<p>今回の型では、固定点との差について得られた分数型の漸化式から<strong>逆数を取ることで等差数列へ変換する</strong>ことができました。</p>
+<h2>今日の確認</h2>
+<p>大きなつまずきはなく、</p>
+<ol>
+<li>固定点を求める</li>
+<li>固定点との差を取る</li>
+<li>新しい漸化式を作る</li>
+<li>必要なら逆数など別の変換を試す</li>
+<li>一般項・極限へ進む</li>
+</ol>
+<p>という流れを自力で使えました。</p>
+<p>また、逆数を取るときには分母が 0 でないことを確認する、という厳密さも意識しておきます。</p>
+</article></section><section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION</h2><article class="session-content"><p>数列 $\{a_n\}$ を</p>
 <p>$$
 a_1=5,
 \qquad
-a_{n+1}
-=
-\frac{5a_n-3}{a_n+1}
+a_{n+1}=\frac{5a_n-3}{a_n+1}
 \quad(n\ge1)
 $$</p>
 <p>によって定める。</p>
@@ -674,12 +454,9 @@ $$</p>
 <h3>(2)</h3>
 <p>(1)で得られた2つの解を利用して、</p>
 <p>$$
-b_n
-=
-\frac{a_n-1}{a_n-3}
+b_n=\frac{a_n-1}{a_n-3}
 $$</p>
-<p>とおく。</p>
-<p>$b_{n+1}$ を $b_n$ を用いて表せ。</p>
+<p>とおく。$b_{n+1}$ を $b_n$ を用いて表せ。</p>
 <h3>(3)</h3>
 <p>$a_n$ を $n$ の式で表せ。</p>
 <h3>(4)</h3>
@@ -689,335 +466,87 @@ $$</p>
 <p>を求めよ。</p>
 <details>
 <summary>ヒント</summary>
-<p>まず固定点を2つ求めます。</p>
-<p>そのあと、</p>
-<p>$$
-a_{n+1}-1
-$$</p>
-<p>と</p>
-<p>$$
-a_{n+1}-3
-$$</p>
-<p>を別々に計算してみます。</p>
-<p>両方に共通して現れる因子に注目してください。</p>
-</details>
-<details>
-<summary>解答・解説</summary>
-<h3>(1)</h3>
-<p>$$
-x=\frac{5x-3}{x+1}
-$$</p>
-<p>より、</p>
-<p>$$
-x(x+1)=5x-3.
-$$</p>
-<p>したがって、</p>
-<p>$$
-x^2-4x+3=0
-$$</p>
-<p>なので、</p>
-<p>$$
-(x-1)(x-3)=0.
-$$</p>
-<p>よって固定点は、</p>
-<p>$$
-\boxed{1,\ 3}
-$$</p>
-<p>です。</p>
-<hr>
-<h3>(2)</h3>
-<p>まず、</p>
-<p>$$
-a_{n+1}-1
-=
-\frac{5a_n-3}{a_n+1}-1
-$$</p>
-<p>より、</p>
-<p>$$
-a_{n+1}-1
-=
-\frac{4(a_n-1)}{a_n+1}.
-$$</p>
-<p>また、</p>
-<p>$$
-a_{n+1}-3
-=
-\frac{5a_n-3}{a_n+1}-3
-$$</p>
-<p>より、</p>
-<p>$$
-a_{n+1}-3
-=
-\frac{2(a_n-3)}{a_n+1}.
-$$</p>
-<p>したがって、</p>
-<p>$$
-\frac{a_{n+1}-1}{a_{n+1}-3}
-=
-2
-\frac{a_n-1}{a_n-3}.
-$$</p>
-<p>よって、</p>
-<p>$$
-\boxed{
-b_{n+1}=2b_n
-}
-$$</p>
-<p>です。</p>
-<hr>
-<h3>(3)</h3>
-<p>初項は、</p>
-<p>$$
-b_1
-=
-\frac{a_1-1}{a_1-3}
-=
-\frac42
-=
-2.
-$$</p>
-<p>したがって、</p>
-<p>$$
-b_n=2^n.
-$$</p>
-<p>よって、</p>
-<p>$$
-\frac{a_n-1}{a_n-3}
-=
-2^n.
-$$</p>
-<p>これを $a_n$ について解くと、</p>
-<p>$$
-a_n-1
-=
-2^n(a_n-3),
-$$</p>
-<p>$$
-a_n-1
-=
-2^na_n-3\cdot2^n.
-$$</p>
-<p>したがって、</p>
-<p>$$
-(2^n-1)a_n
-=
-3\cdot2^n-1.
-$$</p>
-<p>よって、</p>
-<p>$$
-\boxed{
-a_n
-=
-\frac{3\cdot2^n-1}{2^n-1}
-}
-$$</p>
-<p>です。</p>
-<hr>
-<h3>(4)</h3>
-<p>分子・分母を $2^n$ で割ると、</p>
-<p>$$
-a_n
-=
-\frac{3-\frac1{2^n}}
-{1-\frac1{2^n}}.
-$$</p>
-<p>$n\to\infty$ のとき、</p>
-<p>$$
-\frac1{2^n}\to0
-$$</p>
-<p>なので、</p>
-<p>$$
-\boxed{
-\lim_{n\to\infty}a_n=3
-}
-$$</p>
-<p>となります。</p>
-</details>
-<hr>
-<h2>今日の発見</h2>
-<p>この問題では固定点が、</p>
-<p>$$
-1,\ 3
-$$</p>
-<p>の2つありました。</p>
-<p>sakurak02さんは問題文の誘導を見ずに、</p>
-<p>$$
-a_{n+1}-1
-$$</p>
-<p>と</p>
-<p>$$
-a_{n+1}-3
-$$</p>
-<p>をそれぞれ計算しました。</p>
-<p>すると、</p>
-<p>$$
-a_{n+1}-1
-=
-\frac{4(a_n-1)}{a_n+1},
-$$</p>
-<p>$$
-a_{n+1}-3
-=
-\frac{2(a_n-3)}{a_n+1}
-$$</p>
-<p>となりました。</p>
-<p>ここで両式に共通する</p>
-<p>$$
-a_n+1
-$$</p>
-<p>に注目し、2式を割ることで、</p>
-<p>$$
-\frac{a_{n+1}-1}{a_{n+1}-3}
-=
-2
-\frac{a_n-1}{a_n-3}
-$$</p>
-<p>を得ました。</p>
-<p>つまり、</p>
-<p>$$
-\frac{a_n-1}{a_n-3}
-$$</p>
-<p>という「2つの固定点からの差の比」が等比数列になります。</p>
-<hr>
-<h2>今日のポイント</h2>
-<p>固定点が</p>
-<p>$$
-\alpha,\ \beta
-$$</p>
-<p>の2つあるときは、</p>
-<p>$$
-a_n-\alpha,
-\qquad
-a_n-\beta
-$$</p>
-<p>をそれぞれ調べることが有効です。</p>
-<p>その結果、共通する因子が現れれば、</p>
-<p>$$
-\boxed{
-\frac{a_n-\alpha}{a_n-\beta}
-}
-$$</p>
-<p>という比を取ることで、漸化式が単純になる場合があります。</p>
-<p>今日は、</p>
-<p>$$
-\text{固定点を2つ求める}
-$$</p>
-<p>$$
-\downarrow
-$$</p>
-<p>$$
-a_n-\alpha,
-\qquad
-a_n-\beta
-$$</p>
-<p>を調べる</p>
-<p>$$
-\downarrow
-$$</p>
-<p>共通因子を見つける</p>
-<p>$$
-\downarrow
-$$</p>
-<p>2式を割る</p>
-<p>$$
-\downarrow
-$$</p>
-<p>等比数列にする</p>
-<p>という流れを、自力でたどることができました。</p>
-<hr>
-<h2>つまずき・修正</h2>
-<p>今回は大きなつまずきはありませんでした。</p>
-<p>特に重要だったのは、問題文に用意していた</p>
-<p>$$
-b_n
-=
-\frac{a_n-1}{a_n-3}
-$$</p>
-<p>という誘導を見ずに、</p>
-<p>自分で</p>
+<p>固定点を2つ求めたあと、</p>
 <p>$$
 a_{n+1}-1,
 \qquad
 a_{n+1}-3
 $$</p>
-<p>を計算し、その比を取る発想に到達したことです。</p>
-<p>これは、</p>
-<p><strong>「固定点が2つあるから、両方から引いてみる」</strong></p>
-<p>という考え方が、自分の中で使える形になり始めていることを示しています。</p>
-<hr>
-<h2>補足</h2>
-<p>途中では、</p>
+<p>を別々に計算する。</p>
+<p>共通する因子に注目し、2式の比を考える。</p>
+</details>
+</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.09.03 001 LOG ページ1を拡大">
+        <img class="sheet" src="./images/20260903-001-1.webp" alt="2026.09.03 001 LOG ページ1" loading="lazy">
+      </button>
+      <figcaption>LOG · 1</figcaption>
+    </figure>
+    <details class="more-logs">
+      <summary>more</summary>
+      <div class="more-log-list"><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.09.03 001 LOG ページ2を拡大">
+        <img class="sheet" src="./images/20260903-001-2.webp" alt="2026.09.03 001 LOG ページ2" loading="lazy">
+      </button>
+      <figcaption>LOG · 2</figcaption>
+    </figure></div>
+    </details></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>この問題では固定点が2つ現れます。</p>
+<p>固定点を $\alpha,\beta$ とすると、</p>
 <p>$$
-a_n-3
+a_n-\alpha,
+\qquad
+a_n-\beta
 $$</p>
-<p>で割る操作が入ります。</p>
-<p>したがって厳密には、</p>
-<p>$$
-a_n\neq3
-$$</p>
-<p>であることを確認しておく必要があります。</p>
-<p>今回得られた一般項から、</p>
-<p>$$
-a_n-3
-=
-\frac{2}{2^n-1}
-$$</p>
-<p>なので、</p>
-<p>$$
-a_n-3&gt;0.
-$$</p>
-<p>したがって、</p>
-<p>$$
-a_n\neq3
-$$</p>
-<p>であり、途中の割り算にも問題はありません。</p>
-<hr>
-<h2>FIRST SESSIONとのつながり</h2>
-<p>FIRST SESSIONでは、固定点が重解</p>
-<p>$$
-(x-2)^2=0
-$$</p>
-<p>となり、</p>
-<p>$$
-a_n-2
-$$</p>
-<p>という「1つの固定点との差」を利用しました。</p>
-<p>今回のRETRY SESSIONでは、</p>
-<p>$$
-(x-1)(x-3)=0
-$$</p>
-<p>と異なる2つの固定点が現れたため、</p>
-<p>$$
-\frac{a_n-1}{a_n-3}
-$$</p>
-<p>という「2つの固定点からの差の比」を利用しました。</p>
-<p>並べると、</p>
-<h3>固定点が1つ</h3>
-<p>$$
-a_n-\alpha
-$$</p>
-<p>を見る。</p>
-<h3>固定点が2つ</h3>
+<p>をそれぞれ調べ、共通因子が現れたら</p>
 <p>$$
 \frac{a_n-\alpha}{a_n-\beta}
 $$</p>
-<p>を疑う。</p>
-<p>という違いが見えてきます。</p>
-<p>ただし公式として覚えるより、</p>
-<p><strong>固定点から引いてみる → 共通因子を探す → 必要なら比を取る</strong></p>
-<p>という流れで考える方が、未知の問題にも応用しやすくなります。</p>
-<hr>
-<h2>今日のまとめ</h2>
-<p>今日は、</p>
-<p><strong>固定点を求めたあと、その固定点をどう使うか</strong></p>
-<p>という部分を一段深く練習しました。</p>
-<p>固定点が1つなら「差」、</p>
-<p>固定点が2つなら「差の比」</p>
-<p>という見方がつながり、</p>
-<p>さらに今回は、その変形を誘導なしで自力で見つけることができました。</p>
-</article></div>
-      </div>
-    </section>
+<p>という<strong>差の比</strong>を考えるのがポイントです。</p>
+<p>今回はこの比が等比数列になります。</p>
+<p>固定点が1つの型で「差」を見たことから、固定点が2つの型では「差の比」へ進む、というつながりが見えます。</p>
+<details>
+<summary>MODEL ANSWER</summary>
+<p>(1)</p>
+<p>$$
+x=\frac{5x-3}{x+1}
+$$</p>
+<p>より</p>
+<p>$$
+x^2-4x+3=0,
+$$</p>
+<p>したがって</p>
+<p>$$
+\boxed{x=1,3}.
+$$</p>
+<p>(2)</p>
+<p>$$
+a_{n+1}-1=\frac{4(a_n-1)}{a_n+1},
+$$</p>
+<p>$$
+a_{n+1}-3=\frac{2(a_n-3)}{a_n+1}.
+$$</p>
+<p>よって</p>
+<p>$$
+\frac{a_{n+1}-1}{a_{n+1}-3}
+=2\frac{a_n-1}{a_n-3},
+$$</p>
+<p>したがって</p>
+<p>$$
+\boxed{b_{n+1}=2b_n}.
+$$</p>
+<p>(3) $b_1=2$ より $b_n=2^n$。したがって</p>
+<p>$$
+\frac{a_n-1}{a_n-3}=2^n.
+$$</p>
+<p>これを解くと</p>
+<p>$$
+\boxed{a_n=\frac{3\cdot2^n-1}{2^n-1}}.
+$$</p>
+<p>(4)</p>
+<p>$$
+\boxed{\lim_{n\to\infty}a_n=3}.
+$$</p>
+</details>
+</article></section></div>
 </main>
 
 <footer>Math Study Log © 2026</footer>

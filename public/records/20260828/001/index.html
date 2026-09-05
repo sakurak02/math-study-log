@@ -18,22 +18,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<meta name="description" content="今日は、隣接2項間の漸化式から数列の極限を求める問題を学習しました。">
+<meta name="description" content="一次の漸化式">
 <meta property="og:title" content="漸化式の固定点と数列の極限 | 数学学習記録">
-<meta property="og:description" content="今日は、隣接2項間の漸化式から数列の極限を求める問題を学習しました。">
+<meta property="og:description" content="一次の漸化式">
 <meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260828/001/">
 <meta property="og:type" content="article">
-<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260828/001/images/20260828-001f-1.webp">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260828/001/images/20260828-001-1.webp">
 <meta property="og:image:width" content="1668">
-<meta property="og:image:height" content="2154">
+<meta property="og:image:height" content="2157">
 <meta property="og:image:type" content="image/webp">
 <meta property="og:image:alt" content="漸化式の固定点と数列の極限 | 数学学習記録">
 <meta property="og:site_name" content="Math Study Log">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="漸化式の固定点と数列の極限 | 数学学習記録">
-<meta name="twitter:description" content="今日は、隣接2項間の漸化式から数列の極限を求める問題を学習しました。">
-<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260828/001/images/20260828-001f-1.webp">
+<meta name="twitter:description" content="一次の漸化式">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260828/001/images/20260828-001-1.webp">
 <meta name="twitter:image:alt" content="漸化式の固定点と数列の極限 | 数学学習記録">
 <script>
 window.MathJax = {
@@ -319,37 +319,22 @@ mjx-container[display="true"] {
   overflow-y: hidden;
   padding: 4px 0;
 }
-.header-inner, main { width: min(1440px, calc(100% - 48px)); }
-.study-stage + .study-stage { margin-top: 40px; }
-.stage-heading {
-  margin-bottom: 14px;
-  color: var(--accent);
-  font: 600 18px/1.5 "Noto Sans JP", sans-serif;
-}
-/* 固定の2列。高さは長い側に合わせ、次の段をその下へ配置する。 */
-.study-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: stretch;
-  gap: 24px;
-}
-.study-column {
+.study-flow { display: grid; gap: 28px; }
+.study-section {
   min-width: 0;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
 }
-.column-heading {
+.section-heading {
   margin-bottom: 18px;
-  color: var(--ink-soft);
-  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  color: var(--accent);
+  font: 600 13px/1.5 "JetBrains Mono", monospace;
   letter-spacing: 0.1em;
 }
-.study-column .session-content { padding: 0; border: 0; }
-.study-column .session-content > :first-child { margin-top: 0; }
-.session-content .session-log-image,
-.session-content .session-log-image-block { display: none; }
+.study-section .session-content { padding: 0; border: 0; }
+.study-section .session-content > :first-child { margin-top: 0; }
 .study-sheet + .study-sheet { margin-top: 24px; }
 .sheet-button {
   display: block;
@@ -362,36 +347,24 @@ mjx-container[display="true"] {
 .sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
 .study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
-.study-empty, .legacy-note { color: var(--ink-soft); font-size: 13px; }
-.legacy-note { margin-bottom: 18px; }
-.legacy-session { margin-top: 40px; }
-.retry-extra {
-  width: min(900px, 100%);
-  margin: 28px auto 0;
+.more-logs { margin-top: 18px; border-top: 1px solid var(--line); }
+.more-logs > summary {
+  padding: 14px 0 2px;
+  color: var(--accent);
+  cursor: pointer;
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
 }
-.retry-extra .session-content { padding: 0; border: 0; }
-.retry-extra .session-content > :first-child { margin-top: 0; }
+.more-log-list { padding-top: 18px; }
+.session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+.session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
 .lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
 .lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
 .lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
 @media (max-width: 900px) {
-  .study-pair { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  .study-column { padding: 14px; }
-  .study-column[data-column="log"].mobile-hidden,
-  .study-sheet.has-inline-session-image { display: none; }
-  .session-content .session-log-image-block {
-    display: block;
-    margin: 20px 0;
-  }
-  .session-content .session-log-image {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    margin: 0;
-  }
-  .header-inner, main { width: calc(100% - 24px); }
+  .study-flow { gap: 18px; }
+  .study-section { padding: 14px; }
 }
 
 @media (max-width: 600px) {
@@ -427,7 +400,7 @@ mjx-container[display="true"] {
 
 <header>
   <div class="header-inner">
-    <div class="page-kicker">STUDY · LOG &amp; SESSION</div>
+    <div class="page-kicker">MATH STUDY LOG</div>
     <h1>漸化式の固定点と数列の極限</h1>
 <div class="page-date">2026.08.28 / 001</div>
   </div>
@@ -439,76 +412,35 @@ mjx-container[display="true"] {
     <a class="text-link" href="../index.html">2026.08.28 の学習セット</a>
   </nav>
 
-  <section class="study-stage" data-stage="f" aria-labelledby="stage-f">
-      <h2 class="stage-heading" id="stage-f">教材問題</h2>
-      <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.28 001 教材問題 ページ1を拡大">
-        <img class="sheet" src="./images/20260828-001f-1.webp" alt="2026.08.28 001 教材問題 ページ1" loading="lazy">
-      </button>
-      <figcaption>教材問題 · 1</figcaption>
-    </figure></div>
-        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h1>漸化式の固定点と数列の極限</h1>
-<p>今日は、隣接2項間の漸化式から数列の極限を求める問題を学習しました。</p>
+  <div class="study-flow"><section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content"><h1>漸化式の固定点と数列の極限</h1>
 <h2>今日のポイント</h2>
-<p>漸化式が</p>
+<p>一次の漸化式</p>
 <p>$$
 a_{n+1}=pa_n+q
 $$</p>
-<p>の形で与えられたとき、</p>
+<p>では、固定点 $x$ を</p>
 <p>$$
 x=px+q
 $$</p>
-<p>を満たす値 $x$ を求めます。</p>
-<p>この $x$ を使うと、</p>
+<p>から求めると、</p>
 <p>$$
 a_{n+1}-x=p(a_n-x)
 $$</p>
-<p>となるため、数列 $\{a_n-x\}$ を等比数列として扱うことができます。</p>
-<hr>
-<h2>教材問題での確認</h2>
-<p>sakurak02さんは今回は迷うことなく、</p>
+<p>となります。</p>
+<p>したがって、$\{a_n-x\}$ を等比数列として扱えます。</p>
+<p>今回は、</p>
 <ol>
 <li>固定点を求める</li>
-<li>$a_n$ から固定点を引く</li>
-<li>等比数列の形にする</li>
+<li>固定点との差を取る</li>
+<li>等比数列にする</li>
 <li>一般項を求める</li>
 <li>極限を求める</li>
 </ol>
-<p>という流れで解くことができました。</p>
-<p>特に、</p>
-<p>$$
-|p|&lt;1
-$$</p>
-<p>なら</p>
-<p>$$
-p^n\to0
-$$</p>
-<p>となるため、</p>
-<p>$$
-a_n\to x
-$$</p>
-<p>となることを確認しました。</p>
-<p>公比が負の場合でも、</p>
-<p>$$
-|p|&lt;1
-$$</p>
-<p>であれば、固定点の上下を行き来しながらその値へ近づいていきます。</p>
-<hr>
-</article></div>
-      </div>
-    </section>
-<section class="study-stage" data-stage="r" aria-labelledby="stage-r">
-      <h2 class="stage-heading" id="stage-r">オリジナル問題</h2>
-      <div class="study-pair">
-        <div class="study-column" data-column="log"><h3 class="column-heading">LOG</h3><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.28 001 オリジナル問題 ページ1を拡大">
-        <img class="sheet" src="./images/20260828-001r-1.webp" alt="2026.08.28 001 オリジナル問題 ページ1" loading="lazy">
-      </button>
-      <figcaption>オリジナル問題 · 1</figcaption>
-    </figure></div>
-        <div class="study-column" data-column="session"><h3 class="column-heading">SESSION</h3><article class="session-content"><h2>オリジナル問題</h2>
-<p>数列 $\{a_n\}$ が</p>
+<p>という流れを迷わず使うことができました。</p>
+<h2>今日の確認</h2>
+<p>$|p|&lt;1$ なら、固定点との差が 0 に近づくので $a_n\to x$ となります。</p>
+<p>公比が負でも、絶対値が 1 未満なら固定点の上下を行き来しながら近づきます。</p>
+</article></section><section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION</h2><article class="session-content"><p>数列 $\{a_n\}$ が</p>
 <p>$$
 a_1=2,
 \qquad
@@ -522,106 +454,47 @@ $$</p>
 <p>$$
 a_{n+1}=pa_n+q
 $$</p>
-<p>の形に直してみます。</p>
-<p>次に、固定点 $x$ を</p>
-<p>$$
-x=px+q
-$$</p>
-<p>から求めます。</p>
+<p>の形に直す。</p>
+<p>次に固定点を求め、$a_n$ との差を考える。</p>
 </details>
+</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.08.28 001 LOG ページ1を拡大">
+        <img class="sheet" src="./images/20260828-001-1.webp" alt="2026.08.28 001 LOG ページ1" loading="lazy">
+      </button>
+      <figcaption>LOG · 1</figcaption>
+    </figure></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>固定点を求めて差を取ると、固定点との差が等比数列になります。</p>
+<p>この問題では、さらに<strong>初項がすでに固定点と一致している</strong>ことが特徴です。</p>
+<p>初項が固定点なら、その後もずっと固定点にとどまります。つまり「固定点は最後に近づく値」だけでなく、最初からそこにいる場合もあります。</p>
 <details>
-<summary>解答・解説</summary>
+<summary>MODEL ANSWER</summary>
 <p>漸化式を変形すると、</p>
 <p>$$
-a_{n+1}
-=-\frac13a_n+\frac83
+a_{n+1}=-\frac13a_n+\frac83.
 $$</p>
-<p>となります。</p>
-<p>固定点を $x$ とすると、</p>
+<p>固定点 $x$ は</p>
 <p>$$
 x=-\frac13x+\frac83
 $$</p>
-<p>より、</p>
-<p>$$
-3x=-x+8
-$$</p>
-<p>$$
-4x=8
-$$</p>
+<p>より $x=2$。</p>
 <p>したがって、</p>
 <p>$$
-x=2
+a_{n+1}-2=-\frac13(a_n-2).
 $$</p>
-<p>です。</p>
-<p>そこで、</p>
-<p>$$
-a_{n+1}-2
-=-\frac13(a_n-2)
-$$</p>
-<p>となります。</p>
-<p>したがって、数列 $\{a_n-2\}$ は公比 $-\frac13$ の等比数列です。</p>
-<p>ところが初項は</p>
-<p>$$
-a_1-2=2-2=0
-$$</p>
-<p>です。</p>
-<p>よって、</p>
-<p>$$
-a_n-2
-=
-0\left(-\frac13\right)^{n-1}
-=0
-$$</p>
-<p>となるため、</p>
-<p>$$
-\boxed{a_n=2}
-$$</p>
-<p>です。</p>
-<p>したがって、</p>
-<p>$$
-\boxed{\lim_{n\to\infty}a_n=2}
-$$</p>
-<p>となります。</p>
-</details>
-<hr>
-<h2>今日のつまずき</h2>
-<p>この問題では、</p>
+<p>ところが</p>
 <p>$$
 a_1-2=0
 $$</p>
-<p>となったため、</p>
-<p>「初項が0の等比数列でよいのか？」</p>
-<p>というところで少し迷いました。</p>
-<p>しかし、</p>
+<p>なので、すべての $n$ について $a_n-2=0$。</p>
+<p>よって</p>
 <p>$$
-a_{n+1}-2=-\frac13(a_n-2)
+\boxed{a_n=2}
 $$</p>
-<p>で初項が0なら、その後もずっと0です。</p>
-<p>つまり、</p>
+<p>であり、</p>
 <p>$$
-a_1=2,\quad a_2=2,\quad a_3=2,\quad\ldots
+\boxed{\lim_{n\to\infty}a_n=2}.
 $$</p>
-<p>となり、元の数列そのものが</p>
-<p>$$
-2,2,2,\ldots
-$$</p>
-<p>という定数列になります。</p>
-<p>実際、</p>
-<p>$$
-3\cdot2+2=8
-$$</p>
-<p>なので、元の漸化式も満たしています。</p>
-<hr>
-<h2>今日の発見</h2>
-<p>固定点とは、単に「数列が最後に近づいていく値」とは限りません。</p>
-<p>初項がすでに固定点と一致していれば、数列は最初からその値にとどまります。</p>
-<p>$$
-\boxed{\text{初項＝固定点なら、数列は最初から固定点にいる}}
-$$</p>
-<p>今回の問題では、このことを具体的に確認できました。</p>
-</article></div>
-      </div>
-    </section>
+</details>
+</article></section></div>
 </main>
 
 <footer>Math Study Log © 2026</footer>
