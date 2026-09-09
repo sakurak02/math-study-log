@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>連立漸化式、5つの解法に見えたものが2つに整理された日 | 学習記録 001 - 2026年9月8日</title>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LTZZZFVRKP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LTZZZFVRKP');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="description" content="連立漸化式には、いくつもの解法があるように見えます。">
+<meta property="og:title" content="連立漸化式、5つの解法に見えたものが2つに整理された日 | 数学学習記録">
+<meta property="og:description" content="連立漸化式には、いくつもの解法があるように見えます。">
+<meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260908/001/">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260908/001/images/20260908-001-1.webp">
+<meta property="og:image:width" content="1668">
+<meta property="og:image:height" content="2157">
+<meta property="og:image:type" content="image/webp">
+<meta property="og:image:alt" content="連立漸化式、5つの解法に見えたものが2つに整理された日 | 数学学習記録">
+<meta property="og:site_name" content="Math Study Log">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="連立漸化式、5つの解法に見えたものが2つに整理された日 | 数学学習記録">
+<meta name="twitter:description" content="連立漸化式には、いくつもの解法があるように見えます。">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260908/001/images/20260908-001-1.webp">
+<meta name="twitter:image:alt" content="連立漸化式、5つの解法に見えたものが2つに整理された日 | 数学学習記録">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [["\\(", "\\)"], ["$", "$"]],
+    displayMath: [["\\[", "\\]"], ["$$", "$$"]]
+  },
+  options: {
+    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260908/001/">
+
+<style>
+:root {
+  --bg: #fbfcfc;
+  --panel: #ffffff;
+  --line: #dfe7e7;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --accent: #315f63;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans JP", sans-serif;
+  line-height: 1.7;
+}
+
+.some-clouds-link {
+  position: absolute;
+  top: 3px;
+  left: 12px;
+  z-index: 2;
+  color: #000;
+  font: 400 10px/1.2 "JetBrains Mono", monospace;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  opacity: 0.62;
+}
+
+.some-clouds-link:hover {
+  opacity: 0.82;
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.header-inner,
+main {
+  width: min(900px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.header-inner {
+  padding: 22px 0 16px;
+}
+
+.page-kicker,
+.page-date,
+.record-number {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.page-kicker {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+h1 {
+  margin-top: 3px;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.page-date {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+main {
+  min-height: calc(100vh - 164px);
+  padding: 24px 0 42px;
+}
+
+.page-actions,
+.record-links,
+.day-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.page-actions {
+  margin-bottom: 24px;
+}
+
+.text-link {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--accent);
+  text-decoration: none;
+  font: 600 11px/1.3 "JetBrains Mono", monospace;
+}
+
+.text-link:hover {
+  border-color: var(--accent);
+}
+
+.record-list {
+  border-top: 1px solid var(--line);
+}
+
+.record-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.record-number {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.record-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.record-links .text-link {
+  min-height: 32px;
+}
+
+.day-navigation {
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.session-shell {
+  min-height: 160px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.move-notice {
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.move-notice .text-link {
+  margin-top: 16px;
+}
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 18px 24px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  text-align: center;
+  font-size: 11px;
+}
+.session-content {
+  padding: 4px 0 24px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+
+.session-content > *:first-child {
+  margin-top: 22px;
+}
+
+.session-content h2 {
+  margin: 34px 0 14px;
+  color: var(--accent);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.session-content h3 {
+  margin: 26px 0 10px;
+  font-size: 15px;
+}
+
+.session-content p,
+.session-content ul,
+.session-content ol,
+.session-content blockquote,
+.session-content pre,
+.session-content table {
+  margin: 0 0 18px;
+}
+
+.session-content ul,
+.session-content ol {
+  padding-left: 1.5em;
+}
+
+.session-content blockquote {
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink-soft);
+}
+
+.session-content pre {
+  max-width: 100%;
+  padding: 13px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  font: 12px/1.7 "JetBrains Mono", monospace;
+}
+
+.session-content code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.session-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.session-content th,
+.session-content td {
+  min-width: 120px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.session-content th {
+  background: #e8f0f0;
+}
+
+.session-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 20px auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.session-content a {
+  color: var(--accent);
+}
+
+mjx-container[display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+.study-flow { display: grid; gap: 28px; }
+.study-section {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.section-heading {
+  margin-bottom: 18px;
+  color: var(--accent);
+  font: 600 13px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+}
+.study-section .session-content { padding: 0; border: 0; }
+.study-section .session-content > :first-child { margin-top: 0; }
+.study-sheet + .study-sheet { margin-top: 24px; }
+.sheet-button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: var(--panel);
+  cursor: zoom-in;
+}
+.sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
+.more-logs { margin-top: 18px; border-top: 1px solid var(--line); }
+.more-logs > summary {
+  padding: 14px 0 2px;
+  color: var(--accent);
+  cursor: pointer;
+  font: 600 12px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
+}
+.more-log-list { padding-top: 18px; }
+.session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+.session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
+.lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
+.lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
+.lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
+.lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
+@media (max-width: 900px) {
+  .study-flow { gap: 18px; }
+  .study-section { padding: 14px; }
+}
+
+@media (max-width: 600px) {
+  .header-inner,
+  main {
+    width: calc(100% - 24px);
+  }
+
+  .header-inner {
+    padding: 17px 0 13px;
+  }
+
+  h1 {
+    font-size: 21px;
+  }
+
+  main {
+    padding-top: 19px;
+  }
+
+  .record-item {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 16px 1px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<a class="some-clouds-link" href="https://sakurak02.github.io/some-clouds/">some clouds</a>
+
+<header>
+  <div class="header-inner">
+    <div class="page-kicker">MATH STUDY LOG</div>
+    <h1>連立漸化式、5つの解法に見えたものが2つに整理された日</h1>
+<div class="page-date">2026.09.08 / 001</div>
+  </div>
+</header>
+
+<main>
+  <nav class="page-actions" aria-label="ページメニュー">
+    <a class="text-link" href="../../../index.html">TOP</a>
+    <a class="text-link" href="../index.html">2026.09.08 の学習セット</a>
+  </nav>
+
+  <div class="study-flow"><section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content"><h1>連立漸化式、5つの解法に見えたものが2つに整理された日</h1>
+<h2>今日のテーマ</h2>
+<p>連立漸化式には、いくつもの解法があるように見えます。</p>
+<p>今回、sakurak02さんが最初に戸惑ったのは、</p>
+<p><strong>「似たような連立漸化式なのに、解説によって使っている方法が違う。最初に何を使えばいいのかわからない」</strong></p>
+<p>という点でした。</p>
+<p>実際に複数の解法を紙で試していくと、全部が別々の技ではなく、大きく2つの入口に整理できることが見えてきました。</p>
+<hr>
+<h2>つまずき1｜解法が多すぎて、何を選べばいいかわからない</h2>
+<p>連立漸化式を解く方法として、今回出てきたのは次のようなものでした。</p>
+<ul>
+<li>2つの数列をうまく組み合わせて等比数列を作る</li>
+<li>その等比数列を2本作って連立する</li>
+<li>等比数列を1本だけ作り、残った漸化式を解く</li>
+<li>一方の数列を消去して3項間漸化式にする</li>
+<li>3項間漸化式を異なる2根や重解として処理する</li>
+</ul>
+<p>最初は、これらが全部独立した「別解」に見えました。</p>
+<p>しかし整理すると、入口は大きく2つしかありません。</p>
+<h3>入口A｜線形結合を作る</h3>
+<p>$$
+a_n+\alpha b_n
+$$</p>
+<p>の形を作り、これが等比数列になるような $\alpha$ を探します。</p>
+<p>つまり、</p>
+<p>$$
+a_{n+1}+\alpha b_{n+1}
+=
+\beta(a_n+\alpha b_n)
+$$</p>
+<p>となる $\alpha,\beta$ を求めます。</p>
+<p>ここから、</p>
+<ul>
+<li>独立したものが2本作れれば、その2本を連立する</li>
+<li>1本だけ利用して、残りを1次の漸化式として求める</li>
+</ul>
+<p>という枝分かれがあります。</p>
+<h3>入口B｜一方を消去する</h3>
+<p>$a_n$ または $b_n$ を消去して、</p>
+<p>$$
+b_{n+2}+pb_{n+1}+qb_n=0
+$$</p>
+<p>のような隣接3項間漸化式にします。</p>
+<p>その後、特性方程式を使って処理します。</p>
+<hr>
+<h2>つまずき2｜「2本作れる場合」と「1本しか作れない場合」の違い</h2>
+<p>線形結合を作ろうとすると、$\alpha$ を決める2次方程式が現れます。</p>
+<p>ここで異なる2つの解が出れば、独立した等比数列を2本作れます。</p>
+<p>一方、重解になると、同じ線形結合しか得られません。</p>
+<p>このとき、</p>
+<p><strong>「線形結合の方法が使えない」わけではありません。</strong></p>
+<p>2本を連立する方法が使えないだけで、</p>
+<ul>
+<li>1本の等比数列を利用する</li>
+<li>一方を消去して3項間漸化式にする</li>
+</ul>
+<p>という方法は残っています。</p>
+<p>ここを区別したことで、解法の整理がかなり明確になりました。</p>
+<hr>
+<h2>今日の大きな気づき｜2つの解法は奥でつながっている</h2>
+<p>公開用オリジナル問題を、sakurak02さんは実際に2つの入口から解きました。</p>
+<p>線形結合</p>
+<p>$$
+a_n+\alpha b_n
+$$</p>
+<p>を使った方法では、公比として</p>
+<p>$$
+4,\ 1
+$$</p>
+<p>が現れました。</p>
+<p>一方、一方の数列を消去して3項間漸化式を作ると、特性方程式は</p>
+<p>$$
+x^2-5x+4=0
+$$</p>
+<p>となり、</p>
+<p>$$
+x=4,\ 1
+$$</p>
+<p>が得られました。</p>
+<p>つまり、</p>
+<p>$$
+\boxed{\text{線形結合で現れる公比}}
+$$</p>
+<p>と</p>
+<p>$$
+\boxed{\text{3項間漸化式の特性方程式の解}}
+$$</p>
+<p>が一致しています。</p>
+<p>これは偶然ではありません。</p>
+<p>2つの方法は、まったく別の仕組みを使っているのではなく、</p>
+<p><strong>同じ連立漸化式の中にある2種類の変化のしかたを、別の方向から取り出している</strong></p>
+<p>と見ることができます。</p>
+<hr>
+<h2>今回の学習ポイント</h2>
+<p>今回、sakurak02さんは最初の復習では解法の多さに戸惑い、同じタイプの問題を5通りの方法で実際に解いて比較しました。</p>
+<p>そのあと公開用オリジナル問題では、</p>
+<ol>
+<li>線形結合を作る</li>
+<li>一方を消去する</li>
+</ol>
+<p>という2つの入口を自分で選び、どちらの方法でも最後まで解くことができました。</p>
+<p>さらに、</p>
+<p><strong>「Aの公比とBの特性方程式の解は同じ」</strong></p>
+<p>という関係にも自分で気づきました。</p>
+<p>今日覚えるべきなのは、5種類の解法そのものではありません。</p>
+<p>$$
+\boxed{
+\text{連立漸化式}
+\longrightarrow
+\begin{cases}
+\text{線形結合を作る}\\
+\text{一方を消去する}
+\end{cases}
+}
+$$</p>
+<p>という2つの入口です。</p>
+<p>細かな解法は、その先の枝分かれとして考えると整理しやすくなります。</p>
+<hr>
+<h2>今後の見方</h2>
+<p>連立漸化式を見たとき、最初から「どの解法を使う問題か」を完全に見抜く必要はありません。</p>
+<p>まず、</p>
+<p>$$
+a_n+\alpha b_n
+$$</p>
+<p>を等比数列にできないか考える。</p>
+<p>あるいは、式の形によっては一方を消去して3項間漸化式にする。</p>
+<p>そのどちらから入っても、奥では同じ構造に出会うことがあります。</p>
+<p>今回の学習では、別々の点に見えていた解法が、少しずつ一本の線としてつながりました。</p>
+</article></section><section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION</h2><article class="session-content"><p>数列 $\{a_n\},\{b_n\}$ を</p>
+<p>$$
+a_1=2,\qquad b_1=1
+$$</p>
+<p>および</p>
+<p>$$
+\begin{cases}
+a_{n+1}=2a_n+2b_n\\
+b_{n+1}=a_n+3b_n
+\end{cases}
+\qquad (n=1,2,3,\ldots)
+$$</p>
+<p>によって定める。</p>
+<p>$a_n,\ b_n$ をそれぞれ $n$ の式で表せ。</p>
+<p>ただし、次の2つの方法で解いてみよ。</p>
+<ol>
+<li>$a_n+\alpha b_n$ の形の数列を考える方法</li>
+<li>$a_n$ または $b_n$ の一方を消去し、隣接3項間漸化式に帰着する方法</li>
+</ol>
+<p>さらに、2つの方法で現れる数値の間にどのような関係があるか考えよ。</p>
+<details>
+<summary>HINT</summary>
+<p>方法1では、</p>
+<p>$$
+a_{n+1}+\alpha b_{n+1}
+=
+\beta(a_n+\alpha b_n)
+$$</p>
+<p>となるような $\alpha,\beta$ を探します。</p>
+<p>方法2では、第2式から $a_n$ を $b_n,b_{n+1}$ で表し、添字を1つ進めた式も作ってみましょう。</p>
+<p>最後に、</p>
+<ul>
+<li>方法1で得られる等比数列の公比</li>
+<li>方法2で得られる特性方程式の解</li>
+</ul>
+<p>を比べてみてください。</p>
+</details>
+</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.09.08 001 LOG ページ1を拡大">
+        <img class="sheet" src="./images/20260908-001-1.webp" alt="2026.09.08 001 LOG ページ1" loading="lazy">
+      </button>
+      <figcaption>LOG · 1</figcaption>
+    </figure>
+    <details class="more-logs">
+      <summary>more</summary>
+      <div class="more-log-list"><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.09.08 001 LOG ページ2を拡大">
+        <img class="sheet" src="./images/20260908-001-2.webp" alt="2026.09.08 001 LOG ページ2" loading="lazy">
+      </button>
+      <figcaption>LOG · 2</figcaption>
+    </figure></div>
+    </details></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><h2>EXPLANATION</h2>
+<p>この問題のポイントは、答えを求めることだけではありません。</p>
+<p>連立漸化式に対する代表的な2つの入口、</p>
+<ul>
+<li>線形結合を作る</li>
+<li>一方を消去する</li>
+</ul>
+<p>が、実は同じ構造を別の角度から見ていることを確認する問題です。</p>
+<hr>
+<h3>1．線形結合を作る</h3>
+<p>$$
+a_{n+1}+\alpha b_{n+1}
+$$</p>
+<p>を考えると、</p>
+<p>$$
+a_{n+1}+\alpha b_{n+1}
+=
+(2+\alpha)a_n+(2+3\alpha)b_n
+$$</p>
+<p>です。</p>
+<p>これが</p>
+<p>$$
+\beta(a_n+\alpha b_n)
+$$</p>
+<p>となるには、</p>
+<p>$$
+2+\alpha=\beta
+$$</p>
+<p>$$
+2+3\alpha=\alpha\beta
+$$</p>
+<p>を満たせばよいことになります。</p>
+<p>$\beta=2+\alpha$ を代入すると、</p>
+<p>$$
+2+3\alpha=\alpha(2+\alpha)
+$$</p>
+<p>したがって、</p>
+<p>$$
+\alpha^2-\alpha-2=0
+$$</p>
+<p>$$
+(\alpha-2)(\alpha+1)=0
+$$</p>
+<p>より、</p>
+<p>$$
+\alpha=2,\ -1
+$$</p>
+<p>です。</p>
+<p>対応する $\beta$ は、</p>
+<p>$$
+\beta=4,\ 1
+$$</p>
+<p>となります。</p>
+<p>したがって、</p>
+<p>$$
+a_n+2b_n
+$$</p>
+<p>は公比 $4$ の等比数列、</p>
+<p>$$
+a_n-b_n
+$$</p>
+<p>は公比 $1$ の等比数列です。</p>
+<hr>
+<h3>2．一方を消去する</h3>
+<p>第2式</p>
+<p>$$
+b_{n+1}=a_n+3b_n
+$$</p>
+<p>から、</p>
+<p>$$
+a_n=b_{n+1}-3b_n
+$$</p>
+<p>です。</p>
+<p>さらに、</p>
+<p>$$
+a_{n+1}=b_{n+2}-3b_{n+1}
+$$</p>
+<p>となります。</p>
+<p>これを第1式へ代入すると、</p>
+<p>$$
+b_{n+2}-3b_{n+1}
+=
+2(b_{n+1}-3b_n)+2b_n
+$$</p>
+<p>したがって、</p>
+<p>$$
+b_{n+2}-5b_{n+1}+4b_n=0
+$$</p>
+<p>を得ます。</p>
+<p>特性方程式は、</p>
+<p>$$
+x^2-5x+4=0
+$$</p>
+<p>なので、</p>
+<p>$$
+(x-1)(x-4)=0
+$$</p>
+<p>より、</p>
+<p>$$
+x=1,\ 4
+$$</p>
+<p>です。</p>
+<hr>
+<h3>3．2つの方法のつながり</h3>
+<p>線形結合の方法で現れた公比は、</p>
+<p>$$
+4,\ 1
+$$</p>
+<p>でした。</p>
+<p>3項間漸化式の特性方程式の解も、</p>
+<p>$$
+4,\ 1
+$$</p>
+<p>です。</p>
+<p>つまり、</p>
+<p>$$
+\boxed{
+\text{線形結合の公比}
+=
+\text{特性方程式の解}
+}
+$$</p>
+<p>となっています。</p>
+<p>2つの解法は別々のテクニックに見えますが、同じ連立漸化式の構造を異なる方法で取り出しています。</p>
+<p>この関係に気づくと、連立漸化式の複数の解法を、ばらばらに暗記する必要がなくなります。</p>
+<details>
+<summary>MODEL ANSWER</summary>
+<p>まず、</p>
+<p>$$
+a_{n+1}+\alpha b_{n+1}
+=
+\beta(a_n+\alpha b_n)
+$$</p>
+<p>となる $\alpha,\beta$ を求める。</p>
+<p>与えられた漸化式より、</p>
+<p>$$
+a_{n+1}+\alpha b_{n+1}
+=
+(2+\alpha)a_n+(2+3\alpha)b_n
+$$</p>
+<p>であるから、</p>
+<p>$$
+2+\alpha=\beta,\qquad
+2+3\alpha=\alpha\beta
+$$</p>
+<p>を得る。</p>
+<p>$\beta=2+\alpha$ を代入すると、</p>
+<p>$$
+\alpha^2-\alpha-2=0
+$$</p>
+<p>$$
+(\alpha-2)(\alpha+1)=0
+$$</p>
+<p>より、</p>
+<p>$$
+\alpha=2,\ -1.
+$$</p>
+<p>したがって、</p>
+<p>$$
+a_{n+1}+2b_{n+1}
+=
+4(a_n+2b_n)
+$$</p>
+<p>および</p>
+<p>$$
+a_{n+1}-b_{n+1}
+=
+a_n-b_n
+$$</p>
+<p>となる。</p>
+<p>初期条件より、</p>
+<p>$$
+a_1+2b_1=4,\qquad
+a_1-b_1=1
+$$</p>
+<p>なので、</p>
+<p>$$
+a_n+2b_n=4^n
+$$</p>
+<p>$$
+a_n-b_n=1.
+$$</p>
+<p>この2式から、</p>
+<p>$$
+\boxed{
+a_n=\frac{4^n+2}{3}
+}
+$$</p>
+<p>$$
+\boxed{
+b_n=\frac{4^n-1}{3}
+}
+$$</p>
+<p>を得る。</p>
+<p>次に、一方を消去する方法を考える。</p>
+<p>$$
+b_{n+1}=a_n+3b_n
+$$</p>
+<p>より、</p>
+<p>$$
+a_n=b_{n+1}-3b_n
+$$</p>
+<p>であり、</p>
+<p>$$
+a_{n+1}=b_{n+2}-3b_{n+1}.
+$$</p>
+<p>これらを</p>
+<p>$$
+a_{n+1}=2a_n+2b_n
+$$</p>
+<p>に代入すると、</p>
+<p>$$
+b_{n+2}-3b_{n+1}
+=
+2(b_{n+1}-3b_n)+2b_n
+$$</p>
+<p>したがって、</p>
+<p>$$
+b_{n+2}-5b_{n+1}+4b_n=0.
+$$</p>
+<p>特性方程式は、</p>
+<p>$$
+x^2-5x+4=0
+$$</p>
+<p>$$
+(x-1)(x-4)=0
+$$
+であるから、</p>
+<p>$$
+x=1,\ 4.
+$$</p>
+<p>これは最初の方法で得られた公比 $1,4$ と一致する。</p>
+<p>よって2つの解法は、同じ連立漸化式の構造を別の形で取り出していることがわかる。</p>
+</details>
+</article></section></div>
+</main>
+
+<footer>Math Study Log © 2026</footer>
+<dialog class="lightbox" aria-label="答案画像の拡大">
+  <button class="text-link lightbox-close" type="button">閉じる</button>
+  <img alt="">
+</dialog>
+<script>
+const lightbox = document.querySelector(".lightbox");
+document.querySelectorAll(".sheet-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    const source = button.querySelector("img");
+    const enlarged = lightbox.querySelector("img");
+    enlarged.src = source.src;
+    enlarged.alt = source.alt;
+    lightbox.showModal();
+  });
+});
+lightbox.querySelector("button").addEventListener("click", () => lightbox.close());
+lightbox.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") lightbox.close();
+});
+lightbox.addEventListener("click", (event) => {
+  if (event.target === lightbox) lightbox.close();
+});
+</script>
+
+</body>
+</html>

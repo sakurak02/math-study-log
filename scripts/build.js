@@ -2075,7 +2075,7 @@ ${tableOfContents}
 
   <section class="about-section">
     <div class="about-kicker">ABOUT THIS STUDY</div>
-    <div class="about-title">64歳から、5年後の難関大受験数学へ。</div>
+    <div class="about-title">64歳から、難関大受験数学の攻略を通過点に、数学という学問に触れるための土台を5年かけて築きたい。</div>
     <div class="about-start">STARTED AUGUST 2026</div>
     <p class="about-text">
       数学IIIはほぼ未修。数学II・Bも久しぶりの学習です。<br>
