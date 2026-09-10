@@ -93,6 +93,19 @@ test("new-format article renders the required vertical section order", (t) => {
   assert.doesNotMatch(page, /<h1>オリジナル問題<\/h1>|<h1>解説<\/h1>/);
 });
 
+test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) => {
+  const build = fixture(t, recordFiles());
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const page = build.read("public/index.html");
+  const goal = page.indexOf('<div class="about-kicker">MY GOAL</div>');
+  const about = page.indexOf('<div class="about-kicker">ABOUT THIS STUDY</div>');
+  assert.ok(goal >= 0 && about > goal);
+  assert.match(page, /<div class="about-title">64歳から、数学を学びなおしたい<\/div>/);
+  assert.match(page, /<div class="about-title">このサイトについて<\/div>/);
+  assert.match(page, /<div class="about-start">STARTED AUGUST 2026<\/div>/);
+});
+
 test("one LOG is displayed directly without more", (t) => {
   const build = fixture(t, recordFiles());
   const result = build.run();
