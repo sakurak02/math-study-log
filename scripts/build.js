@@ -2075,13 +2075,12 @@ ${tableOfContents}
 
   <section class="about-section">
     <div class="about-kicker">ABOUT THIS STUDY</div>
-    <div class="about-title">64歳から、数学を学びなおしたい</div>
+    <div class="about-title">このサイトについて</div>
     <div class="about-start">STARTED AUGUST 2026</div>
     <p class="about-text">
-      数学IIIはほぼ未修、数学II・Bも久しぶりの学習です。<br>
-      高校数学をひとつずつ学び直し、難関大受験数学にも挑戦しながら、<br>
-      いつかその先の大学数学に触れられるところまで進みたいと思っています。<br><br>
-      LOGは学習の跡、SESSIONは一つの学習テーマの振り返り、QUESTIONは自由な数学の疑問。
+      sakurak02が数学を学び直す過程を、ChatGPTとの対話とともに記録しています。<br>
+      正解だけでなく、迷ったこと、考え直したこと、理解がつながった瞬間も残していきます。<br>
+      最初に取り組んだ問題でのつまずきをもとに、ChatGPTのオリジナル問題で復習するスタイルです。
     </p>
   </section>
 
@@ -2197,7 +2196,7 @@ function createStudyPage(record, study, view = "study") {
   const cardTitle = `${study.title} | 数学学習記録`;
   const cardDescription = descriptionForStudy(study);
   const sessionSection = `<section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.sessionMarkdown, images: [] })}</article></section>`;
-  const questionSection = `<section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.questionMarkdown), images: [] })}</article></section>`;
+  const questionSection = `<section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION　by ChatGPT</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.questionMarkdown), images: [] })}</article></section>`;
   const logSection = `<section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2>${renderStudyLog(record, study)}</section>`;
   const answerSource = withoutFirstHeading(study.answerMarkdown).replace(/<summary>\s*模範解答\s*<\/summary>/g, "<summary>MODEL ANSWER</summary>");
   const answerSection = `<section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: answerSource, images: [] })}</article></section>`;

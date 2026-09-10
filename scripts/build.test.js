@@ -87,6 +87,7 @@ test("new-format article renders the required vertical section order", (t) => {
     .map((id) => page.indexOf(`id="${id}"`));
   assert.ok(headings.every((index) => index >= 0));
   assert.deepEqual(headings, [...headings].sort((a, b) => a - b));
+  assert.match(page, /id="question-heading">ORIGINAL QUESTION　by ChatGPT<\/h2>/);
   assert.match(page, /<summary>ヒント<\/summary>/);
   assert.match(page, /<summary>MODEL ANSWER<\/summary>/);
   assert.doesNotMatch(page, /<h1>オリジナル問題<\/h1>|<h1>解説<\/h1>/);
