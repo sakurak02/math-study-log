@@ -109,6 +109,8 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.match(page, /class="about-guide" src="\.\/images\/kuumo\/s3\.png"/);
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*\.about-with-guide/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.header-guide[\s\S]*\.guide-divider[\s\S]*\.about-guide/);
+  assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.about-guide \{\s*top: 14px;\s*right: -8px;\s*bottom: auto;\s*width: 100px;/);
+  assert.doesNotMatch(page, /padding-bottom: 76px/);
 });
 
 test("one LOG is displayed directly without more", (t) => {
