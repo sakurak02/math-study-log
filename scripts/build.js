@@ -1477,8 +1477,20 @@ header {
 }
 
 .header-inner {
+  position: relative;
   max-width: 940px;
   margin: 0 auto;
+}
+
+.header-guide {
+  position: absolute;
+  top: -16px;
+  right: 6px;
+  z-index: 1;
+  display: block;
+  width: 132px;
+  height: auto;
+  pointer-events: none;
 }
 
 .header-title {
@@ -1728,6 +1740,43 @@ main {
   margin: 28px 0;
 }
 
+.guide-divider {
+  position: relative;
+  height: 64px;
+  margin: 8px 0 14px;
+  border-top: 0;
+}
+
+.guide-divider::before,
+.guide-divider::after {
+  position: absolute;
+  top: 53px;
+  border-top: 1px solid var(--line);
+  content: "";
+}
+
+.guide-divider::before {
+  right: calc(50% + 45px);
+  left: 0;
+}
+
+.guide-divider::after {
+  right: 0;
+  left: calc(50% + 45px);
+}
+
+.divider-guide {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  z-index: 1;
+  display: block;
+  width: 100px;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .entry-nav {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1864,6 +1913,24 @@ main {
   max-width: 720px;
 }
 
+.about-with-guide {
+  position: relative;
+  max-width: none;
+  min-height: 132px;
+  padding-right: 180px;
+  overflow: hidden;
+}
+
+.about-guide {
+  position: absolute;
+  top: -2px;
+  right: -20px;
+  display: block;
+  width: 220px;
+  height: auto;
+  pointer-events: none;
+}
+
 .about-kicker {
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -1918,6 +1985,18 @@ footer {
   color: var(--ink-soft);
 }
 
+@media (max-width: 820px) {
+  .about-with-guide {
+    min-height: 116px;
+    padding-right: 140px;
+  }
+
+  .about-guide {
+    right: -18px;
+    width: 170px;
+  }
+}
+
 @media (max-width: 600px) {
   header {
     padding: 16px;
@@ -1929,6 +2008,12 @@ footer {
 
   .header-date {
     font-size: 23px;
+  }
+
+  .header-guide {
+    top: -9px;
+    right: -2px;
+    width: 96px;
   }
 
   .calendar-grid {
@@ -2008,6 +2093,29 @@ footer {
     padding: 12px 13px;
   }
 
+  .guide-divider {
+    height: 58px;
+    margin: 7px 0 12px;
+  }
+
+  .guide-divider::before,
+  .guide-divider::after {
+    top: 51px;
+  }
+
+  .guide-divider::before {
+    right: calc(50% + 40px);
+  }
+
+  .guide-divider::after {
+    left: calc(50% + 40px);
+  }
+
+  .divider-guide {
+    top: -13px;
+    width: 88px;
+  }
+
   .toc-section {
     padding: 6px 12px;
   }
@@ -2033,6 +2141,19 @@ footer {
   .about-title {
     font-size: 18px;
   }
+
+  .about-with-guide {
+    min-height: 0;
+    padding-right: 0;
+    padding-bottom: 76px;
+  }
+
+  .about-guide {
+    top: auto;
+    right: -22px;
+    bottom: -12px;
+    width: 140px;
+  }
 }
 </style>
 </head>
@@ -2045,6 +2166,7 @@ ${someCloudsLink()}
   <div class="header-inner">
     <div class="header-title">MATH STUDY LOG</div>
     <div class="header-date">数学学習記録</div>
+    <img class="header-guide" src="./images/kuumo/s1.png" alt="案内キャラクター クーモ">
   </div>
 </header>
 
@@ -2052,7 +2174,9 @@ ${someCloudsLink()}
 
 ${calendarSections}
 
-  <div class="section-divider"></div>
+  <div class="section-divider guide-divider" aria-hidden="true">
+    <img class="divider-guide" src="./images/kuumo/s2.png" alt="">
+  </div>
 
   <nav class="entry-nav" aria-label="学習記録メニュー">
     <a class="entry-card" href="./log/index.html">
@@ -2085,7 +2209,7 @@ ${tableOfContents}
 
   <div class="section-divider"></div>
 
-  <section class="about-section">
+  <section class="about-section about-with-guide">
     <div class="about-kicker">ABOUT THIS STUDY</div>
     <div class="about-title">このサイトについて</div>
     <div class="about-start">STARTED AUGUST 2026</div>
@@ -2094,6 +2218,7 @@ ${tableOfContents}
       正解だけでなく、迷ったこと、考え直したこと、理解がつながった瞬間も残していきます。<br>
       最初に取り組んだ問題でのつまずきをもとに、ChatGPTのオリジナル問題で復習するスタイルです。
     </p>
+    <img class="about-guide" src="./images/kuumo/s3.png" alt="" aria-hidden="true" loading="lazy">
   </section>
 
   <section class="total-section">
