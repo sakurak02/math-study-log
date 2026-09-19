@@ -88,6 +88,7 @@ test("new-format article renders the required vertical section order", (t) => {
   assert.ok(headings.every((index) => index >= 0));
   assert.deepEqual(headings, [...headings].sort((a, b) => a - b));
   assert.match(page, /id="question-heading">ORIGINAL QUESTION　by ChatGPT<\/h2>/);
+  assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
   assert.match(page, /<summary>ヒント<\/summary>/);
   assert.match(page, /<summary>MODEL ANSWER<\/summary>/);
   assert.doesNotMatch(page, /<h1>オリジナル問題<\/h1>|<h1>解説<\/h1>/);
@@ -104,6 +105,7 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.match(page, /<div class="about-title">64歳から、数学を学びなおしたい<\/div>/);
   assert.match(page, /<div class="about-title">このサイトについて<\/div>/);
   assert.match(page, /<div class="about-start">STARTED AUGUST 2026<\/div>/);
+  assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
   assert.match(page, /class="header-guide" src="\.\/images\/kuumo\/s1\.png"/);
   assert.match(page, /class="divider-guide" src="\.\/images\/kuumo\/s2\.png"/);
   assert.match(page, /class="about-guide" src="\.\/images\/kuumo\/s3\.png"/);

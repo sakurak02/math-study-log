@@ -15,6 +15,7 @@ const siteName = "Math Study Log";
 const defaultDescription =
   "64歳から数学を学び直す学習記録。間違い・迷い・修正までそのまま残しています。";
 const siteOgImageUrl = `${siteUrl}/og-image.png`;
+const faviconUrl = `${siteUrl}/assets/cloud.svg`;
 const gaMeasurementId = "G-LTZZZFVRKP";
 const visibleCalendarMonthCount = 3;
 const markdown = new MarkdownIt({
@@ -1425,6 +1426,7 @@ ${pastMonthSections}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数学学習記録 | Math Study Log</title>
+<link rel="icon" type="image/svg+xml" href="${faviconUrl}">
 ${socialMetaTags({
   title: "数学学習記録 | Math Study Log",
   description: defaultDescription,
@@ -2408,6 +2410,7 @@ function createSimpleRecordPage({
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(documentTitle)}</title>
+<link rel="icon" type="image/svg+xml" href="${faviconUrl}">
 
 ${gaTag()}
 
