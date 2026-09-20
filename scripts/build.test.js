@@ -160,6 +160,30 @@ test("same-day 001 and 002 are independent articles and one calendar classificat
   assert.match(dayLink, /数学III・極限/);
 });
 
+test("table of contents keeps four levels and sorts articles newest first", (t) => {
+  const build = fixture(t, {
+    ...recordFiles("20260828", "001"),
+    ...recordFiles("20260829", "001"),
+    ...recordFiles("20260829", "002")
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const page = build.read("public/index.html");
+  const toc = page.match(/<section class="toc-section"[\s\S]*?(?=\n\n  <div class="section-divider"><\/div>)/)?.[0] || "";
+  const subject = toc.indexOf("<summary>数学III</summary>");
+  const category = toc.indexOf("<h3>極限</h3>");
+  const topic = toc.indexOf("<h4>数列の極限</h4>");
+  assert.ok(subject >= 0 && category > subject && topic > category);
+  assert.match(toc, /<details class="toc-subject">/);
+  assert.doesNotMatch(toc, /<h3>微分法<\/h3>|<h3>積分法<\/h3>/);
+
+  const newestSecond = toc.indexOf('href="./records/20260829/002/"');
+  const newestFirst = toc.indexOf('href="./records/20260829/001/"');
+  const oldest = toc.indexOf('href="./records/20260828/001/"');
+  assert.ok(newestSecond > topic && newestFirst > newestSecond && oldest > newestFirst);
+  assert.match(toc, /<time datetime="2026-08-29">2026\/08\/29<\/time>/);
+});
+
 test("LOG and SESSION archive pages retain their focused views", (t) => {
   const build = fixture(t, recordFiles());
   const result = build.run();

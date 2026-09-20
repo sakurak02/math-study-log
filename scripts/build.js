@@ -1248,8 +1248,8 @@ function createTableOfContents() {
 
   classifiedStudies.sort(
     (a, b) =>
-      a.record.date.localeCompare(b.record.date) ||
-      a.study.number.localeCompare(b.study.number)
+      b.record.date.localeCompare(a.record.date) ||
+      b.study.number.localeCompare(a.study.number)
   );
 
   const subjectsHtml = classificationMaster.subjects
@@ -1845,20 +1845,27 @@ main {
 
 .toc-subject[open] > summary {
   color: var(--accent);
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
 }
 
 .toc-category {
-  margin: 0 0 14px 22px;
+  margin: 0 0 16px 22px;
+  padding-left: 16px;
+  border-left: 2px solid var(--line);
 }
 
 .toc-category h3 {
-  margin-bottom: 7px;
+  margin-bottom: 9px;
   color: var(--ink);
   font-size: 13px;
+  line-height: 1.5;
 }
 
 .toc-subcategory {
-  margin-left: 20px;
+  margin-left: 18px;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
 }
 
 .toc-subcategory + .toc-subcategory {
@@ -1866,10 +1873,11 @@ main {
 }
 
 .toc-subcategory h4 {
-  margin-bottom: 4px;
-  color: var(--ink-soft);
+  margin-bottom: 5px;
+  color: var(--accent);
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.5;
 }
 
 .toc-subcategory ul {
@@ -1883,8 +1891,13 @@ main {
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding: 4px 0 4px 18px;
+  padding: 5px 0;
   font-size: 12px;
+  line-height: 1.6;
+}
+
+.toc-article + .toc-article {
+  border-top: 1px solid var(--line);
 }
 
 .toc-article a {
@@ -2122,16 +2135,18 @@ footer {
   }
 
   .toc-category {
-    margin-left: 14px;
+    margin-left: 10px;
+    padding-left: 10px;
   }
 
   .toc-subcategory {
-    margin-left: 12px;
+    margin-left: 8px;
+    padding-left: 8px;
   }
 
   .toc-article {
     display: block;
-    padding-left: 10px;
+    padding: 5px 0;
   }
 
   .toc-article time {
