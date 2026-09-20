@@ -78,6 +78,21 @@ function recordFiles(date = "20260828", sequence = "001", overrides = {}) {
   };
 }
 
+function classifiedRecordFiles(subject, category, topic) {
+  const files = recordFiles();
+  const classification = `<!--\nsubject: ${subject}\ncategory: ${category}\nsubcategory: ${topic}\n-->\n\n`;
+
+  for (const name of ["session.md", "question.md", "answer.md"]) {
+    const file = `content/records/20260828/001/${name}`;
+    files[file] = files[file].replace(/^<!--[\s\S]*?-->\n\n/, classification);
+  }
+
+  const metaFile = "content/records/20260828/001/meta.json";
+  const meta = JSON.parse(files[metaFile]);
+  files[metaFile] = JSON.stringify({ ...meta, subject, category, topic });
+  return files;
+}
+
 test("new-format article renders QUESTION, ANSWER, LOG, and SESSION in order", (t) => {
   const build = fixture(t, recordFiles());
   const result = build.run();
@@ -123,7 +138,7 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.doesNotMatch(page, /<nav class="entry-nav"|href="\.\/(?:log|session|question)\/index\.html"/);
   assert.equal(build.exists("public/log/index.html"), true);
   assert.equal(build.exists("public/session/index.html"), true);
-  assert.equal(build.exists("public/question/index.html"), true);
+  assert.equal(build.exists("public/question/index.html"), false);
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*\.about-with-guide/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.header-guide[\s\S]*\.guide-divider[\s\S]*\.about-guide/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.about-guide \{\s*top: 14px;\s*right: -8px;\s*bottom: auto;\s*width: 100px;/);
@@ -182,6 +197,7 @@ test("table of contents keeps four levels and sorts articles newest first", (t) 
   const category = toc.indexOf("<h3>極限</h3>");
   const topic = toc.indexOf("<h4>数列の極限</h4>");
   assert.ok(subject >= 0 && category > subject && topic > category);
+  assert.equal((toc.match(/<h4>数列の極限<\/h4>/g) || []).length, 1);
   assert.match(toc, /<details class="toc-subject">/);
   assert.doesNotMatch(toc, /<h3>微分法<\/h3>|<h3>積分法<\/h3>/);
 
@@ -190,6 +206,61 @@ test("table of contents keeps four levels and sorts articles newest first", (t) 
   const oldest = toc.indexOf('href="./records/20260828/001/"');
   assert.ok(newestSecond > topic && newestFirst > newestSecond && oldest > newestFirst);
   assert.match(toc, /<time datetime="2026-08-29">2026\/08\/29<\/time>/);
+});
+
+test("registered topic in a category with topics builds successfully", (t) => {
+  const build = fixture(t, classifiedRecordFiles("数学III", "極限", "関数の極限"));
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(build.exists("public/records/20260828/001/index.html"), true);
+});
+
+test("unregistered topic in a category with topics fails the build", (t) => {
+  const build = fixture(t, classifiedRecordFiles("数学III", "極限", "無限等比数列"));
+  const result = build.run();
+  assert.notEqual(result.status, 0);
+  assert.match(
+    result.stderr,
+    /分類マスターにない小分類です:\s*数学III → 極限 → 無限等比数列/
+  );
+});
+
+test("topic remains free-form when its category has no topics", (t) => {
+  const build = fixture(t, classifiedRecordFiles("数学B", "数列", "任意の既存小分類"));
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const page = build.read("public/index.html");
+  assert.match(page, /<summary>数学B<\/summary>[\s\S]*<h3>数列<\/h3>[\s\S]*<h4>任意の既存小分類<\/h4>/);
+});
+
+test("existing subject and category validation still rejects unknown values", (t) => {
+  let build = fixture(t, classifiedRecordFiles("数学X", "極限", "数列の極限"));
+  let result = build.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /分類マスターにない科目です: 数学X/);
+
+  build = fixture(t, classifiedRecordFiles("数学III", "未登録分野", "数列の極限"));
+  result = build.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /分類マスターにない中分類です: 数学III → 未登録分野/);
+});
+
+test("legacy standalone QUESTION output is removed while article QUESTION remains", (t) => {
+  const build = fixture(t, {
+    ...recordFiles(),
+    "public/question/index.html": "stale QUESTION index",
+    "public/question/legacy.html": "stale QUESTION article"
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(build.exists("public/question/index.html"), false);
+  assert.equal(build.exists("public/question/legacy.html"), false);
+  const article = build.read("public/records/20260828/001/index.html");
+  assert.match(article, /id="question-heading">ORIGINAL QUESTION　by ChatGPT<\/h2>/);
+  assert.match(article, /Question text\./);
+  const sitemap = build.read("public/sitemap.xml");
+  assert.doesNotMatch(sitemap, /\/question(?:\/|\.html)/);
+  assert.match(sitemap, /\/records\/20260828\/001\/index\.html/);
 });
 
 test("LOG and SESSION archive pages retain their focused views", (t) => {

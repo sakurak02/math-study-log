@@ -8,8 +8,7 @@ const imagesDir = path.join(publicDir, "images");
 const recordsDir = path.join(publicDir, "records");
 const contentRecordsDir = path.join(rootDir, "content", "records");
 const classificationMasterPath = path.join(rootDir, "content", "classification-master.json");
-const contentQuestionDir = path.join(rootDir, "content", "question");
-const publicQuestionDir = path.join(publicDir, "question");
+const legacyQuestionOutputDir = path.join(publicDir, "question");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
 const siteName = "Math Study Log";
 const defaultDescription =
@@ -74,10 +73,40 @@ function loadClassificationMaster() {
         throw new Error(`分類マスターに重複した中分類があります: ${name} → ${categoryName}`);
       }
 
+      let topicByName = null;
+      if (Object.hasOwn(category, "topics")) {
+        if (!Array.isArray(category.topics) || category.topics.length === 0) {
+          throw new Error(`分類マスターの小分類定義が不正です: ${name} → ${categoryName}`);
+        }
+
+        topicByName = new Map();
+        category.topics.forEach((topic, topicOrder) => {
+          if (
+            typeof topic !== "string" ||
+            !topic.trim() ||
+            topic.length > 80 ||
+            /[\u0000-\u001f\u007f]/.test(topic)
+          ) {
+            throw new Error(`分類マスターの小分類定義が不正です: ${name} → ${categoryName}`);
+          }
+
+          const topicName = topic.trim();
+          if (topicByName.has(topicName)) {
+            throw new Error(`分類マスターに重複した小分類があります: ${name} → ${categoryName} → ${topicName}`);
+          }
+
+          topicByName.set(topicName, {
+            name: topicName,
+            order: topicOrder
+          });
+        });
+      }
+
       categoryByName.set(categoryName, {
         name: categoryName,
         short: category.short.trim(),
-        order: categoryOrder
+        order: categoryOrder,
+        topicByName
       });
     });
 
@@ -108,7 +137,7 @@ function gaTag() {
 
 fs.mkdirSync(imagesDir, { recursive: true });
 fs.mkdirSync(recordsDir, { recursive: true });
-fs.mkdirSync(publicQuestionDir, { recursive: true });
+fs.rmSync(legacyQuestionOutputDir, { recursive: true, force: true });
 
 /* 公開LOG画像: YYYYMMDD-NNN-M.webp（Mは必ず1から開始） */
 const imagePattern = /^(\d{4})(\d{2})(\d{2})-(\d{3})-([1-9]\d*)\.webp$/;
@@ -578,10 +607,17 @@ function classificationFromMeta(meta, metaPath) {
     throw new Error(`分類マスターにない中分類です: ${subjectName} → ${categoryName} (${metaPath})`);
   }
 
+  const topicName = meta.topic.trim();
+  if (category.topicByName && !category.topicByName.has(topicName)) {
+    throw new Error(
+      `分類マスターにない小分類です:\n${subjectName} → ${categoryName} → ${topicName} (${metaPath})`
+    );
+  }
+
   return {
     subject: subjectName,
     category: categoryName,
-    topic: meta.topic.trim(),
+    topic: topicName,
     subjectShort: subject.short,
     categoryShort: category.short,
     subjectOrder: subject.order,
@@ -948,114 +984,6 @@ function renderSessionMarkdown(study) {
   }
 
   return resolveSessionLogImages(html, imageReferences);
-}
-
-function isValidDateString(value) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false;
-  }
-
-  const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-
-  return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-  );
-}
-
-function loadQuestions() {
-  if (!fs.existsSync(contentQuestionDir)) {
-    return [];
-  }
-
-  return fs
-    .readdirSync(contentQuestionDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const slug = entry.name;
-      const questionDir = path.join(contentQuestionDir, slug);
-      const metaPath = path.join(questionDir, "meta.json");
-      const articlePath = path.join(questionDir, "article.md");
-      const questionImagesDir = path.join(questionDir, "images");
-      const allowedKeys = new Set(["title", "date"]);
-
-      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-        throw new Error(`QUESTIONのslugが不正です: ${slug}`);
-      }
-
-      if (!fs.existsSync(metaPath)) {
-        throw new Error(`QUESTIONのmeta.jsonがありません: ${metaPath}`);
-      }
-
-      if (!fs.existsSync(articlePath)) {
-        throw new Error(`QUESTIONのarticle.mdがありません: ${articlePath}`);
-      }
-
-      let meta;
-
-      try {
-        meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-      } catch (error) {
-        throw new Error(`QUESTIONのmeta.jsonを読み込めません: ${metaPath}\n${error.message}`);
-      }
-
-      if (!meta || Array.isArray(meta) || typeof meta !== "object") {
-        throw new Error(`QUESTIONのmeta.jsonはオブジェクトで指定してください: ${metaPath}`);
-      }
-
-      const unexpectedKeys = Object.keys(meta).filter(
-        (key) => !allowedKeys.has(key)
-      );
-
-      if (unexpectedKeys.length > 0) {
-        throw new Error(
-          `QUESTIONのmeta.jsonに公開対象外の項目があります: ${unexpectedKeys.join(", ")}`
-        );
-      }
-
-      if (
-        typeof meta.title !== "string" ||
-        !meta.title.trim() ||
-        meta.title.length > 120 ||
-        /[\u0000-\u001f\u007f]/.test(meta.title)
-      ) {
-        throw new Error(`QUESTIONの公開タイトルが不正です: ${metaPath}`);
-      }
-
-      if (!isValidDateString(meta.date)) {
-        throw new Error(`QUESTIONの日付が不正です: ${metaPath}`);
-      }
-
-      const questionImages = fs.existsSync(questionImagesDir)
-        ? fs
-            .readdirSync(questionImagesDir, { withFileTypes: true })
-            .filter(
-              (imageEntry) =>
-                imageEntry.isFile() &&
-                /\.(?:jpe?g|png|gif|webp)$/i.test(imageEntry.name)
-            )
-            .map((imageEntry) => imageEntry.name)
-            .sort((a, b) =>
-              a.localeCompare(b, "ja", { numeric: true })
-            )
-        : [];
-
-      return {
-        slug,
-        title: meta.title.trim(),
-        date: meta.date,
-        articleMarkdown: fs.readFileSync(articlePath, "utf8"),
-        images: questionImages,
-        sourceImagesDir: questionImagesDir
-      };
-    })
-    .sort(
-      (a, b) =>
-        b.date.localeCompare(a.date) ||
-        a.slug.localeCompare(b.slug)
-    );
 }
 
 function daysInMonth(year, month) {
@@ -2876,114 +2804,6 @@ function archivePageStyles() {
 }`;
 }
 
-function questionPageStyles() {
-  return `${sessionPageStyles().replaceAll(
-    ".session-content",
-    ".question-content"
-  )}
-
-.question-log-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  margin: 4px 0 28px;
-}
-
-.question-log-item {
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-}
-
-.question-log-item img {
-  width: 100%;
-  margin: 0;
-}
-
-@media (max-width: 650px) {
-  .question-log-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-}`;
-}
-
-function renderQuestionMarkdown(question) {
-  const source = question.articleMarkdown.trim();
-  const imageGrid = question.images.length > 0
-    ? `
-  <div class="question-log-grid" aria-label="QUESTION LOG画像">
-${question.images
-  .map(
-    (image, index) => `    <figure class="question-log-item">
-      <img src="./${encodeURIComponent(question.slug)}/images/${encodeURIComponent(image)}" alt="${escapeHtml(question.title)} LOG画像${index + 1}">
-    </figure>`
-  )
-  .join("\n")}
-  </div>`
-    : "";
-
-  let html;
-
-  if (!imageGrid) {
-    html = renderMarkdown(source);
-  } else {
-    const logHeading = source.match(/^##[ \t]+LOG.*$/im);
-
-    if (logHeading) {
-      const lineEnd = source.indexOf("\n", logHeading.index);
-      const splitIndex = lineEnd === -1 ? source.length : lineEnd + 1;
-      html = `${renderMarkdown(source.slice(0, splitIndex))}${imageGrid}${renderMarkdown(source.slice(splitIndex))}`;
-    } else {
-      html = `${imageGrid}${renderMarkdown(source)}`;
-    }
-  }
-
-  return html.replace(
-    /(<img\b[^>]*\bsrc=")\.\/images\//g,
-    `$1./${encodeURIComponent(question.slug)}/images/`
-  );
-}
-
-function createQuestionPage(question) {
-  return createSimpleRecordPage({
-    documentTitle: `QUESTION | ${question.title}`,
-    kicker: "QUESTION",
-    title: question.title,
-    date: formatDotDate(question.date),
-    actions: `<a class="text-link" href="../index.html">TOP</a>`,
-    content: `<article class="question-content">${renderQuestionMarkdown(question)}</article>`,
-    displayYear: question.date.slice(0, 4),
-    headExtra: mathJaxHead(),
-    extraStyles: questionPageStyles()
-  });
-}
-
-function createQuestionIndexPage(questions) {
-  const items = questions
-    .map(
-      (question) => `
-    <article class="archive-item">
-      <div class="archive-date">${formatDotDate(question.date)}</div>
-      <a class="archive-title" href="./${encodeURIComponent(question.slug)}.html">${escapeHtml(question.title)}</a>
-    </article>`
-    )
-    .join("\n");
-
-  return createSimpleRecordPage({
-    documentTitle: "QUESTION | 数学学習記録",
-    kicker: "MATH STUDY LOG",
-    title: "QUESTION",
-    actions: `<a class="text-link" href="../index.html">TOP</a>`,
-    content: `<section class="archive-list">${items}\n  </section>`,
-    displayYear: questions.length > 0
-      ? questions[0].date.slice(0, 4)
-      : new Date().getFullYear(),
-    extraStyles: archivePageStyles()
-  });
-}
-
 function hasCategoryContent(study, kind) {
   return kind === "log"
     ? study.images.length > 0
@@ -3015,8 +2835,6 @@ function createArchivePage(kind, entries) {
     extraStyles: archivePageStyles()
   });
 }
-
-const questions = loadQuestions();
 
 /*
 トップページ生成
@@ -3109,41 +2927,6 @@ fs.writeFileSync(
 );
 
 /*
-QUESTIONページ生成
-*/
-
-for (const question of questions) {
-  const questionAssetsDir = path.join(
-    publicQuestionDir,
-    question.slug,
-    "images"
-  );
-
-  if (question.images.length > 0) {
-    fs.mkdirSync(questionAssetsDir, { recursive: true });
-
-    for (const image of question.images) {
-      fs.copyFileSync(
-        path.join(question.sourceImagesDir, image),
-        path.join(questionAssetsDir, image)
-      );
-    }
-  }
-
-  fs.writeFileSync(
-    path.join(publicQuestionDir, `${question.slug}.html`),
-    createQuestionPage(question),
-    "utf8"
-  );
-}
-
-fs.writeFileSync(
-  path.join(publicQuestionDir, "index.html"),
-  createQuestionIndexPage(questions),
-  "utf8"
-);
-
-/*
 sitemap.xml を自動生成
 */
 
@@ -3151,7 +2934,6 @@ const sitemapUrls = [
   `${siteUrl}/`,
   `${siteUrl}/log/`,
   `${siteUrl}/session/`,
-  `${siteUrl}/question/`,
   ...records.map(
     (record) => `${siteUrl}/records/${dateKey(record.date)}/`
   ),
@@ -3162,9 +2944,6 @@ const sitemapUrls = [
     ["log", "session"].filter((kind) => hasCategoryContent(study, kind)).map((kind) =>
       `${siteUrl}/records/${dateKey(record.date)}/${study.number}/${kind}.html`
     )
-  ),
-  ...questions.map(
-    (question) => `${siteUrl}/question/${question.slug}.html`
   )
 ];
 
@@ -3212,5 +2991,4 @@ console.log(
   )}`
 );
 console.log(`Images     : ${imageFiles.length}`);
-console.log(`Questions  : ${questions.length}`);
 console.log("");

@@ -1,7 +1,7 @@
 <!--
 subject: 数学III
 category: 極限
-subcategory: 無限等比数列
+subcategory: 数列の極限
 -->
 
 # 無限等比数列――公比を見る前に初項を見る
