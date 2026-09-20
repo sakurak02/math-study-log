@@ -133,7 +133,7 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.match(page, /class="about-guide" src="\.\/images\/kuumo\/s3\.png"/);
   assert.match(page, /<section class="topic-entry" aria-labelledby="topic-entry-title">/);
   assert.match(page, /<h2 class="topic-entry-title" id="topic-entry-title">分野から見る<\/h2>/);
-  assert.match(page, /<p class="topic-entry-description">数学I〜C・数学IIIをテーマ別に探す<\/p>/);
+  assert.match(page, /<p class="topic-entry-description">数学I・A・II・B・III・Cをテーマ別に探す<\/p>/);
   assert.match(page, /<button class="topic-toc-button toc-toggle"[^>]*>目次<\/button>/);
   assert.doesNotMatch(page, /<nav class="entry-nav"|href="\.\/(?:log|session|question)\/index\.html"/);
   assert.equal(build.exists("public/log/index.html"), true);

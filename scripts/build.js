@@ -2143,7 +2143,7 @@ ${calendarSections}
 
   <section class="topic-entry" aria-labelledby="topic-entry-title">
     <h2 class="topic-entry-title" id="topic-entry-title">分野から見る</h2>
-    <p class="topic-entry-description">数学I〜C・数学IIIをテーマ別に探す</p>
+    <p class="topic-entry-description">数学I・A・II・B・III・Cをテーマ別に探す</p>
     <div class="topic-entry-action">
       <button class="topic-toc-button toc-toggle" type="button" aria-expanded="false" aria-controls="study-toc">目次</button>
     </div>
