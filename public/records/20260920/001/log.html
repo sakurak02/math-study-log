@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>評価が正しくても、目標に届くとは限らない | 学習記録 002 - 2026年8月29日</title>
+<title>LOG | 偶数項と奇数項から点列全体の極限を考える | 学習記録 001 - 2026年9月20日</title>
 <link rel="icon" type="image/svg+xml" href="https://sakurak02.github.io/math-study-log/assets/cloud.svg">
 
 
@@ -19,36 +19,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<meta name="description" content="001では、二項展開の二次項までを使えば目標に届きました。">
-<meta property="og:title" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
-<meta property="og:description" content="001では、二項展開の二次項までを使えば目標に届きました。">
-<meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260829/002/">
+<meta name="description" content="今回のテーマは、">
+<meta property="og:title" content="偶数項と奇数項から点列全体の極限を考える | 数学学習記録">
+<meta property="og:description" content="今回のテーマは、">
+<meta property="og:url" content="https://sakurak02.github.io/math-study-log/records/20260920/001/log.html">
 <meta property="og:type" content="article">
-<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260829/002/images/20260829-002-1.webp">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/records/20260920/001/images/20260920-001-1.webp">
 <meta property="og:image:width" content="1668">
 <meta property="og:image:height" content="2157">
 <meta property="og:image:type" content="image/webp">
-<meta property="og:image:alt" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
+<meta property="og:image:alt" content="偶数項と奇数項から点列全体の極限を考える | 数学学習記録">
 <meta property="og:site_name" content="Math Study Log">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
-<meta name="twitter:description" content="001では、二項展開の二次項までを使えば目標に届きました。">
-<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260829/002/images/20260829-002-1.webp">
-<meta name="twitter:image:alt" content="評価が正しくても、目標に届くとは限らない | 数学学習記録">
-<script>
-window.MathJax = {
-  tex: {
-    inlineMath: [["\\(", "\\)"], ["$", "$"]],
-    displayMath: [["\\[", "\\]"], ["$$", "$$"]]
-  },
-  options: {
-    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
-  }
-};
-</script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260829/002/">
+<meta name="twitter:title" content="偶数項と奇数項から点列全体の極限を考える | 数学学習記録">
+<meta name="twitter:description" content="今回のテーマは、">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/records/20260920/001/images/20260920-001-1.webp">
+<meta name="twitter:image:alt" content="偶数項と奇数項から点列全体の極限を考える | 数学学習記録">
+
+<link rel="canonical" href="https://sakurak02.github.io/math-study-log/records/20260920/001/log.html">
 
 <style>
 :root {
@@ -401,81 +390,25 @@ mjx-container[display="true"] {
 
 <header>
   <div class="header-inner">
-    <div class="page-kicker">MATH STUDY LOG</div>
-    <h1>評価が正しくても、目標に届くとは限らない</h1>
-<div class="page-date">2026.08.29 / 002</div>
+    <div class="page-kicker">LOG</div>
+    <h1>偶数項と奇数項から点列全体の極限を考える</h1>
+<div class="page-date">2026.09.20 / 001</div>
   </div>
 </header>
 
 <main>
   <nav class="page-actions" aria-label="ページメニュー">
     <a class="text-link" href="../../../index.html">TOP</a>
-    <a class="text-link" href="../index.html">2026.08.29 の学習セット</a>
+    <a class="text-link" href="../../../log/index.html">LOG 一覧</a>
+    <a class="text-link" href="./index.html">学習セット全体</a>
   </nav>
 
-  <div class="study-flow"><section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION　by ChatGPT</h2><article class="session-content"><p>正の整数 $n$ に対して、</p>
-<p>$$
-\left(1+\frac2{\sqrt n}\right)^n&gt;n^2
-$$</p>
-<p>が十分大きな $n$ で成り立つことを示せ。</p>
-<details>
-<summary>ヒント</summary>
-<p>二項展開の二次項までの評価では、目標の $n^2$ に届きません。</p>
-<p>二項展開の $k$ 次項が、おおよそどの程度の大きさになるかを先に見積もり、何次項まで使えば $n^2$ を上回れるか考えてみる。</p>
-</details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>二次項までの下界は $O(n)$ 程度なので、目標である $n^2$ には届きません。</p>
-<p>そこで二項展開の各項の大きさを見積もります。</p>
-<p>5次項は $n^{5/2}$ 程度となるため、十分大きな $n$ では $n^2$ を上回ります。</p>
-<p>正確な積の展開にこだわらず、十分大きな $n$ で各因子を $n/2$ 以上と評価すると、証明を簡潔にできます。</p>
-<details>
-<summary>模範解答</summary>
-<p>二項展開の5次項</p>
-<p>$$
-\binom n5\left(\frac2{\sqrt n}\right)^5
-$$</p>
-<p>を見る。</p>
-<p>$n\ge8$ なら</p>
-<p>$$
-n-1,n-2,n-3,n-4\ge\frac n2
-$$</p>
-<p>だから、</p>
-<p>$$
-\begin{aligned}
-\binom n5\left(\frac2{\sqrt n}\right)^5
-&amp;\ge
-\frac{n(n/2)^4}{120}\cdot\frac{32}{n^{5/2}}\\
-&amp;=\frac1{60}n^{5/2}.
-\end{aligned}
-$$</p>
-<p>さらに $n&gt;3600$ なら</p>
-<p>$$
-\frac1{60}n^{5/2}&gt;n^2.
-$$</p>
-<p>したがって十分大きな $n$ について、</p>
-<p>$$
-\boxed{
-\left(1+\frac2{\sqrt n}\right)^n&gt;n^2
-}.
-$$</p>
-</details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.08.29 002 LOG ページ1を拡大">
-        <img class="sheet" src="./images/20260829-002-1.webp" alt="2026.08.29 002 LOG ページ1" loading="lazy">
+  <div class="study-flow"><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.09.20 001 LOG ページ1を拡大">
+        <img class="sheet" src="./images/20260920-001-1.webp" alt="2026.09.20 001 LOG ページ1" loading="lazy">
       </button>
       <figcaption>LOG · 1</figcaption>
-    </figure></section><section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content"><h1>評価が正しくても、目標に届くとは限らない</h1>
-<h2>今日のポイント</h2>
-<p>001では、二項展開の二次項までを使えば目標に届きました。</p>
-<p>今回は右辺が $n^2$ なので、同じ評価をそのまま使っても十分ではありません。</p>
-<p>下からの評価では、単に正しい不等式を作るだけでなく、<strong>その評価が目標に届く強さを持っているか</strong>を見る必要があります。</p>
-<h2>一段先の見方</h2>
-<p>二項展開の各項が $n$ の何乗程度になるかを先に見積もると、必要な項数を逆算できます。</p>
-<p>また、積を正確に展開する代わりに、十分大きな $n$ に対して</p>
-<p>$$
-n-k\ge\frac n2
-$$</p>
-<p>のような粗い評価を使うと、計算を簡単にできます。</p>
-</article></section></div>
+    </figure></section></div>
 </main>
 
 <footer>Math Study Log © 2026</footer>

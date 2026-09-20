@@ -413,180 +413,7 @@ mjx-container[display="true"] {
     <a class="text-link" href="../index.html">2026.09.09 の学習セット</a>
   </nav>
 
-  <div class="study-flow"><section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content"><h1>解法を最後まで使い切らなくてもいい</h1>
-<h2>今日のテーマ</h2>
-<p>今回のテーマは、連立漸化式の新しい解法を覚えることではありません。</p>
-<p>一度覚えた解法にそのまま乗り続けるのではなく、</p>
-<p><strong>途中でより簡単な構造が見えたら、そちらへ切り替える</strong></p>
-<p>という判断です。</p>
-<p>sakurak02さんは前回、連立漸化式について、</p>
-<ul>
-<li>線形結合を作る</li>
-<li>一方を消去して3項間漸化式にする</li>
-</ul>
-<p>という2つの大きな入口を整理しました。</p>
-<p>その直後の学習だったため、今回も最初は、覚えたばかりの線形結合の方法を最後まで使って解きました。</p>
-<p>計算は正しく、答えにも到達しています。</p>
-<p>ただ、途中にはもっと短い道がありました。</p>
-<hr>
-<h2>つまずき｜昨日覚えた型を、そのまま最後まで使った</h2>
-<p>連立漸化式を見て、sakurak02さんは前回学んだ</p>
-<p>$$
-x_n+\alpha y_n
-$$</p>
-<p>の形を探しました。</p>
-<p>これは正しい方針です。</p>
-<p>しかし、途中で</p>
-<p>$$
-\frac12x_n+y_n=2
-$$</p>
-<p>のような、$n$ によらず一定になる関係が得られた時点で、状況が変わります。</p>
-<p>この式から、</p>
-<p>$$
-y_n=2-\frac12x_n
-$$</p>
-<p>と表せます。</p>
-<p>つまり、もう2つの数列を同時に追う必要はありません。</p>
-<p>片方をもう片方で表してしまえば、連立漸化式を1変数の漸化式にできます。</p>
-<hr>
-<h2>今回のポイント｜使える関係が1本見つかったら、一度立ち止まる</h2>
-<p>線形結合を使う目的は、必ずしも独立した関係を2本作ることではありません。</p>
-<p>1本の関係だけでも、</p>
-<p>$$
-y_n=\text{$x_n$ の式}
-$$</p>
-<p>の形にできれば、それを元の漸化式へ戻すことで1変数に落とせます。</p>
-<p>したがって、連立漸化式で何か簡単な関係が見つかったら、</p>
-<p><strong>「もう一つ探す必要が本当にあるか？」</strong></p>
-<p>を一度考えることが大切です。</p>
-<p>正しい解法を知っていることと、その解法を最後まで使い切ることは別です。</p>
-<p>途中で問題が簡単になったなら、そこで解法を乗り換えてかまいません。</p>
-<hr>
-<h2>オリジナル問題での確認</h2>
-<p>公開用オリジナル問題では、sakurak02さんはまず</p>
-<p>$$
-\frac12x_{n+1}+y_{n+1}
-=
-\frac12x_n+y_n
-$$</p>
-<p>という不変な関係を見つけました。</p>
-<p>初期値から、</p>
-<p>$$
-\frac12x_n+y_n=2
-$$</p>
-<p>となるので、</p>
-<p>$$
-y_n=2-\frac12x_n
-$$</p>
-<p>です。</p>
-<p>これを漸化式へ代入することで、</p>
-<p>$$
-x_{n+1}
-=
-\frac38x_n+\frac12
-$$</p>
-<p>という1変数の漸化式に落とすことができました。</p>
-<p>ここまでは、今回の狙いどおりです。</p>
-<hr>
-<h2>もう一つの気づき｜極限だけなら一般項まで求めなくてもよい</h2>
-<p>sakurak02さんは、その後一般項まで求めてから極限を出しました。</p>
-<p>もちろん正しい解法です。</p>
-<p>ただし、今回求めるものは一般項ではなく極限だけです。</p>
-<p>そこで、</p>
-<p>$$
-x_{n+1}
-=
-\frac38x_n+\frac12
-$$</p>
-<p>まで来た時点で、さらに短く考えることができます。</p>
-<p>もし $x_n$ がある値 $L$ に収束するとすれば、$x_{n+1}$ も同じ $L$ に収束するので、</p>
-<p>$$
-L=\frac38L+\frac12
-$$</p>
-<p>を満たす必要があります。</p>
-<p>これを解くと、</p>
-<p>$$
-L=\frac45
-$$</p>
-<p>です。</p>
-<p>ただし、</p>
-<p><strong>この式を解いただけでは、本当に $\frac45$ に収束することはまだ確定していません。</strong></p>
-<p>そこで、</p>
-<p>$$
-x_{n+1}-\frac45
-=
-\frac38\left(x_n-\frac45\right)
-$$</p>
-<p>と変形します。</p>
-<p>すると、</p>
-<p>$$
-x_n-\frac45
-$$</p>
-<p>は公比 $\frac38$ の等比数列です。</p>
-<p>$$
-\left|\frac38\right|&lt;1
-$$</p>
-<p>なので、</p>
-<p>$$
-x_n-\frac45\to0
-$$</p>
-<p>となり、</p>
-<p>$$
-x_n\to\frac45
-$$</p>
-<p>と確認できます。</p>
-<hr>
-<h2>公比が負でも同じ</h2>
-<p>一般に、</p>
-<p>$$
-x_{n+1}-L=r(x_n-L)
-$$</p>
-<p>となったとき、</p>
-<p>$$
-|r|&lt;1
-$$</p>
-<p>なら、</p>
-<p>$$
-x_n-L\to0
-$$</p>
-<p>です。</p>
-<p>$r$ が負の場合は、$L$ の左右を行き来しながら近づきます。</p>
-<p>重要なのは符号ではなく、</p>
-<p>$$
-\boxed{|r|&lt;1}
-$$</p>
-<p>であることです。</p>
-<hr>
-<h2>今日の学習ポイント</h2>
-<p>今回のポイントは2つです。</p>
-<h3>1．途中で簡単な構造が見えたら、解法を乗り換える</h3>
-<p>$$
-\boxed{
-\text{正しい解法を最後まで使い切る必要はない}
-}
-$$</p>
-<p>連立漸化式で1本の関係が見つかり、1変数に減らせるなら、それ以上複雑な処理を続ける必要はありません。</p>
-<h3>2．極限だけなら、一般項を求めなくてもよい場合がある</h3>
-<p>$$
-x_{n+1}=ax_n+b
-$$</p>
-<p>の形になったとき、</p>
-<p>$$
-|a|&lt;1
-$$</p>
-<p>なら、収束先候補 $L$ を</p>
-<p>$$
-L=aL+b
-$$</p>
-<p>から求め、</p>
-<p>$$
-x_{n+1}-L=a(x_n-L)
-$$</p>
-<p>を確認すれば、一般項を最後まで求めなくても極限を決定できます。</p>
-<p>今回の学習では、</p>
-<p><strong>「解ける方法を知る」から、「目的に応じて短い方法を選ぶ」へ</strong></p>
-<p>少し進むことができました。</p>
-</article></section><section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION　by ChatGPT</h2><article class="session-content"><p>数列 $\{x_n\},\{y_n\}$ を</p>
+  <div class="study-flow"><section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION　by ChatGPT</h2><article class="session-content"><p>数列 $\{x_n\},\{y_n\}$ を</p>
 <p>$$
 x_1=2,\qquad y_1=1
 $$</p>
@@ -618,12 +445,7 @@ $$</p>
 <p>と表せないか考えてください。</p>
 <p>さらに今回は一般項ではなく極限だけを求めればよいことにも注目してみましょう。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="2026.09.09 001 LOG ページ1を拡大">
-        <img class="sheet" src="./images/20260909-001-1.webp" alt="2026.09.09 001 LOG ページ1" loading="lazy">
-      </button>
-      <figcaption>LOG · 1</figcaption>
-    </figure></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><h2>EXPLANATION</h2>
+</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><h2>EXPLANATION</h2>
 <p>この問題のポイントは、連立漸化式を最後まで連立のまま扱わないことです。</p>
 <p>まず、2つの漸化式を適切に組み合わせると、</p>
 <p>$$
@@ -803,6 +625,184 @@ $$</p>
 $$</p>
 <p>となる。</p>
 </details>
+</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+      <button class="sheet-button" type="button" aria-label="2026.09.09 001 LOG ページ1を拡大">
+        <img class="sheet" src="./images/20260909-001-1.webp" alt="2026.09.09 001 LOG ページ1" loading="lazy">
+      </button>
+      <figcaption>LOG · 1</figcaption>
+    </figure></section><section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content"><h1>解法を最後まで使い切らなくてもいい</h1>
+<h2>今日のテーマ</h2>
+<p>今回のテーマは、連立漸化式の新しい解法を覚えることではありません。</p>
+<p>一度覚えた解法にそのまま乗り続けるのではなく、</p>
+<p><strong>途中でより簡単な構造が見えたら、そちらへ切り替える</strong></p>
+<p>という判断です。</p>
+<p>sakurak02さんは前回、連立漸化式について、</p>
+<ul>
+<li>線形結合を作る</li>
+<li>一方を消去して3項間漸化式にする</li>
+</ul>
+<p>という2つの大きな入口を整理しました。</p>
+<p>その直後の学習だったため、今回も最初は、覚えたばかりの線形結合の方法を最後まで使って解きました。</p>
+<p>計算は正しく、答えにも到達しています。</p>
+<p>ただ、途中にはもっと短い道がありました。</p>
+<hr>
+<h2>つまずき｜昨日覚えた型を、そのまま最後まで使った</h2>
+<p>連立漸化式を見て、sakurak02さんは前回学んだ</p>
+<p>$$
+x_n+\alpha y_n
+$$</p>
+<p>の形を探しました。</p>
+<p>これは正しい方針です。</p>
+<p>しかし、途中で</p>
+<p>$$
+\frac12x_n+y_n=2
+$$</p>
+<p>のような、$n$ によらず一定になる関係が得られた時点で、状況が変わります。</p>
+<p>この式から、</p>
+<p>$$
+y_n=2-\frac12x_n
+$$</p>
+<p>と表せます。</p>
+<p>つまり、もう2つの数列を同時に追う必要はありません。</p>
+<p>片方をもう片方で表してしまえば、連立漸化式を1変数の漸化式にできます。</p>
+<hr>
+<h2>今回のポイント｜使える関係が1本見つかったら、一度立ち止まる</h2>
+<p>線形結合を使う目的は、必ずしも独立した関係を2本作ることではありません。</p>
+<p>1本の関係だけでも、</p>
+<p>$$
+y_n=\text{$x_n$ の式}
+$$</p>
+<p>の形にできれば、それを元の漸化式へ戻すことで1変数に落とせます。</p>
+<p>したがって、連立漸化式で何か簡単な関係が見つかったら、</p>
+<p><strong>「もう一つ探す必要が本当にあるか？」</strong></p>
+<p>を一度考えることが大切です。</p>
+<p>正しい解法を知っていることと、その解法を最後まで使い切ることは別です。</p>
+<p>途中で問題が簡単になったなら、そこで解法を乗り換えてかまいません。</p>
+<hr>
+<h2>オリジナル問題での確認</h2>
+<p>公開用オリジナル問題では、sakurak02さんはまず</p>
+<p>$$
+\frac12x_{n+1}+y_{n+1}
+=
+\frac12x_n+y_n
+$$</p>
+<p>という不変な関係を見つけました。</p>
+<p>初期値から、</p>
+<p>$$
+\frac12x_n+y_n=2
+$$</p>
+<p>となるので、</p>
+<p>$$
+y_n=2-\frac12x_n
+$$</p>
+<p>です。</p>
+<p>これを漸化式へ代入することで、</p>
+<p>$$
+x_{n+1}
+=
+\frac38x_n+\frac12
+$$</p>
+<p>という1変数の漸化式に落とすことができました。</p>
+<p>ここまでは、今回の狙いどおりです。</p>
+<hr>
+<h2>もう一つの気づき｜極限だけなら一般項まで求めなくてもよい</h2>
+<p>sakurak02さんは、その後一般項まで求めてから極限を出しました。</p>
+<p>もちろん正しい解法です。</p>
+<p>ただし、今回求めるものは一般項ではなく極限だけです。</p>
+<p>そこで、</p>
+<p>$$
+x_{n+1}
+=
+\frac38x_n+\frac12
+$$</p>
+<p>まで来た時点で、さらに短く考えることができます。</p>
+<p>もし $x_n$ がある値 $L$ に収束するとすれば、$x_{n+1}$ も同じ $L$ に収束するので、</p>
+<p>$$
+L=\frac38L+\frac12
+$$</p>
+<p>を満たす必要があります。</p>
+<p>これを解くと、</p>
+<p>$$
+L=\frac45
+$$</p>
+<p>です。</p>
+<p>ただし、</p>
+<p><strong>この式を解いただけでは、本当に $\frac45$ に収束することはまだ確定していません。</strong></p>
+<p>そこで、</p>
+<p>$$
+x_{n+1}-\frac45
+=
+\frac38\left(x_n-\frac45\right)
+$$</p>
+<p>と変形します。</p>
+<p>すると、</p>
+<p>$$
+x_n-\frac45
+$$</p>
+<p>は公比 $\frac38$ の等比数列です。</p>
+<p>$$
+\left|\frac38\right|&lt;1
+$$</p>
+<p>なので、</p>
+<p>$$
+x_n-\frac45\to0
+$$</p>
+<p>となり、</p>
+<p>$$
+x_n\to\frac45
+$$</p>
+<p>と確認できます。</p>
+<hr>
+<h2>公比が負でも同じ</h2>
+<p>一般に、</p>
+<p>$$
+x_{n+1}-L=r(x_n-L)
+$$</p>
+<p>となったとき、</p>
+<p>$$
+|r|&lt;1
+$$</p>
+<p>なら、</p>
+<p>$$
+x_n-L\to0
+$$</p>
+<p>です。</p>
+<p>$r$ が負の場合は、$L$ の左右を行き来しながら近づきます。</p>
+<p>重要なのは符号ではなく、</p>
+<p>$$
+\boxed{|r|&lt;1}
+$$</p>
+<p>であることです。</p>
+<hr>
+<h2>今日の学習ポイント</h2>
+<p>今回のポイントは2つです。</p>
+<h3>1．途中で簡単な構造が見えたら、解法を乗り換える</h3>
+<p>$$
+\boxed{
+\text{正しい解法を最後まで使い切る必要はない}
+}
+$$</p>
+<p>連立漸化式で1本の関係が見つかり、1変数に減らせるなら、それ以上複雑な処理を続ける必要はありません。</p>
+<h3>2．極限だけなら、一般項を求めなくてもよい場合がある</h3>
+<p>$$
+x_{n+1}=ax_n+b
+$$</p>
+<p>の形になったとき、</p>
+<p>$$
+|a|&lt;1
+$$</p>
+<p>なら、収束先候補 $L$ を</p>
+<p>$$
+L=aL+b
+$$</p>
+<p>から求め、</p>
+<p>$$
+x_{n+1}-L=a(x_n-L)
+$$</p>
+<p>を確認すれば、一般項を最後まで求めなくても極限を決定できます。</p>
+<p>今回の学習では、</p>
+<p><strong>「解ける方法を知る」から、「目的に応じて短い方法を選ぶ」へ</strong></p>
+<p>少し進むことができました。</p>
 </article></section></div>
 </main>
 

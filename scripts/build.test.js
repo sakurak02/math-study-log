@@ -63,7 +63,7 @@ function recordFiles(date = "20260828", sequence = "001", overrides = {}) {
   return {
     [`${dir}/session.md`]: `${classification}# Session title ${sequence}\n\nSession text.`,
     [`${dir}/question.md`]: `${classification}# オリジナル問題\n\nQuestion text.\n\n<details>\n<summary>ヒント</summary>\n\nHint text.\n\n</details>`,
-    [`${dir}/answer.md`]: `${classification}# 解説\n\nExplanation text.\n\n<details>\n<summary>模範解答</summary>\n\nAnswer text.\n\n</details>`,
+    [`${dir}/answer.md`]: `${classification}# 解説\n\n<details>\n<summary>ANSWER</summary>\n\n## EXPLANATION\n\nExplanation text.\n\n## MODEL ANSWER\n\nAnswer text.\n\n</details>`,
     [`${dir}/meta.json`]: JSON.stringify({
       studyId: `${date}-${sequence}`,
       date: isoDate,
@@ -78,19 +78,23 @@ function recordFiles(date = "20260828", sequence = "001", overrides = {}) {
   };
 }
 
-test("new-format article renders the required vertical section order", (t) => {
+test("new-format article renders QUESTION, ANSWER, LOG, and SESSION in order", (t) => {
   const build = fixture(t, recordFiles());
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
   const page = build.read("public/records/20260828/001/index.html");
-  const headings = ["session-heading", "question-heading", "log-heading", "explanation-heading"]
+  const headings = ["question-heading", "explanation-heading", "log-heading", "session-heading"]
     .map((id) => page.indexOf(`id="${id}"`));
   assert.ok(headings.every((index) => index >= 0));
   assert.deepEqual(headings, [...headings].sort((a, b) => a - b));
   assert.match(page, /id="question-heading">ORIGINAL QUESTION　by ChatGPT<\/h2>/);
   assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
   assert.match(page, /<summary>ヒント<\/summary>/);
-  assert.match(page, /<summary>MODEL ANSWER<\/summary>/);
+  assert.match(page, /<details>\s*<summary>ANSWER<\/summary>/);
+  assert.doesNotMatch(page, /<details\s+open(?:\s|>)/);
+  assert.ok(page.indexOf("id=\"question-heading\"") < page.indexOf("<summary>ANSWER</summary>"));
+  assert.ok(page.indexOf("<summary>ANSWER</summary>") < page.indexOf("id=\"log-heading\""));
+  assert.ok(page.indexOf("id=\"log-heading\"") < page.indexOf("id=\"session-heading\""));
   assert.doesNotMatch(page, /<h1>オリジナル問題<\/h1>|<h1>解説<\/h1>/);
 });
 
@@ -183,8 +187,8 @@ test("new image naming is enforced and page one is required", (t) => {
   assert.match(result.stderr, /LOG画像の1ページ目がありません/);
 });
 
-test("session, question, and answer are all required", (t) => {
-  for (const name of ["session.md", "question.md", "answer.md"]) {
+test("session and question are required", (t) => {
+  for (const name of ["session.md", "question.md"]) {
     const files = recordFiles();
     delete files[`content/records/20260828/001/${name}`];
     const build = fixture(t, files);
@@ -192,6 +196,20 @@ test("session, question, and answer are all required", (t) => {
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, new RegExp(`新形式の必須ファイルがありません: ${name.replace(".", "\\.")}`));
   }
+});
+
+test("article without answer.md renders QUESTION, LOG, and SESSION without an ANSWER section", (t) => {
+  const files = recordFiles();
+  delete files["content/records/20260828/001/answer.md"];
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const page = build.read("public/records/20260828/001/index.html");
+  const headings = ["question-heading", "log-heading", "session-heading"]
+    .map((id) => page.indexOf(`id="${id}"`));
+  assert.ok(headings.every((index) => index >= 0));
+  assert.deepEqual(headings, [...headings].sort((a, b) => a - b));
+  assert.doesNotMatch(page, /id="explanation-heading"|<summary>ANSWER<\/summary>/);
 });
 
 test("conflicting classifications across the three documents fail the build", (t) => {

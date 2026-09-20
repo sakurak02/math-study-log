@@ -769,8 +769,7 @@ function loadStudyContent(record, study) {
 
   const missingFiles = [
     [sessionPath, "session.md"],
-    [questionPath, "question.md"],
-    [answerPath, "answer.md"]
+    [questionPath, "question.md"]
   ].filter(([filePath]) => !fs.existsSync(filePath));
   if (missingFiles.length > 0) {
     throw new Error(`新形式の必須ファイルがありません: ${missingFiles.map(([, name]) => name).join(", ")} (${studyContentDir})`);
@@ -783,7 +782,7 @@ function loadStudyContent(record, study) {
     classification: sessionClassification || metaClassification,
     sessionMarkdown: session.markdown,
     questionMarkdown: question.markdown,
-    answerMarkdown: answer.markdown
+    answerMarkdown: answer?.markdown ?? null
   };
 }
 
@@ -2336,13 +2335,14 @@ function createStudyPage(record, study, view = "study") {
   const sessionSection = `<section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.sessionMarkdown, images: [] })}</article></section>`;
   const questionSection = `<section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION　by ChatGPT</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.questionMarkdown), images: [] })}</article></section>`;
   const logSection = `<section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2>${renderStudyLog(record, study)}</section>`;
-  const answerSource = withoutFirstHeading(study.answerMarkdown).replace(/<summary>\s*模範解答\s*<\/summary>/g, "<summary>MODEL ANSWER</summary>");
-  const answerSection = `<section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: answerSource, images: [] })}</article></section>`;
+  const answerSection = study.answerMarkdown === null
+    ? ""
+    : `<section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.answerMarkdown), images: [] })}</article></section>`;
   const content = view === "log"
     ? `<div class="study-flow">${logSection}</div>`
     : view === "session"
       ? `<div class="study-flow">${sessionSection}</div>`
-      : `<div class="study-flow">${sessionSection}${questionSection}${logSection}${answerSection}</div>`;
+      : `<div class="study-flow">${questionSection}${answerSection}${logSection}${sessionSection}</div>`;
 
   return createSimpleRecordPage({
     documentTitle: `${view === "study" ? "" : `${view.toUpperCase()} | `}${study.title} | 学習記録 ${study.number} - ${formatJapaneseDate(record.date)}`,
