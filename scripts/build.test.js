@@ -226,11 +226,11 @@ test("unregistered topic in a category with topics fails the build", (t) => {
 });
 
 test("topic remains free-form when its category has no topics", (t) => {
-  const build = fixture(t, classifiedRecordFiles("数学B", "数列", "任意の既存小分類"));
+  const build = fixture(t, classifiedRecordFiles("数学B", "数学と社会生活", "任意の既存小分類"));
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
   const page = build.read("public/index.html");
-  assert.match(page, /<summary>数学B<\/summary>[\s\S]*<h3>数列<\/h3>[\s\S]*<h4>任意の既存小分類<\/h4>/);
+  assert.match(page, /<summary>数学B<\/summary>[\s\S]*<h3>数学と社会生活<\/h3>[\s\S]*<h4>任意の既存小分類<\/h4>/);
 });
 
 test("existing subject and category validation still rejects unknown values", (t) => {
@@ -320,7 +320,7 @@ test("article without answer.md renders QUESTION, LOG, and SESSION without an AN
 
 test("conflicting classifications across the three documents fail the build", (t) => {
   const files = recordFiles();
-  files["content/records/20260828/001/question.md"] = "<!--\nsubject: 数学B\ncategory: 数列\nsubcategory: 漸化式\n-->\n\n# Question";
+  files["content/records/20260828/001/question.md"] = "<!--\nsubject: 数学B\ncategory: 数列\nsubcategory: 種々の漸化式\n-->\n\n# Question";
   const build = fixture(t, files);
   const result = build.run();
   assert.notEqual(result.status, 0);
