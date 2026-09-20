@@ -63,7 +63,7 @@ function recordFiles(date = "20260828", sequence = "001", overrides = {}) {
   return {
     [`${dir}/session.md`]: `${classification}# Session title ${sequence}\n\nSession text.`,
     [`${dir}/question.md`]: `${classification}# オリジナル問題\n\nQuestion text.\n\n<details>\n<summary>ヒント</summary>\n\nHint text.\n\n</details>`,
-    [`${dir}/answer.md`]: `${classification}# 解説\n\n<details>\n<summary>ANSWER</summary>\n\n## EXPLANATION\n\nExplanation text.\n\n## MODEL ANSWER\n\nAnswer text.\n\n</details>`,
+    [`${dir}/answer.md`]: `${classification}# 解説\n\n## EXPLANATION\n\nExplanation text with $E=mc^2$.\n\n## MODEL ANSWER\n\nAnswer text.`,
     [`${dir}/meta.json`]: JSON.stringify({
       studyId: `${date}-${sequence}`,
       date: isoDate,
@@ -83,17 +83,20 @@ test("new-format article renders QUESTION, ANSWER, LOG, and SESSION in order", (
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
   const page = build.read("public/records/20260828/001/index.html");
-  const headings = ["question-heading", "explanation-heading", "log-heading", "session-heading"]
+  const headings = ["question-heading", "answer-heading", "log-heading", "session-heading"]
     .map((id) => page.indexOf(`id="${id}"`));
   assert.ok(headings.every((index) => index >= 0));
   assert.deepEqual(headings, [...headings].sort((a, b) => a - b));
   assert.match(page, /id="question-heading">ORIGINAL QUESTION　by ChatGPT<\/h2>/);
   assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
   assert.match(page, /<summary>ヒント<\/summary>/);
-  assert.match(page, /<details>\s*<summary>ANSWER<\/summary>/);
-  assert.doesNotMatch(page, /<details\s+open(?:\s|>)/);
-  assert.ok(page.indexOf("id=\"question-heading\"") < page.indexOf("<summary>ANSWER</summary>"));
-  assert.ok(page.indexOf("<summary>ANSWER</summary>") < page.indexOf("id=\"log-heading\""));
+  assert.match(page, /<h2 class="section-heading" id="answer-heading">ANSWER<\/h2>/);
+  assert.match(page, /<details class="answer-details"><summary>ANSWERを開く<\/summary><article class="session-content">/);
+  assert.doesNotMatch(page, /<details class="answer-details"\s+open/);
+  assert.match(page, /<h2>EXPLANATION<\/h2>[\s\S]*<h2>MODEL ANSWER<\/h2>/);
+  assert.match(page, /\$E=mc\^2\$/);
+  assert.ok(page.indexOf("id=\"question-heading\"") < page.indexOf("id=\"answer-heading\""));
+  assert.ok(page.indexOf("id=\"answer-heading\"") < page.indexOf("id=\"log-heading\""));
   assert.ok(page.indexOf("id=\"log-heading\"") < page.indexOf("id=\"session-heading\""));
   assert.doesNotMatch(page, /<h1>オリジナル問題<\/h1>|<h1>解説<\/h1>/);
 });
@@ -164,9 +167,9 @@ test("LOG and SESSION archive pages retain their focused views", (t) => {
   const log = build.read("public/records/20260828/001/log.html");
   const session = build.read("public/records/20260828/001/session.html");
   assert.match(log, /id="log-heading"/);
-  assert.doesNotMatch(log, /id="session-heading"|id="question-heading"|id="explanation-heading"/);
+  assert.doesNotMatch(log, /id="session-heading"|id="question-heading"|id="answer-heading"/);
   assert.match(session, /id="session-heading"/);
-  assert.doesNotMatch(session, /id="log-heading"|id="question-heading"|id="explanation-heading"/);
+  assert.doesNotMatch(session, /id="log-heading"|id="question-heading"|id="answer-heading"/);
 });
 
 test("new image naming is enforced and page one is required", (t) => {
@@ -209,7 +212,7 @@ test("article without answer.md renders QUESTION, LOG, and SESSION without an AN
     .map((id) => page.indexOf(`id="${id}"`));
   assert.ok(headings.every((index) => index >= 0));
   assert.deepEqual(headings, [...headings].sort((a, b) => a - b));
-  assert.doesNotMatch(page, /id="explanation-heading"|<summary>ANSWER<\/summary>/);
+  assert.doesNotMatch(page, /id="answer-heading"|class="answer-details"|ANSWERを開く/);
 });
 
 test("conflicting classifications across the three documents fail the build", (t) => {

@@ -357,6 +357,17 @@ mjx-container[display="true"] {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -450,7 +461,7 @@ $$</p>
 </ul>
 <p>を比べてみてください。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><h2>EXPLANATION</h2>
+</article></section><section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content"><h2>EXPLANATION</h2>
 <p>この問題のポイントは、答えを求めることだけではありません。</p>
 <p>連立漸化式に対する代表的な2つの入口、</p>
 <ul>
@@ -684,7 +695,7 @@ $$</p>
 <p>これは最初の方法で得られた公比 $1,4$ と一致する。</p>
 <p>よって2つの解法は、同じ連立漸化式の構造を別の形で取り出していることがわかる。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+</article></details></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="2026.09.08 001 LOG ページ1を拡大">
         <img class="sheet" src="./images/20260908-001-1.webp" alt="2026.09.08 001 LOG ページ1" loading="lazy">
       </button>

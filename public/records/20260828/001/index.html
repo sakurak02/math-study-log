@@ -357,6 +357,17 @@ mjx-container[display="true"] {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -430,7 +441,7 @@ $$</p>
 <p>の形に直す。</p>
 <p>次に固定点を求め、$a_n$ との差を考える。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>固定点を求めて差を取ると、固定点との差が等比数列になります。</p>
+</article></section><section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content"><p>固定点を求めて差を取ると、固定点との差が等比数列になります。</p>
 <p>この問題では、さらに<strong>初項がすでに固定点と一致している</strong>ことが特徴です。</p>
 <p>初項が固定点なら、その後もずっと固定点にとどまります。つまり「固定点は最後に近づく値」だけでなく、最初からそこにいる場合もあります。</p>
 <details>
@@ -462,7 +473,7 @@ $$</p>
 \boxed{\lim_{n\to\infty}a_n=2}.
 $$</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+</article></details></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="2026.08.28 001 LOG ページ1を拡大">
         <img class="sheet" src="./images/20260828-001-1.webp" alt="2026.08.28 001 LOG ページ1" loading="lazy">
       </button>

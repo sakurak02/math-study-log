@@ -357,6 +357,17 @@ mjx-container[display="true"] {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -428,7 +439,7 @@ $$</p>
 <p>となる場合を確認する。</p>
 <p>そのあと、初項が 0 でない場合について公比の収束条件を考える。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>この問題では、公比を見る前に<strong>初項が 0 になる特別な場合</strong>を切り分けることがポイントです。</p>
+</article></section><section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content"><p>この問題では、公比を見る前に<strong>初項が 0 になる特別な場合</strong>を切り分けることがポイントです。</p>
 <p>$x=1$ のときは初項が 0 となるため、数列は最初からすべて 0 です。</p>
 <p>$x\neq1$ のときは、初項は 0 ではないので、公比</p>
 <p>$$
@@ -466,7 +477,7 @@ $$</p>
 <p>極限値は、$|r|&lt;1$ の場合と $x=1$ では 0。</p>
 <p>端点 $x=\sqrt5$ では公比が 1 なので極限は $\sqrt5-1$、$x=-\sqrt5$ では $-\sqrt5-1$ となる。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+</article></details></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="2026.08.25 001 LOG ページ1を拡大">
         <img class="sheet" src="./images/20260825-001-1.webp" alt="2026.08.25 001 LOG ページ1" loading="lazy">
       </button>

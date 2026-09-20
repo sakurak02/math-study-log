@@ -357,6 +357,17 @@ mjx-container[display="true"] {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -448,9 +459,7 @@ $$</p>
 <p><strong>点列 $P_n$ のすべての項は、偶数番目か奇数番目のどちらかである</strong></p>
 <p>ことを考えてみよう。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><details>
-<summary>ANSWER</summary>
-<h2>EXPLANATION</h2>
+</article></section><section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content"><h2>EXPLANATION</h2>
 <p>この問題では、点列全体を一度に扱うより、</p>
 <p>$$
 P_{2n}
@@ -534,8 +543,7 @@ $$</p>
 \boxed{(2,1)}
 $$</p>
 <p>に収束する。</p>
-</details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+</article></details></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="2026.09.20 001 LOG ページ1を拡大">
         <img class="sheet" src="./images/20260920-001-1.webp" alt="2026.09.20 001 LOG ページ1" loading="lazy">
       </button>

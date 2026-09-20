@@ -357,6 +357,17 @@ mjx-container[display="true"] {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -451,7 +462,7 @@ $$</p>
 <p>を別々に計算する。</p>
 <p>共通する因子に注目し、2式の比を考える。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>この問題では固定点が2つ現れます。</p>
+</article></section><section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content"><p>この問題では固定点が2つ現れます。</p>
 <p>固定点を $\alpha,\beta$ とすると、</p>
 <p>$$
 a_n-\alpha,
@@ -508,7 +519,7 @@ $$</p>
 \boxed{\lim_{n\to\infty}a_n=3}.
 $$</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+</article></details></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="2026.09.03 001 LOG ページ1を拡大">
         <img class="sheet" src="./images/20260903-001-1.webp" alt="2026.09.03 001 LOG ページ1" loading="lazy">
       </button>

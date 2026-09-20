@@ -1,8 +1,5 @@
 # 偶数項と奇数項から点列全体の極限を考える
 
-<details>
-<summary>ANSWER</summary>
-
 ## EXPLANATION
 
 この問題では、点列全体を一度に扱うより、
@@ -124,5 +121,3 @@ $$
 $$
 
 に収束する。
-
-</details>

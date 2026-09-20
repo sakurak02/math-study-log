@@ -2308,6 +2308,17 @@ function studyPageStyles() {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -2337,7 +2348,7 @@ function createStudyPage(record, study, view = "study") {
   const logSection = `<section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2>${renderStudyLog(record, study)}</section>`;
   const answerSection = study.answerMarkdown === null
     ? ""
-    : `<section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.answerMarkdown), images: [] })}</article></section>`;
+    : `<section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.answerMarkdown), images: [] })}</article></details></section>`;
   const content = view === "log"
     ? `<div class="study-flow">${logSection}</div>`
     : view === "session"

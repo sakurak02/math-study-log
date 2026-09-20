@@ -357,6 +357,17 @@ mjx-container[display="true"] {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -428,7 +439,7 @@ $$</p>
 <p>を利用する。</p>
 <p>$x=\sqrt{3/n}$ を代入したあと、得られた下界と $n$ を<strong>直接比較</strong>する。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>この問題では、二項展開の二次項までを使った下からの評価で十分です。</p>
+</article></section><section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content"><p>この問題では、二項展開の二次項までを使った下からの評価で十分です。</p>
 <p>$x=\sqrt{3/n}$ を代入すると、下界の中に $n$ と同じ一次の大きさをもつ項が現れます。</p>
 <p>ここで大切なのは、「どちらも無限大へ行くから大きい」と考えるのではなく、得られた下界と $n$ を<strong>直接比較する</strong>ことです。</p>
 <details>
@@ -455,7 +466,7 @@ $$</p>
 }.
 $$</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+</article></details></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="2026.08.29 001 LOG ページ1を拡大">
         <img class="sheet" src="./images/20260829-001-1.webp" alt="2026.08.29 001 LOG ページ1" loading="lazy">
       </button>

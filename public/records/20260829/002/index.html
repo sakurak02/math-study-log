@@ -357,6 +357,17 @@ mjx-container[display="true"] {
   letter-spacing: 0.08em;
 }
 .more-log-list { padding-top: 18px; }
+.answer-details { margin: 0; }
+.answer-details > summary {
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.answer-details[open] > summary {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
 .session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
 .session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
 .lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
@@ -423,7 +434,7 @@ $$</p>
 <p>二項展開の二次項までの評価では、目標の $n^2$ に届きません。</p>
 <p>二項展開の $k$ 次項が、おおよそどの程度の大きさになるかを先に見積もり、何次項まで使えば $n^2$ を上回れるか考えてみる。</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="explanation-heading"><h2 class="section-heading" id="explanation-heading">EXPLANATION</h2><article class="session-content"><p>二次項までの下界は $O(n)$ 程度なので、目標である $n^2$ には届きません。</p>
+</article></section><section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content"><p>二次項までの下界は $O(n)$ 程度なので、目標である $n^2$ には届きません。</p>
 <p>そこで二項展開の各項の大きさを見積もります。</p>
 <p>5次項は $n^{5/2}$ 程度となるため、十分大きな $n$ では $n^2$ を上回ります。</p>
 <p>正確な積の展開にこだわらず、十分大きな $n$ で各因子を $n/2$ 以上と評価すると、証明を簡潔にできます。</p>
@@ -458,7 +469,7 @@ $$</p>
 }.
 $$</p>
 </details>
-</article></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
+</article></details></section><section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2><figure class="study-sheet">
       <button class="sheet-button" type="button" aria-label="2026.08.29 002 LOG ページ1を拡大">
         <img class="sheet" src="./images/20260829-002-1.webp" alt="2026.08.29 002 LOG ページ1" loading="lazy">
       </button>
