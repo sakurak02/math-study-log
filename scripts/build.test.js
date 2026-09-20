@@ -116,6 +116,14 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.match(page, /class="header-guide" src="\.\/images\/kuumo\/s1\.png"/);
   assert.match(page, /class="divider-guide" src="\.\/images\/kuumo\/s2\.png"/);
   assert.match(page, /class="about-guide" src="\.\/images\/kuumo\/s3\.png"/);
+  assert.match(page, /<section class="topic-entry" aria-labelledby="topic-entry-title">/);
+  assert.match(page, /<h2 class="topic-entry-title" id="topic-entry-title">分野から見る<\/h2>/);
+  assert.match(page, /<p class="topic-entry-description">数学I〜C・数学IIIをテーマ別に探す<\/p>/);
+  assert.match(page, /<button class="topic-toc-button toc-toggle"[^>]*>目次<\/button>/);
+  assert.doesNotMatch(page, /<nav class="entry-nav"|href="\.\/(?:log|session|question)\/index\.html"/);
+  assert.equal(build.exists("public/log/index.html"), true);
+  assert.equal(build.exists("public/session/index.html"), true);
+  assert.equal(build.exists("public/question/index.html"), true);
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*\.about-with-guide/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.header-guide[\s\S]*\.guide-divider[\s\S]*\.about-guide/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.about-guide \{\s*top: 14px;\s*right: -8px;\s*bottom: auto;\s*width: 100px;/);
