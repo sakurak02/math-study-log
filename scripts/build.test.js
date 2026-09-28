@@ -130,7 +130,7 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
   assert.match(page, /class="header-guide" src="\.\/images\/kuumo\/s1\.png"/);
   assert.match(page, /class="divider-guide" src="\.\/images\/kuumo\/s2\.png"/);
-  assert.match(page, /class="about-guide" src="\.\/images\/kuumo\/s3\.png"/);
+  assert.match(page, /<figure class="about-guide">[\s\S]*class="about-guide-image" src="\.\/images\/kuumo\/s3\.png"[\s\S]*<figcaption class="about-guide-caption">some clouds からちぎれて生まれた、学びの案内役クーモ。<\/figcaption>[\s\S]*<\/figure>/);
   assert.match(page, /<section class="topic-entry" aria-labelledby="topic-entry-title">/);
   assert.match(page, /<h2 class="topic-entry-title" id="topic-entry-title">分野から見る<\/h2>/);
   assert.match(page, /<p class="topic-entry-description">数学I・A・II・B・III・Cをテーマ別に探す<\/p>/);
@@ -141,7 +141,7 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.equal(build.exists("public/question/index.html"), false);
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*\.about-with-guide/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.header-guide[\s\S]*\.guide-divider[\s\S]*\.about-guide/);
-  assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.about-guide \{\s*top: 14px;\s*right: -8px;\s*bottom: auto;\s*width: 100px;/);
+  assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.about-guide \{\s*position: static;\s*width: min\(240px, 82%\);\s*margin: 22px auto 0;/);
   assert.doesNotMatch(page, /padding-bottom: 76px/);
 });
 
