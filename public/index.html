@@ -91,17 +91,33 @@ header {
   position: relative;
   max-width: 940px;
   margin: 0 auto;
+  padding-right: 220px;
 }
 
-.header-guide {
+.header-guide-wrap {
   position: absolute;
   top: -16px;
   right: 6px;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.header-guide-copy {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.header-guide {
   display: block;
   width: 132px;
   height: auto;
-  pointer-events: none;
 }
 
 .header-title {
@@ -553,14 +569,14 @@ main {
   position: relative;
   max-width: none;
   min-height: 190px;
-  padding-right: 210px;
-  overflow: hidden;
+  padding-right: 230px;
+  overflow: visible;
 }
 
 .about-guide {
   position: absolute;
   top: -2px;
-  right: -20px;
+  right: 0;
   width: 220px;
   margin: 0;
   text-align: center;
@@ -574,11 +590,17 @@ main {
 }
 
 .about-guide-caption {
+  box-sizing: border-box;
+  max-width: 100%;
   margin: 3px auto 0;
+  padding: 0 6px;
+  overflow: visible;
   color: var(--ink-soft);
   font-size: 10px;
   line-height: 1.6;
   letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .about-kicker {
@@ -638,11 +660,11 @@ footer {
 @media (max-width: 820px) {
   .about-with-guide {
     min-height: 168px;
-    padding-right: 170px;
+    padding-right: 180px;
   }
 
   .about-guide {
-    right: -18px;
+    right: 0;
     width: 170px;
   }
 }
@@ -660,9 +682,22 @@ footer {
     font-size: 23px;
   }
 
-  .header-guide {
+  .header-inner {
+    padding-right: 150px;
+  }
+
+  .header-guide-wrap {
     top: -9px;
     right: -2px;
+    gap: 4px;
+  }
+
+  .header-guide-copy {
+    font-size: 9px;
+    letter-spacing: 0.04em;
+  }
+
+  .header-guide {
     width: 96px;
   }
 
@@ -829,7 +864,10 @@ footer {
   <div class="header-inner">
     <div class="header-title">MATH STUDY LOG</div>
     <div class="header-date">数学学習記録</div>
-    <img class="header-guide" src="./images/kuumo/s1.png" alt="案内キャラクター クーモ">
+    <div class="header-guide-wrap">
+      <span class="header-guide-copy">クーモとまなぶ</span>
+      <img class="header-guide" src="./images/kuumo/s1.png" alt="案内キャラクター クーモ">
+    </div>
   </div>
 </header>
 

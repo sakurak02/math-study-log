@@ -128,7 +128,7 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.match(page, /<div class="about-title">このサイトについて<\/div>/);
   assert.match(page, /<div class="about-start">STARTED AUGUST 2026<\/div>/);
   assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
-  assert.match(page, /class="header-guide" src="\.\/images\/kuumo\/s1\.png"/);
+  assert.match(page, /<div class="header-guide-wrap">[\s\S]*<span class="header-guide-copy">クーモとまなぶ<\/span>[\s\S]*class="header-guide" src="\.\/images\/kuumo\/s1\.png"[\s\S]*<\/div>/);
   assert.match(page, /class="divider-guide" src="\.\/images\/kuumo\/s2\.png"/);
   assert.match(page, /<figure class="about-guide">[\s\S]*class="about-guide-image" src="\.\/images\/kuumo\/s3\.png"[\s\S]*<figcaption class="about-guide-caption">some clouds からちぎれて生まれた、学びの案内役クーモ。<\/figcaption>[\s\S]*<\/figure>/);
   assert.match(page, /<section class="topic-entry" aria-labelledby="topic-entry-title">/);
@@ -140,7 +140,10 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.equal(build.exists("public/session/index.html"), true);
   assert.equal(build.exists("public/question/index.html"), false);
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*\.about-with-guide/);
-  assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.header-guide[\s\S]*\.guide-divider[\s\S]*\.about-guide/);
+  assert.match(page, /\.header-guide-wrap \{[^}]*display: flex;[^}]*align-items: center;[^}]*\}/);
+  assert.match(page, /\.about-with-guide \{[^}]*overflow: visible;[^}]*\}/);
+  assert.match(page, /\.about-guide-caption \{[^}]*max-width: 100%;[^}]*overflow: visible;[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;[^}]*\}/);
+  assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.header-guide-wrap[\s\S]*\.header-guide[\s\S]*\.guide-divider[\s\S]*\.about-guide/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.about-guide \{\s*position: static;\s*width: min\(240px, 82%\);\s*margin: 22px auto 0;/);
   assert.doesNotMatch(page, /padding-bottom: 76px/);
 });
