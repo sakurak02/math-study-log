@@ -258,10 +258,11 @@ test("homepage renders new daily log cards with published cover images", (t) => 
   assert.equal(build.exists("public/daily/20261002/images/20261002-1.webp"), true);
   assert.equal(build.exists("public/daily/20261002/images/20261002-2.webp"), true);
   assert.equal(build.exists("public/daily/20261002/images/20261002-10.webp"), true);
-  assert.match(page, /\.daily-log-media \{[\s\S]*?aspect-ratio: 3 \/ 4;/);
+  assert.match(page, /\.daily-log-media \{[\s\S]*?aspect-ratio: 1 \/ 1;/);
   assert.match(page, /\.daily-log-image \{[\s\S]*?object-fit: cover;[\s\S]*?object-position: top;/);
-  assert.match(page, /\.daily-log-excerpt \{[\s\S]*?-webkit-line-clamp: 3;/);
-  assert.match(page, /\.daily-log-grid \{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+  assert.match(page, /\.daily-log-excerpt \{[\s\S]*?min-height: calc\(1\.55em \* 2\);[\s\S]*?-webkit-line-clamp: 2;/);
+  assert.match(page, /\.daily-log-grid \{[\s\S]*?grid-template-columns: repeat\(5, minmax\(0, 1fr\)\);/);
+  assert.match(page, /@media \(max-width: 900px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
   assert.match(page, /@media \(max-width: 700px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: minmax\(0, 1fr\);/);

@@ -1549,8 +1549,8 @@ main {
 
 .daily-log-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .daily-log-card {
@@ -1564,7 +1564,7 @@ main {
 }
 
 .daily-log-media {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border-bottom: 1px solid var(--line);
   background: var(--empty);
@@ -1594,36 +1594,36 @@ main {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 12px;
+  padding: 8px;
 }
 
 .daily-log-date {
   color: var(--ink);
-  font: 600 11px/1.5 "JetBrains Mono", monospace;
+  font: 600 10px/1.45 "JetBrains Mono", monospace;
   letter-spacing: 0.03em;
 }
 
 .daily-log-excerpt {
   display: -webkit-box;
-  min-height: calc(1.7em * 3);
-  max-height: calc(1.7em * 3);
-  margin-top: 7px;
+  min-height: calc(1.55em * 2);
+  max-height: calc(1.55em * 2);
+  margin-top: 4px;
   overflow: hidden;
   color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.7;
+  font-size: 11px;
+  line-height: 1.55;
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
 }
 
 .daily-log-pages {
-  margin-top: 12px;
-  padding-top: 9px;
+  margin-top: 7px;
+  padding-top: 5px;
   border-top: 1px solid var(--line);
-  color: var(--accent);
-  font: 600 10px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  font: 500 9px/1.4 "JetBrains Mono", monospace;
+  letter-spacing: 0.04em;
 }
 
 .daily-log-empty {
@@ -2152,6 +2152,12 @@ footer {
   color: var(--ink-soft);
 }
 
+@media (max-width: 900px) {
+  .daily-log-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 820px) {
   .daily-log-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2185,7 +2191,7 @@ footer {
 
   .daily-log-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 18px;
+    gap: 14px;
   }
 
   .header-date {
