@@ -1312,22 +1312,90 @@ function homepageInteractionScript() {
     toc.toggleAttribute("hidden", !shouldOpen);
     tocToggle.setAttribute("aria-expanded", String(shouldOpen));
   });
+
+  const latestGrid = document.querySelector("#daily-log-latest");
+  const archive = document.querySelector("#daily-log-archive");
+  const yearsContainer = document.querySelector("#daily-log-years");
+  const dailyCards = [...document.querySelectorAll(".daily-log-card")]
+    .sort((a, b) => b.dataset.dateKey.localeCompare(a.dataset.dateKey));
+  const tabletLogs = window.matchMedia("(max-width: 820px)");
+  const mobileLogs = window.matchMedia("(max-width: 600px)");
+
+  const arrangeDailyLogs = () => {
+    if (!latestGrid || !archive || !yearsContainer || dailyCards.length === 0) return;
+
+    const latestCount = mobileLogs.matches ? 5 : tabletLogs.matches ? 12 : 20;
+    const openMonths = new Set(
+      [...yearsContainer.querySelectorAll(".daily-log-month[open]")]
+        .map((details) => details.dataset.archiveMonth)
+    );
+    const latestCards = dailyCards.slice(0, latestCount);
+    const archivedCards = dailyCards.slice(latestCount);
+
+    latestGrid.replaceChildren(...latestCards);
+    yearsContainer.replaceChildren();
+
+    const years = new Map();
+
+    archivedCards.forEach((card) => {
+      const year = card.dataset.year;
+      const month = card.dataset.month;
+      if (!years.has(year)) years.set(year, new Map());
+      if (!years.get(year).has(month)) years.get(year).set(month, []);
+      years.get(year).get(month).push(card);
+    });
+
+    years.forEach((months, year) => {
+      const yearSection = document.createElement("section");
+      yearSection.className = "daily-log-year";
+      yearSection.dataset.archiveYear = year;
+
+      const yearHeading = document.createElement("h3");
+      yearHeading.textContent = year;
+      yearSection.append(yearHeading);
+
+      months.forEach((cards, month) => {
+        const monthKey = year + "-" + month;
+        const details = document.createElement("details");
+        details.className = "daily-log-month";
+        details.dataset.archiveMonth = monthKey;
+        details.open = openMonths.has(monthKey);
+
+        const summary = document.createElement("summary");
+        summary.textContent = Number(month) + "月";
+
+        const grid = document.createElement("div");
+        grid.className = "daily-log-grid";
+        grid.append(...cards);
+        details.append(summary, grid);
+        yearSection.append(details);
+      });
+
+      yearsContainer.append(yearSection);
+    });
+
+    archive.hidden = archivedCards.length === 0;
+  };
+
+  [tabletLogs, mobileLogs].forEach((query) => {
+    if (query.addEventListener) query.addEventListener("change", arrangeDailyLogs);
+    else query.addListener(arrangeDailyLogs);
+  });
+
+  arrangeDailyLogs();
 })();
 </script>`;
 }
 
-function createDailyLogGrid() {
-  const cards = [...dailyLogs]
-    .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
-    .map((log) => {
-      const excerpt = dailyLogExcerpt(log.markdown);
-      const pageLabel = `${log.pageCount} ${log.pageCount === 1 ? "page" : "pages"}`;
-      const image = log.coverImage
-        ? `<img class="daily-log-image" src="./daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}" alt="${escapeHtml(formatJapaneseDate(log.date))}の学習写真" loading="lazy">`
-        : `<div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div>`;
+function createDailyLogCard(log) {
+  const excerpt = dailyLogExcerpt(log.markdown);
+  const pageLabel = `${log.pageCount} ${log.pageCount === 1 ? "page" : "pages"}`;
+  const image = log.coverImage
+    ? `<img class="daily-log-image" src="./daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}" alt="${escapeHtml(formatJapaneseDate(log.date))}の学習写真" loading="lazy">`
+    : `<div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div>`;
 
-      return `
-      <article class="daily-log-card">
+  return `
+      <article class="daily-log-card" data-date-key="${log.dateKey}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}">
         <div class="daily-log-media">${image}</div>
         <div class="daily-log-body">
           <time class="daily-log-date" datetime="${escapeHtml(log.date)}">${escapeHtml(formatDotDate(log.date))}</time>
@@ -1335,8 +1403,41 @@ function createDailyLogGrid() {
           <div class="daily-log-pages">${pageLabel}</div>
         </div>
       </article>`;
-    })
+}
+
+function createDailyLogArchive(logs) {
+  const years = new Map();
+
+  for (const log of logs) {
+    const year = log.dateKey.slice(0, 4);
+    const month = log.dateKey.slice(4, 6);
+
+    if (!years.has(year)) years.set(year, new Map());
+    if (!years.get(year).has(month)) years.get(year).set(month, []);
+    years.get(year).get(month).push(log);
+  }
+
+  return [...years.entries()]
+    .map(([year, months]) => `
+      <section class="daily-log-year" data-archive-year="${year}">
+        <h3>${year}</h3>
+${[...months.entries()]
+  .map(([month, monthLogs]) => `
+        <details class="daily-log-month" data-archive-month="${year}-${month}">
+          <summary>${Number(month)}月</summary>
+          <div class="daily-log-grid">${monthLogs.map(createDailyLogCard).join("")}
+          </div>
+        </details>`)
+  .join("")}
+      </section>`)
     .join("");
+}
+
+function createDailyLogGrid() {
+  const sortedLogs = [...dailyLogs]
+    .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+  const latestLogs = sortedLogs.slice(0, 20);
+  const archivedLogs = sortedLogs.slice(20);
 
   return `
   <section class="daily-log-section" aria-labelledby="daily-log-title">
@@ -1344,21 +1445,20 @@ function createDailyLogGrid() {
       <div class="daily-log-kicker">LEARNING LOG</div>
       <h2 id="daily-log-title">学習記録</h2>
     </div>
-    ${cards
-      ? `<div class="daily-log-grid">${cards}
-    </div>`
+    ${sortedLogs.length
+      ? `<div class="daily-log-subheading">LATEST</div>
+    <div class="daily-log-grid" id="daily-log-latest">${latestLogs.map(createDailyLogCard).join("")}
+    </div>
+    <section class="daily-log-archive" id="daily-log-archive" aria-labelledby="daily-log-archive-title"${archivedLogs.length ? "" : " hidden"}>
+      <div class="daily-log-archive-heading" id="daily-log-archive-title">過去の学習記録</div>
+      <div id="daily-log-years">${createDailyLogArchive(archivedLogs)}
+      </div>
+    </section>`
       : `<p class="daily-log-empty">学習記録はまだありません。</p>`}
   </section>`;
 }
 
-/*
-トップページ
-*/
-
-function createIndexPage() {
-  const latest =
-    records.length > 0 ? records[records.length - 1] : null;
-
+function createCalendarSections() {
   const months = new Map();
 
   for (const record of records) {
@@ -1397,7 +1497,8 @@ ${createMonthCalendar(year, month, monthRecords)}
   const pastMonthSections = createMonthSections(
     sortedMonths.slice(visibleCalendarMonthCount)
   );
-  const calendarSections = `
+
+  return `
   <div class="recent-calendars">
 ${recentMonthSections}
   </div>
@@ -1408,6 +1509,15 @@ ${pastMonthSections ? `
 ${pastMonthSections}
     </div>
   </details>` : ""}`;
+}
+
+/*
+トップページ
+*/
+
+function createIndexPage() {
+  const latest =
+    records.length > 0 ? records[records.length - 1] : null;
 
   const displayYear = latest
     ? latest.date.slice(0, 4)
@@ -1547,6 +1657,13 @@ main {
   line-height: 1.5;
 }
 
+.daily-log-subheading {
+  margin-bottom: 9px;
+  color: var(--ink-soft);
+  font: 600 9px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+}
+
 .daily-log-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1634,6 +1751,66 @@ main {
   color: var(--ink-soft);
   font-size: 13px;
   text-align: center;
+}
+
+.daily-log-archive {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.daily-log-archive[hidden] {
+  display: none;
+}
+
+.daily-log-archive-heading {
+  margin-bottom: 14px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.daily-log-year + .daily-log-year {
+  margin-top: 24px;
+}
+
+.daily-log-year > h3 {
+  margin-bottom: 8px;
+  font: 600 16px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.03em;
+}
+
+.daily-log-month {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+}
+
+.daily-log-month + .daily-log-month {
+  margin-top: 8px;
+}
+
+.daily-log-month > summary {
+  padding: 9px 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.daily-log-month > summary:hover,
+.daily-log-month > summary:focus-visible {
+  color: var(--accent);
+}
+
+.daily-log-month[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.daily-log-month > .daily-log-grid {
+  padding: 12px;
 }
 
 .month-section {
@@ -2390,10 +2567,6 @@ ${someCloudsLink()}
 <main>
 
 ${dailyLogGrid}
-
-  <div class="section-divider"></div>
-
-${calendarSections}
 
   <div class="section-divider guide-divider" aria-hidden="true">
     <img class="divider-guide" src="./images/kuumo/s2.png" alt="">

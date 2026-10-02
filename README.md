@@ -13,7 +13,7 @@ logs/YYYY/YYYYMMDD/
   YYYYMMDD-2.webp
 ```
 
-ビルド時に `scripts/load-logs.js` が日付、Markdown本文とHTML、画像一覧、代表画像、画像枚数を読み込みます。Markdownや画像がない日も安全に扱います。代表画像は `public/daily/YYYYMMDD/images/` にコピーされ、トップページの学習記録グリッドに日付の新しい順で表示されます。
+ビルド時に `scripts/load-logs.js` が日付、Markdown本文とHTML、画像一覧、代表画像、画像枚数を読み込みます。Markdownや画像がない日も安全に扱います。代表画像は `public/daily/YYYYMMDD/images/` にコピーされ、トップページに最新20件（タブレット12件、スマートフォン5件）を表示します。それ以前の記録は年・月別の折りたたみにまとめます。
 
 ## 記事の追加
 

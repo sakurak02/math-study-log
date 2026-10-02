@@ -242,7 +242,7 @@ test("homepage renders new daily log cards with published cover images", (t) => 
   assert.equal(result.status, 0, result.stderr);
 
   const page = build.read("public/index.html");
-  const cards = [...page.matchAll(/<article class="daily-log-card">([\s\S]*?)<\/article>/g)]
+  const cards = [...page.matchAll(/<article class="daily-log-card"[^>]*>([\s\S]*?)<\/article>/g)]
     .map((match) => match[1]);
 
   assert.equal(cards.length, 2);
@@ -266,6 +266,53 @@ test("homepage renders new daily log cards with published cover images", (t) => 
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
   assert.match(page, /@media \(max-width: 700px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: minmax\(0, 1fr\);/);
+});
+
+test("daily logs use responsive latest limits and non-duplicated year-month archives", (t) => {
+  const dateKeys = [
+    ...Array.from({ length: 10 }, (_, index) => `202610${String(index + 1).padStart(2, "0")}`),
+    ...Array.from({ length: 15 }, (_, index) => `202609${String(index + 1).padStart(2, "0")}`),
+    ...Array.from({ length: 3 }, (_, index) => `202508${String(index + 1).padStart(2, "0")}`)
+  ];
+  const files = Object.fromEntries(
+    dateKeys.map((dateKey) => [
+      `logs/${dateKey.slice(0, 4)}/${dateKey}/${dateKey}.md`,
+      `# ${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-${dateKey.slice(6)}\n\nLog ${dateKey}`
+    ])
+  );
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+
+  const page = build.read("public/index.html");
+  const latestStart = page.indexOf('id="daily-log-latest"');
+  const archiveStart = page.indexOf('id="daily-log-archive"');
+  const latestHtml = page.slice(latestStart, archiveStart);
+  const archiveHtml = page.slice(
+    archiveStart,
+    page.indexOf('<div class="section-divider guide-divider"', archiveStart)
+  );
+  const latestKeys = [...latestHtml.matchAll(/data-date-key="(\d{8})"/g)].map((match) => match[1]);
+  const archiveKeys = [...archiveHtml.matchAll(/data-date-key="(\d{8})"/g)].map((match) => match[1]);
+  const expectedOrder = [...dateKeys].sort((a, b) => b.localeCompare(a));
+
+  assert.deepEqual(latestKeys, expectedOrder.slice(0, 20));
+  assert.deepEqual(archiveKeys, expectedOrder.slice(20));
+  assert.equal(new Set([...latestKeys, ...archiveKeys]).size, dateKeys.length);
+  assert.doesNotMatch(archiveHtml, /data-archive-month="2026-10"/);
+  assert.match(archiveHtml, /<h3>2026<\/h3>[\s\S]*data-archive-month="2026-09"[\s\S]*<summary>9月<\/summary>/);
+  assert.match(archiveHtml, /<h3>2025<\/h3>[\s\S]*data-archive-month="2025-08"[\s\S]*<summary>8月<\/summary>/);
+  assert.ok(archiveHtml.indexOf("<h3>2026</h3>") < archiveHtml.indexOf("<h3>2025</h3>"));
+  assert.match(page, /const latestCount = mobileLogs\.matches \? 5 : tabletLogs\.matches \? 12 : 20;/);
+  assert.match(page, /latestGrid\.replaceChildren\(\.\.\.latestCards\)/);
+  assert.match(page, /archive\.hidden = archivedCards\.length === 0;/);
+  assert.doesNotMatch(page, /<div class="calendar-grid">|class="day-cell/);
+
+  const buildSource = fs.readFileSync(path.join(__dirname, "build.js"), "utf8");
+  assert.match(buildSource, /function createMonthCalendar\(/);
+  assert.match(buildSource, /function createCalendarSections\(/);
+  assert.match(buildSource, /\.calendar-grid \{/);
+  assert.match(buildSource, /\.day-detail-toggle/);
 });
 
 test("one LOG is displayed directly without more", (t) => {
@@ -292,7 +339,7 @@ test("multiple LOGs keep numeric order and fold pages after the first under more
   assert.ok(page.indexOf("20260828-001-1.webp") < page.indexOf('<details class="more-logs">'));
 });
 
-test("same-day 001 and 002 are independent articles and one calendar classification", (t) => {
+test("same-day 001 and 002 remain independent while the top calendar stays hidden", (t) => {
   const build = fixture(t, { ...recordFiles("20260829", "001"), ...recordFiles("20260829", "002") });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -301,9 +348,8 @@ test("same-day 001 and 002 are independent articles and one calendar classificat
   const index = build.read("public/index.html");
   assert.match(index, /href="\.\/records\/20260829\/001\/"/);
   assert.match(index, /href="\.\/records\/20260829\/002\/"/);
-  const dayLink = index.match(/<a href="\.\/records\/20260829\/index\.html" class="day-link"[\s\S]*?<\/a>/)?.[0] || "";
-  assert.equal((dayLink.match(/class="day-topic"/g) || []).length, 1);
-  assert.match(dayLink, /数学III・極限/);
+  assert.doesNotMatch(index, /<div class="calendar-grid">|class="day-cell/);
+  assert.equal((index.match(/<h4>数列の極限<\/h4>/g) || []).length, 1);
 });
 
 test("table of contents keeps four levels and sorts articles newest first", (t) => {
