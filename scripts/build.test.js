@@ -216,10 +216,8 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.match(page, /<div class="header-guide-wrap">[\s\S]*<span class="header-guide-copy">クーモとまなぶ<\/span>[\s\S]*class="header-guide" src="\.\/images\/kuumo\/s1\.png"[\s\S]*<\/div>/);
   assert.equal((page.match(/class="divider-guide" src="\.\/images\/kuumo\/s2\.png"/g) || []).length, 1);
   assert.match(page, /<figure class="about-guide">[\s\S]*class="about-guide-image" src="\.\/images\/kuumo\/s3\.png"[\s\S]*<figcaption class="about-guide-caption">some clouds からちぎれて生まれた、学びの案内役クーモ。<\/figcaption>[\s\S]*<\/figure>/);
-  assert.match(page, /<section class="topic-entry" aria-labelledby="topic-entry-title">/);
-  assert.match(page, /<h2 class="topic-entry-title" id="topic-entry-title">分野から見る<\/h2>/);
-  assert.match(page, /<p class="topic-entry-description">数学I・A・II・B・III・Cをテーマ別に探す<\/p>/);
-  assert.match(page, /<button class="topic-toc-button toc-toggle"[^>]*>目次<\/button>/);
+  assert.doesNotMatch(page, /<section class="topic-entry"|id="study-toc"|class="toc-subject"/);
+  assert.doesNotMatch(page, />分野から見る<|>数学I・A・II・B・III・Cをテーマ別に探す<|>目次<\/button>/);
   assert.doesNotMatch(page, /<nav class="entry-nav"|href="\.\/(?:log|session|question)\/index\.html"/);
   assert.equal(build.exists("public/log/index.html"), true);
   assert.equal(build.exists("public/session/index.html"), true);
@@ -352,13 +350,11 @@ test("same-day 001 and 002 remain independent while the top calendar stays hidde
   assert.equal(build.exists("public/records/20260829/001/index.html"), true);
   assert.equal(build.exists("public/records/20260829/002/index.html"), true);
   const index = build.read("public/index.html");
-  assert.match(index, /href="\.\/records\/20260829\/001\/"/);
-  assert.match(index, /href="\.\/records\/20260829\/002\/"/);
   assert.doesNotMatch(index, /<div class="calendar-grid">|class="day-cell/);
-  assert.equal((index.match(/<h4>数列の極限<\/h4>/g) || []).length, 1);
+  assert.doesNotMatch(index, /<section class="topic-entry"|id="study-toc"|class="toc-subject"/);
 });
 
-test("table of contents keeps four levels and sorts articles newest first", (t) => {
+test("legacy table of contents implementation remains while homepage omits it", (t) => {
   const build = fixture(t, {
     ...recordFiles("20260828", "001"),
     ...recordFiles("20260829", "001"),
@@ -367,20 +363,18 @@ test("table of contents keeps four levels and sorts articles newest first", (t) 
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
   const page = build.read("public/index.html");
-  const toc = page.match(/<section class="toc-section"[\s\S]*?(?=\n\n  <div class="section-divider"><\/div>)/)?.[0] || "";
-  const subject = toc.indexOf("<summary>数学III</summary>");
-  const category = toc.indexOf("<h3>極限</h3>");
-  const topic = toc.indexOf("<h4>数列の極限</h4>");
-  assert.ok(subject >= 0 && category > subject && topic > category);
-  assert.equal((toc.match(/<h4>数列の極限<\/h4>/g) || []).length, 1);
-  assert.match(toc, /<details class="toc-subject">/);
-  assert.doesNotMatch(toc, /<h3>微分法<\/h3>|<h3>積分法<\/h3>/);
+  assert.doesNotMatch(page, /<section class="topic-entry"|id="study-toc"|class="toc-subject"/);
 
-  const newestSecond = toc.indexOf('href="./records/20260829/002/"');
-  const newestFirst = toc.indexOf('href="./records/20260829/001/"');
-  const oldest = toc.indexOf('href="./records/20260828/001/"');
-  assert.ok(newestSecond > topic && newestFirst > newestSecond && oldest > newestFirst);
-  assert.match(toc, /<time datetime="2026-08-29">2026\/08\/29<\/time>/);
+  const buildSource = fs.readFileSync(path.join(__dirname, "build.js"), "utf8");
+  assert.match(buildSource, /function createTableOfContents\(\)/);
+  assert.match(buildSource, /function compareStudiesByClassification\(/);
+  assert.match(buildSource, /const classificationMaster = loadClassificationMaster\(\);/);
+  assert.doesNotMatch(
+    buildSource,
+    /const tableOfContents = createTableOfContents\(\);|\$\{tableOfContents\}/
+  );
+  assert.equal(build.exists("public/records/20260829/001/index.html"), true);
+  assert.equal(build.exists("public/records/20260829/002/index.html"), true);
 });
 
 test("registered topic in a category with topics builds successfully", (t) => {
@@ -404,8 +398,9 @@ test("topic remains free-form when its category has no topics", (t) => {
   const build = fixture(t, classifiedRecordFiles("数学B", "数学と社会生活", "任意の既存小分類"));
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
+  assert.equal(build.exists("public/records/20260828/001/index.html"), true);
   const page = build.read("public/index.html");
-  assert.match(page, /<summary>数学B<\/summary>[\s\S]*<h3>数学と社会生活<\/h3>[\s\S]*<h4>任意の既存小分類<\/h4>/);
+  assert.doesNotMatch(page, /<section class="topic-entry"|id="study-toc"|class="toc-subject"/);
 });
 
 test("existing subject and category validation still rejects unknown values", (t) => {

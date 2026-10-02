@@ -1522,7 +1522,6 @@ function createIndexPage() {
   const displayYear = latest
     ? latest.date.slice(0, 4)
     : new Date().getFullYear();
-  const tableOfContents = createTableOfContents();
   const dailyLogGrid = createDailyLogGrid();
 
   return `<!DOCTYPE html>
@@ -2567,16 +2566,6 @@ ${someCloudsLink()}
 <main>
 
 ${dailyLogGrid}
-
-  <section class="topic-entry" aria-labelledby="topic-entry-title">
-    <h2 class="topic-entry-title" id="topic-entry-title">分野から見る</h2>
-    <p class="topic-entry-description">数学I・A・II・B・III・Cをテーマ別に探す</p>
-    <div class="topic-entry-action">
-      <button class="topic-toc-button toc-toggle" type="button" aria-expanded="false" aria-controls="study-toc">目次</button>
-    </div>
-  </section>
-
-${tableOfContents}
 
   <div class="section-divider guide-divider" aria-hidden="true">
     <img class="divider-guide" src="./images/kuumo/s2.png" alt="">
