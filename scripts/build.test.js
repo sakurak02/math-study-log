@@ -254,9 +254,10 @@ test("homepage renders new daily log cards with published cover images", (t) => 
   assert.match(page, /<h2 id="daily-log-title">学習記録<\/h2>/);
   assert.ok(page.indexOf("2026.10.03") < page.indexOf("2026.10.02"));
   assert.match(cards[1], /src="\.\/daily\/20261002\/images\/20261002-1\.webp"/);
+  assert.match(cards[1], /<a class="daily-log-card-link" href="\.\/daily\/20261002\/"/);
   assert.match(cards[1], /<time[^>]*>2026\.10\.02<\/time>/);
   assert.match(cards[1], /<p class="daily-log-excerpt">数学III。極限。 新しい学習記録方式のテスト。<\/p>/);
-  assert.doesNotMatch(cards[1], /<h1>|# 2026-10-02|<a\b/);
+  assert.doesNotMatch(cards[1], /<h1>|# 2026-10-02/);
   assert.match(cards[1], /<div class="daily-log-pages">3 pages<\/div>/);
   assert.match(cards[0], /<div class="daily-log-pages">1 page<\/div>/);
   assert.equal(build.exists("public/daily/20261002/images/20261002-1.webp"), true);
@@ -270,6 +271,23 @@ test("homepage renders new daily log cards with published cover images", (t) => 
   assert.match(page, /@media \(max-width: 820px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
   assert.match(page, /@media \(max-width: 700px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: minmax\(0, 1fr\);/);
+
+  assert.equal(build.exists("public/daily/20261002/index.html"), true);
+  const dailyPage = build.read("public/daily/20261002/index.html");
+  const dailyImages = [...dailyPage.matchAll(/class="daily-sheet-image" src="\.\/images\/([^"]+)"/g)]
+    .map((match) => match[1]);
+  const markdownSection = dailyPage.match(/<div class="daily-markdown-content">([\s\S]*?)<\/div>/)?.[1] || "";
+  assert.deepEqual(dailyImages, ["20261002-1.webp", "20261002-2.webp", "20261002-10.webp"]);
+  assert.match(dailyPage, /<title>2026\.10\.02 \| 数学学習記録<\/title>/);
+  assert.match(dailyPage, /<h1>2026\.10\.02<\/h1>/);
+  assert.match(dailyPage, /<a class="text-link" href="\.\.\/\.\.\/index\.html">← 学習記録へ戻る<\/a>/);
+  assert.match(dailyPage, /href="\.\/images\/20261002-1\.webp" target="_blank" rel="noopener"/);
+  assert.match(dailyPage, /\.daily-sheet-image \{[\s\S]*?width: 100%;[\s\S]*?height: auto;/);
+  assert.match(markdownSection, /<p>数学III。極限。<\/p>[\s\S]*<p>新しい学習記録方式のテスト。<\/p>/);
+  assert.doesNotMatch(markdownSection, /<h1>|2026-10-02/);
+  assert.match(dailyPage, /<a class="text-link" href="\.\.\/20261003\/">2026\.10\.03 →<\/a>/);
+  assert.match(build.read("public/daily/20261003/index.html"), /<a class="text-link" href="\.\.\/20261002\/">← 2026\.10\.02<\/a>/);
+  assert.match(build.read("public/sitemap.xml"), /https:\/\/sakurak02\.github\.io\/math-study-log\/daily\/20261002\//);
 });
 
 test("daily logs use responsive latest limits and non-duplicated year-month archives", (t) => {
@@ -303,6 +321,9 @@ test("daily logs use responsive latest limits and non-duplicated year-month arch
   assert.deepEqual(latestKeys, expectedOrder.slice(0, 20));
   assert.deepEqual(archiveKeys, expectedOrder.slice(20));
   assert.equal(new Set([...latestKeys, ...archiveKeys]).size, dateKeys.length);
+  for (const dateKey of archiveKeys) {
+    assert.match(archiveHtml, new RegExp(`href="\\.\\/daily\\/${dateKey}\\/"`));
+  }
   assert.doesNotMatch(archiveHtml, /data-archive-month="2026-10"/);
   assert.match(archiveHtml, /<h3>2026<\/h3>[\s\S]*data-archive-month="2026-09"[\s\S]*<summary>9月<\/summary>/);
   assert.match(archiveHtml, /<h3>2025<\/h3>[\s\S]*data-archive-month="2025-08"[\s\S]*<summary>8月<\/summary>/);

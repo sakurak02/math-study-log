@@ -184,6 +184,24 @@ main {
   background: var(--panel);
 }
 
+.daily-log-card-link {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+}
+
+.daily-log-card-link:hover,
+.daily-log-card-link:focus-visible {
+  outline: 0;
+}
+
+.daily-log-card:has(.daily-log-card-link:hover),
+.daily-log-card:has(.daily-log-card-link:focus-visible) {
+  border-color: var(--accent);
+}
+
 .daily-log-media {
   aspect-ratio: 1 / 1;
   overflow: hidden;
@@ -1079,12 +1097,14 @@ footer {
     <div class="daily-log-subheading">LATEST</div>
     <div class="daily-log-grid" id="daily-log-latest">
       <article class="daily-log-card" data-date-key="20261002" data-year="2026" data-month="10">
-        <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261002/images/20261002-1.webp" alt="2026年10月2日の学習写真" loading="lazy"></div>
-        <div class="daily-log-body">
-          <time class="daily-log-date" datetime="2026-10-02">2026.10.02</time>
-          <p class="daily-log-excerpt">数学III。極限。 新しい学習記録方式のテスト。</p>
-          <div class="daily-log-pages">3 pages</div>
-        </div>
+        <a class="daily-log-card-link" href="./daily/20261002/" aria-label="2026年10月2日の学習記録を開く">
+          <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261002/images/20261002-1.webp" alt="2026年10月2日の学習写真" loading="lazy"></div>
+          <div class="daily-log-body">
+            <time class="daily-log-date" datetime="2026-10-02">2026.10.02</time>
+            <p class="daily-log-excerpt">数学III。極限。 新しい学習記録方式のテスト。</p>
+            <div class="daily-log-pages">3 pages</div>
+          </div>
+        </a>
       </article>
     </div>
     <section class="daily-log-archive" id="daily-log-archive" aria-labelledby="daily-log-archive-title" hidden>

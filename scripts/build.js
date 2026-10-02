@@ -1396,12 +1396,14 @@ function createDailyLogCard(log) {
 
   return `
       <article class="daily-log-card" data-date-key="${log.dateKey}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}">
-        <div class="daily-log-media">${image}</div>
-        <div class="daily-log-body">
-          <time class="daily-log-date" datetime="${escapeHtml(log.date)}">${escapeHtml(formatDotDate(log.date))}</time>
-          <p class="daily-log-excerpt">${escapeHtml(excerpt)}</p>
-          <div class="daily-log-pages">${pageLabel}</div>
-        </div>
+        <a class="daily-log-card-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
+          <div class="daily-log-media">${image}</div>
+          <div class="daily-log-body">
+            <time class="daily-log-date" datetime="${escapeHtml(log.date)}">${escapeHtml(formatDotDate(log.date))}</time>
+            <p class="daily-log-excerpt">${escapeHtml(excerpt)}</p>
+            <div class="daily-log-pages">${pageLabel}</div>
+          </div>
+        </a>
       </article>`;
 }
 
@@ -1677,6 +1679,24 @@ main {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
+}
+
+.daily-log-card-link {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  color: inherit;
+  text-decoration: none;
+}
+
+.daily-log-card-link:hover,
+.daily-log-card-link:focus-visible {
+  outline: 0;
+}
+
+.daily-log-card:has(.daily-log-card-link:hover),
+.daily-log-card:has(.daily-log-card-link:focus-visible) {
+  border-color: var(--accent);
 }
 
 .daily-log-media {
@@ -3019,6 +3039,207 @@ ${dateHtml}
 </html>`;
 }
 
+function dailyLogPageStyles() {
+  return `.daily-entry {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.daily-sheets {
+  display: grid;
+  gap: 30px;
+}
+
+.daily-sheet {
+  margin: 0;
+}
+
+.daily-sheet-label {
+  margin-bottom: 7px;
+  color: var(--ink-soft);
+  font: 600 10px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
+}
+
+.daily-sheet-link {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.daily-sheet-link:hover,
+.daily-sheet-link:focus-visible {
+  border-color: var(--accent);
+}
+
+.daily-sheet-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 7px;
+}
+
+.daily-no-images {
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
+}
+
+.daily-markdown {
+  margin-top: 38px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+.daily-markdown-heading {
+  margin: 0 0 18px;
+  color: var(--accent);
+  font: 600 11px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+}
+
+.daily-markdown-content {
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.daily-markdown-content > *:first-child {
+  margin-top: 0;
+}
+
+.daily-markdown-content h1,
+.daily-markdown-content h2,
+.daily-markdown-content h3 {
+  margin: 30px 0 12px;
+  line-height: 1.55;
+}
+
+.daily-markdown-content h1 { font-size: 21px; }
+.daily-markdown-content h2 { font-size: 18px; }
+.daily-markdown-content h3 { font-size: 16px; }
+
+.daily-markdown-content p,
+.daily-markdown-content ul,
+.daily-markdown-content ol,
+.daily-markdown-content blockquote,
+.daily-markdown-content pre,
+.daily-markdown-content table {
+  margin: 0 0 18px;
+}
+
+.daily-markdown-content ul,
+.daily-markdown-content ol {
+  padding-left: 1.5em;
+}
+
+.daily-markdown-content blockquote {
+  padding: 9px 14px;
+  border-left: 3px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.daily-markdown-content pre {
+  max-width: 100%;
+  padding: 13px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+}
+
+.daily-markdown-content code {
+  font-family: "JetBrains Mono", monospace;
+}
+
+.daily-markdown-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.daily-markdown-content th,
+.daily-markdown-content td {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.daily-markdown-content a {
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .daily-sheets { gap: 24px; }
+  .daily-markdown { margin-top: 30px; padding-top: 22px; }
+  .daily-markdown-content { font-size: 14px; }
+}`;
+}
+
+function createDailyLogPage(log, index) {
+  const previous = index > 0 ? dailyLogs[index - 1] : null;
+  const next = index < dailyLogs.length - 1 ? dailyLogs[index + 1] : null;
+  const markdownSource = withoutFirstHeading(log.markdown);
+  const markdownHtml = renderMarkdown(markdownSource, true);
+  const description = descriptionFromMarkdown(markdownSource) || defaultDescription;
+  const coverUrl = log.coverImage
+    ? `${siteUrl}/daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}`
+    : siteOgImageUrl;
+  const coverPath = log.coverImage
+    ? path.join(logsDir, log.dateKey.slice(0, 4), log.dateKey, log.coverImage)
+    : path.join(publicDir, "og-image.png");
+  const imagesHtml = log.images.length
+    ? log.images
+      .map((image, imageIndex) => `
+      <figure class="daily-sheet">
+        <figcaption class="daily-sheet-label">PAGE ${imageIndex + 1}</figcaption>
+        <a class="daily-sheet-link" href="./images/${encodeURIComponent(image)}" target="_blank" rel="noopener" aria-label="${escapeHtml(formatJapaneseDate(log.date))} ページ${imageIndex + 1}を原寸で開く">
+          <img class="daily-sheet-image" src="./images/${encodeURIComponent(image)}" alt="${escapeHtml(formatJapaneseDate(log.date))} 学習記録 ページ${imageIndex + 1}" loading="lazy">
+        </a>
+      </figure>`)
+      .join("")
+    : `<p class="daily-no-images">学習写真はありません。</p>`;
+  const previousLink = previous
+    ? `<a class="text-link" href="../${previous.dateKey}/">← ${formatDotDate(previous.date)}</a>`
+    : `<span></span>`;
+  const nextLink = next
+    ? `<a class="text-link" href="../${next.dateKey}/">${formatDotDate(next.date)} →</a>`
+    : `<span></span>`;
+
+  return createSimpleRecordPage({
+    documentTitle: `${formatDotDate(log.date)} | 数学学習記録`,
+    kicker: "LEARNING LOG",
+    title: formatDotDate(log.date),
+    actions: `<a class="text-link" href="../../index.html">← 学習記録へ戻る</a>`,
+    content: `<article class="daily-entry">
+    <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${imagesHtml}
+    </section>
+    <section class="daily-markdown" aria-labelledby="daily-markdown-heading">
+      <h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2>
+      <div class="daily-markdown-content">${markdownHtml}</div>
+    </section>
+    <nav class="day-navigation" aria-label="新方式の学習日を移動">${previousLink}${nextLink}</nav>
+  </article>`,
+    displayYear: log.date.slice(0, 4),
+    headExtra: `${socialMetaTags({
+      title: `${formatDotDate(log.date)} | 数学学習記録`,
+      description,
+      url: `${siteUrl}/daily/${log.dateKey}/`,
+      image: coverUrl,
+      imageMeta: imageMetadata(coverPath)
+    })}
+<link rel="canonical" href="${siteUrl}/daily/${log.dateKey}/">
+${mathJaxHead(true)}`,
+    extraStyles: dailyLogPageStyles()
+  });
+}
+
 function createRecordIndexPage(record, index) {
   const studies = studiesForRecord(record);
   const previous = index > 0 ? records[index - 1] : null;
@@ -3264,19 +3485,28 @@ function createArchivePage(kind, entries) {
 // 新方式の画像はソースのlogsとは分け、ブラウザから参照できる専用パスへ公開する。
 fs.rmSync(dailyOutputDir, { recursive: true, force: true });
 
-for (const log of dailyLogs) {
-  if (log.images.length === 0) continue;
-
+for (const [index, log] of dailyLogs.entries()) {
   const sourceDir = path.join(logsDir, log.dateKey.slice(0, 4), log.dateKey);
-  const outputImagesDir = path.join(dailyOutputDir, log.dateKey, "images");
-  fs.mkdirSync(outputImagesDir, { recursive: true });
+  const outputDir = path.join(dailyOutputDir, log.dateKey);
+  const outputImagesDir = path.join(outputDir, "images");
+  fs.mkdirSync(outputDir, { recursive: true });
 
-  for (const image of log.images) {
-    fs.copyFileSync(
-      path.join(sourceDir, image),
-      path.join(outputImagesDir, image)
-    );
+  if (log.images.length > 0) {
+    fs.mkdirSync(outputImagesDir, { recursive: true });
+
+    for (const image of log.images) {
+      fs.copyFileSync(
+        path.join(sourceDir, image),
+        path.join(outputImagesDir, image)
+      );
+    }
   }
+
+  fs.writeFileSync(
+    path.join(outputDir, "index.html"),
+    createDailyLogPage(log, index),
+    "utf8"
+  );
 }
 
 fs.writeFileSync(
@@ -3373,6 +3603,9 @@ const sitemapUrls = [
   `${siteUrl}/`,
   `${siteUrl}/log/`,
   `${siteUrl}/session/`,
+  ...dailyLogs.map(
+    (log) => `${siteUrl}/daily/${log.dateKey}/`
+  ),
   ...records.map(
     (record) => `${siteUrl}/records/${dateKey(record.date)}/`
   ),
