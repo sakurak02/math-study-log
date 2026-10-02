@@ -195,7 +195,7 @@ test("new-format article renders QUESTION, ANSWER, LOG, and SESSION in order", (
   assert.doesNotMatch(page, /<h1>オリジナル問題<\/h1>|<h1>解説<\/h1>/);
 });
 
-test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) => {
+test("homepage renders the updated MY GOAL and about copy with Kuumo", (t) => {
   const build = fixture(t, recordFiles());
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -210,7 +210,10 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
     /<div class="section-divider guide-divider" aria-hidden="true">\s*<img class="divider-guide" src="\.\/images\/kuumo\/s2\.png" alt="">\s*<\/div>\s*<section class="about-section">\s*<div class="about-kicker">MY GOAL<\/div>/
   );
   assert.match(page, /<div class="about-title">64歳から、数学を学びなおしたい<\/div>/);
+  assert.match(page, /数学をひとつずつ学び直しながら、<br>[\s\S]*毎日の勉強を、紙の記録として残しています。<br><br>[\s\S]*5年かけて、少しずつ積み上げていきます。/);
   assert.match(page, /<div class="about-title">このサイトについて<\/div>/);
+  assert.match(page, /その日に勉強したノートや答案を、写真と短い記録で残しています。<br><br>[\s\S]*見に来てくださって、ありがとうございます。[\s\S]*クーモと一緒に、今日も少しずつ。/);
+  assert.doesNotMatch(page, /ChatGPTとの対話|ChatGPTのオリジナル問題|難関大受験数学|大学数学に触れられる/);
   assert.match(page, /<div class="about-start">STARTED AUGUST 2026<\/div>/);
   assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
   assert.match(page, /<div class="header-guide-wrap">[\s\S]*<span class="header-guide-copy">クーモとまなぶ<\/span>[\s\S]*class="header-guide" src="\.\/images\/kuumo\/s1\.png"[\s\S]*<\/div>/);

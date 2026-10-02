@@ -2744,9 +2744,10 @@ ${dailyLogGrid}
     <div class="about-kicker">MY GOAL</div>
     <div class="about-title">64歳から、数学を学びなおしたい</div>
     <p class="about-text">
-      数学IIIはほぼ未修、数学II・Bも久しぶりの学習です。<br>
-      高校数学をひとつずつ学び直し、難関大受験数学にも挑戦しながら、<br>
-      いつかその先の大学数学に触れられるところまで進みたいと思っています。
+      数学をひとつずつ学び直しながら、<br>
+      毎日の勉強を、紙の記録として残しています。<br><br>
+      たくさん進む日も、少しだけの日も。<br>
+      5年かけて、少しずつ積み上げていきます。
     </p>
   </section>
 
@@ -2757,9 +2758,10 @@ ${dailyLogGrid}
     <div class="about-title">このサイトについて</div>
     <div class="about-start">STARTED AUGUST 2026</div>
     <p class="about-text">
-      sakurak02が数学を学び直す過程を、ChatGPTとの対話とともに記録しています。<br>
-      正解だけでなく、迷ったこと、考え直したこと、理解がつながった瞬間も残していきます。<br>
-      最初に取り組んだ問題でのつまずきをもとに、ChatGPTのオリジナル問題で復習するスタイルです。
+      その日に勉強したノートや答案を、写真と短い記録で残しています。<br><br>
+      見に来てくださって、ありがとうございます。<br>
+      ここを見たあと、ほんの少しでも「自分もやろうかな」と思ってもらえたらうれしいです。<br><br>
+      クーモと一緒に、今日も少しずつ。
     </p>
     <figure class="about-guide">
       <img class="about-guide-image" src="./images/kuumo/s3.png" alt="" aria-hidden="true" loading="lazy">
