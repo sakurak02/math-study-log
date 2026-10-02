@@ -4,6 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
+const { loadLogs } = require("./load-logs");
 
 const projectDir = path.resolve(__dirname, "..");
 
@@ -30,6 +31,7 @@ function fixture(t, files) {
     fs.mkdirSync(path.join(tempDir, dir), { recursive: true });
   }
   fs.copyFileSync(path.join(__dirname, "build.js"), path.join(tempDir, "scripts/build.js"));
+  fs.copyFileSync(path.join(__dirname, "load-logs.js"), path.join(tempDir, "scripts/load-logs.js"));
   fs.mkdirSync(path.join(tempDir, "content"), { recursive: true });
   fs.copyFileSync(
     path.join(projectDir, "content/classification-master.json"),
@@ -52,6 +54,9 @@ function fixture(t, files) {
     },
     exists(file) {
       return fs.existsSync(path.join(tempDir, file));
+    },
+    loadLogs() {
+      return loadLogs(path.join(tempDir, "logs"));
     }
   };
 }
@@ -92,6 +97,80 @@ function classifiedRecordFiles(subject, category, topic) {
   files[metaFile] = JSON.stringify({ ...meta, subject, category, topic });
   return files;
 }
+
+test("new logs loader safely handles a missing or empty logs directory", (t) => {
+  let build = fixture(t, {});
+  assert.deepEqual(build.loadLogs(), []);
+  let result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /New logs\s+: 0/);
+
+  build = fixture(t, { "logs/.gitkeep": "" });
+  assert.deepEqual(build.loadLogs(), []);
+  result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("new logs loader reads markdown-only days without front matter", (t) => {
+  const source = "# 2026-10-02\n\n数学III。極限。\n\n新しい学習記録方式のテスト。\n";
+  const build = fixture(t, {
+    "logs/2026/20261002/20261002.md": source
+  });
+  const logs = build.loadLogs();
+
+  assert.equal(logs.length, 1);
+  assert.deepEqual(logs[0], {
+    date: "2026-10-02",
+    dateKey: "20261002",
+    markdown: source,
+    markdownHtml: "<h1>2026-10-02</h1>\n<p>数学III。極限。</p>\n<p>新しい学習記録方式のテスト。</p>\n",
+    images: [],
+    coverImage: null,
+    pageCount: 0
+  });
+
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /New logs\s+: 1/);
+});
+
+test("new logs loader sorts WebP page numbers numerically and exposes the cover", (t) => {
+  const webp = createVp8xWebp();
+  const build = fixture(t, {
+    "logs/2026/20261002/20261002-10.webp": webp,
+    "logs/2026/20261002/20261002-2.webp": webp,
+    "logs/2026/20261002/20261002-1.webp": webp,
+    "logs/2026/20261002/20261002-0.webp": webp,
+    "logs/2026/20261002/unrelated.webp": webp
+  });
+  const [log] = build.loadLogs();
+
+  assert.deepEqual(log.images, [
+    "20261002-1.webp",
+    "20261002-2.webp",
+    "20261002-10.webp"
+  ]);
+  assert.equal(log.coverImage, "20261002-1.webp");
+  assert.equal(log.pageCount, 3);
+});
+
+test("new logs loader skips malformed dates and only scans the matching year", (t) => {
+  const webp = createVp8xWebp();
+  const build = fixture(t, {
+    "logs/2026/20261003/20261003-2.webp": webp,
+    "logs/2026/20260230/20260230.md": "invalid date",
+    "logs/2025/20261004/20261004.md": "wrong year",
+    "logs/misc/20261005/20261005.md": "wrong parent",
+    "logs/2026/not-a-date/note.md": "wrong name"
+  });
+  const logs = build.loadLogs();
+
+  assert.equal(logs.length, 1);
+  assert.equal(logs[0].dateKey, "20261003");
+  assert.deepEqual(logs[0].images, ["20261003-2.webp"]);
+  assert.equal(logs[0].coverImage, null);
+  assert.equal(logs[0].pageCount, 1);
+});
 
 test("new-format article renders QUESTION, ANSWER, LOG, and SESSION in order", (t) => {
   const build = fixture(t, recordFiles());

@@ -1,12 +1,14 @@
 const fs = require("fs");
 const path = require("path");
 const MarkdownIt = require("markdown-it");
+const { loadLogs } = require("./load-logs");
 
 const rootDir = path.join(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
 const imagesDir = path.join(publicDir, "images");
 const recordsDir = path.join(publicDir, "records");
 const contentRecordsDir = path.join(rootDir, "content", "records");
+const logsDir = path.join(rootDir, "logs");
 const classificationMasterPath = path.join(rootDir, "content", "classification-master.json");
 const legacyQuestionOutputDir = path.join(publicDir, "question");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
@@ -22,6 +24,9 @@ const markdown = new MarkdownIt({
   linkify: true,
   typographer: false
 });
+
+// 新方式は旧recordsとは別に読み込み、後続の生成処理から利用できる状態にする。
+const dailyLogs = loadLogs(logsDir);
 
 function loadClassificationMaster() {
   let source;
@@ -3050,4 +3055,5 @@ console.log(
   )}`
 );
 console.log(`Images     : ${imageFiles.length}`);
+console.log(`New logs   : ${dailyLogs.length}`);
 console.log("");
