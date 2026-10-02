@@ -24,6 +24,10 @@ function escapeHtml(value = "") {
     .replace(/"/g, "&quot;");
 }
 
+function escapeAttribute(value = "") {
+  return escapeHtml(value).replace(/\r?\n/g, "&#10;");
+}
+
 function withoutFirstHeading(source = "") {
   return source.replace(/^\uFEFF?[ \t]*#[ \t]+[^\r\n]*(?:\r?\n|$)/, "").trim();
 }
@@ -44,6 +48,33 @@ function excerptFromMarkdown(source = "", maxLength = 180) {
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1).trimEnd()}…` : text;
+}
+
+function cardExcerptFromMarkdown(source = "", maxLength = 240) {
+  const text = markdown
+    .parse(withoutFirstHeading(source), {})
+    .filter((token) => token.type === "inline")
+    .map((token) =>
+      (token.children || [])
+        .map((child) => {
+          if (["text", "code_inline", "image"].includes(child.type)) return child.content;
+          if (["softbreak", "hardbreak"].includes(child.type)) return "\n";
+          return "";
+        })
+        .join("")
+    )
+    .join("\n")
+    .split("\n")
+    .map((line) =>
+      line
+        .replace(/^[ \t]*[-*+][ \t]*/, "")
+        .replace(/[ \t]+/g, " ")
+        .trim()
+    )
+    .filter(Boolean)
+    .join("\n");
+
   return text.length > maxLength ? `${text.slice(0, maxLength - 1).trimEnd()}…` : text;
 }
 
@@ -137,7 +168,7 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
 }
 
 function dailyLogDataAttributes(log) {
-  return `data-daily-log-entry data-date-key="${log.dateKey}" data-date="${escapeHtml(log.date)}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}" data-excerpt="${escapeHtml(excerptFromMarkdown(log.markdown))}" data-cover-image="${escapeHtml(log.coverImage || "")}" data-page-count="${log.pageCount}"`;
+  return `data-daily-log-entry data-date-key="${log.dateKey}" data-date="${escapeAttribute(log.date)}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}" data-card-excerpt="${escapeAttribute(cardExcerptFromMarkdown(log.markdown))}" data-archive-excerpt="${escapeAttribute(excerptFromMarkdown(log.markdown))}" data-cover-image="${escapeAttribute(log.coverImage || "")}" data-page-count="${log.pageCount}"`;
 }
 
 function createDailyLogCard(log) {
@@ -150,7 +181,7 @@ function createDailyLogCard(log) {
     <div class="daily-log-media">${image}</div>
     <div class="daily-log-body">
       <time class="daily-log-date" datetime="${log.date}">${formatDotDate(log.date)}</time>
-      <p class="daily-log-excerpt">${escapeHtml(excerptFromMarkdown(log.markdown))}</p>
+      <p class="daily-log-excerpt">${escapeHtml(cardExcerptFromMarkdown(log.markdown))}</p>
       <div class="daily-log-pages">${pageLabel}</div>
     </div>
   </a>
@@ -199,7 +230,7 @@ function homepageScript() {
 
   const applyData = (element, entry) => {
     element.dataset.dailyLogEntry = "";
-    for (const key of ["dateKey", "date", "year", "month", "excerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
+    for (const key of ["dateKey", "date", "year", "month", "cardExcerpt", "archiveExcerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
   };
   const japaneseDate = (date) => {
     const [year, month, day] = date.split("-").map(Number);
@@ -237,7 +268,7 @@ function homepageScript() {
     time.textContent = entry.date.replace(/-/g, ".");
     const excerpt = document.createElement("p");
     excerpt.className = "daily-log-excerpt";
-    excerpt.textContent = entry.excerpt;
+    excerpt.textContent = entry.cardExcerpt;
     const pages = document.createElement("div");
     pages.className = "daily-log-pages";
     pages.textContent = entry.pageCount + " " + (entry.pageCount === "1" ? "page" : "pages");
@@ -260,7 +291,7 @@ function homepageScript() {
     time.textContent = entry.date.replace(/-/g, ".");
     const excerpt = document.createElement("span");
     excerpt.className = "daily-log-archive-excerpt";
-    excerpt.textContent = entry.excerpt;
+    excerpt.textContent = entry.archiveExcerpt;
     link.append(time, excerpt);
     article.append(link);
     return article;
@@ -326,7 +357,7 @@ function homeStyles() {
 .daily-log-image-placeholder { display: grid; place-items: center; color: var(--ink-soft); font: 500 10px/1.5 "JetBrains Mono", monospace; }
 .daily-log-body { display: flex; min-height: 88px; flex: 1; flex-direction: column; padding: 8px; }
 .daily-log-date { font: 600 10px/1.45 "JetBrains Mono", monospace; }
-.daily-log-excerpt { display: -webkit-box; min-height: 3.1em; max-height: 3.1em; margin-top: 4px; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.daily-log-excerpt { display: -webkit-box; min-height: 4.65em; max-height: 4.65em; margin-top: 4px; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .daily-log-pages { margin-top: auto; padding-top: 5px; border-top: 1px solid var(--line); color: var(--ink-soft); font: 500 9px/1.4 "JetBrains Mono", monospace; }
 .daily-log-empty { padding: 20px 0; color: var(--ink-soft); font-size: 13px; }
 .daily-log-archive { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }

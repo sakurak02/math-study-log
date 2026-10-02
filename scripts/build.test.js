@@ -154,6 +154,17 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
     `logs/${dateKey.slice(0, 4)}/${dateKey}/${dateKey}.md`,
     `# ${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-${dateKey.slice(6)}\n\nLog ${dateKey}\n\n全文です。`
   ]));
+  files["logs/2026/20261010/20261010.md"] = `# 2026-10-10
+
+- 数学III
+- 1ページ
+- 47 関数の極限
+- 48 極限値の条件から関数を考える`;
+  files["logs/2026/20261009/20261009.md"] = `# 2026-10-09
+
+-数学II
+-1ページ
+-関数の極限`;
   files["logs/2026/20261010/20261010-10.webp"] = webp;
   files["logs/2026/20261010/20261010-2.webp"] = webp;
   files["logs/2026/20261010/20261010-1.webp"] = webp;
@@ -172,11 +183,17 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   assert.deepEqual(archiveKeys, expectedOrder.slice(20));
   assert.equal(new Set([...latestKeys, ...archiveKeys]).size, dateKeys.length);
   assert.match(latestHtml, /class="daily-log-image"/);
+  assert.match(latestHtml, /<p class="daily-log-excerpt">数学III\n1ページ\n47 関数の極限\n48 極限値の条件から関数を考える<\/p>/);
+  assert.match(latestHtml, /data-card-excerpt="数学III&#10;1ページ&#10;47 関数の極限&#10;48 極限値の条件から関数を考える"/);
+  assert.match(latestHtml, /<p class="daily-log-excerpt">数学II\n1ページ\n関数の極限<\/p>/);
+  assert.doesNotMatch(latestHtml, /<p class="daily-log-excerpt">-/);
   assert.doesNotMatch(archiveHtml, /class="daily-log-card"|class="daily-log-image"|class="daily-log-pages"|<img\b/);
+  assert.match(archiveHtml, /data-archive-excerpt="Log 20260905 全文です。"/);
   assert.match(archiveHtml, /data-archive-month="2026-09"[\s\S]*<summary>9月<\/summary>/);
   assert.match(archiveHtml, /data-archive-year="2025"[\s\S]*data-archive-month="2025-08"/);
   assert.match(page, /const latestCount = mobile\.matches \? 5 : tablet\.matches \? 12 : 20;/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.daily-log-grid \{ grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(page, /\.daily-log-excerpt \{[^}]*white-space: pre-line;[^}]*-webkit-line-clamp: 3;/);
   assertInlineScriptsParse(page);
 
   const dailyPage = build.read("public/daily/20261010/index.html");
@@ -186,7 +203,7 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   assert.match(dailyPage, /<title>2026\.10\.10 \| 数学学習記録<\/title>/);
   assert.match(dailyPage, /← 学習記録へ戻る/);
   assert.match(dailyPage, /og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/daily\/20261010\/images\/20261010-1\.webp"/);
-  assert.match(markdownSection, /<p>Log 20261010<\/p>[\s\S]*<p>全文です。<\/p>/);
+  assert.match(markdownSection, /<ul>[\s\S]*<li>数学III<\/li>[\s\S]*<li>1ページ<\/li>[\s\S]*<li>47 関数の極限<\/li>[\s\S]*<li>48 極限値の条件から関数を考える<\/li>[\s\S]*<\/ul>/);
   assert.doesNotMatch(markdownSection, /<h1>|2026-10-10/);
   assert.match(dailyPage, /href="\.\/images\/20261010-1\.webp" target="_blank"/);
   assert.match(dailyPage, /href="\.\.\/20261009\/">← 2026\.10\.09<\/a>/);

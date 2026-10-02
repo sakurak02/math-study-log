@@ -81,7 +81,7 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
 .daily-log-image-placeholder { display: grid; place-items: center; color: var(--ink-soft); font: 500 10px/1.5 "JetBrains Mono", monospace; }
 .daily-log-body { display: flex; min-height: 88px; flex: 1; flex-direction: column; padding: 8px; }
 .daily-log-date { font: 600 10px/1.45 "JetBrains Mono", monospace; }
-.daily-log-excerpt { display: -webkit-box; min-height: 3.1em; max-height: 3.1em; margin-top: 4px; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.daily-log-excerpt { display: -webkit-box; min-height: 4.65em; max-height: 4.65em; margin-top: 4px; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .daily-log-pages { margin-top: auto; padding-top: 5px; border-top: 1px solid var(--line); color: var(--ink-soft); font: 500 9px/1.4 "JetBrains Mono", monospace; }
 .daily-log-empty { padding: 20px 0; color: var(--ink-soft); font-size: 13px; }
 .daily-log-archive { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
@@ -139,7 +139,24 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
 <main>
   <section class="daily-log-section" aria-labelledby="daily-log-title">
     <div class="daily-log-heading"><div class="daily-log-kicker">LEARNING LOG</div><h2 id="daily-log-title">学習記録</h2></div>
-    <p class="daily-log-empty">学習記録はまだありません。</p>
+    <div class="daily-log-subheading">LATEST</div>
+    <div class="daily-log-grid" id="daily-log-latest"><article class="daily-log-card" data-daily-log-entry data-date-key="20261002" data-date="2026-10-02" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ/1ページ&#10;47関数の極限&#10;48極限値の条件から関数の係数決定&#10;まあまあだった。" data-archive-excerpt="-数学Ⅲ/1ページ -47関数の極限 -48極限値の条件から関数の係数決定 -まあまあだった。" data-cover-image="20261002-1.webp" data-page-count="1">
+  <a class="daily-log-card-link" href="./daily/20261002/" aria-label="2026年10月2日の学習記録を開く">
+    <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261002/images/20261002-1.webp" alt="2026年10月2日の学習写真" loading="lazy"></div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="2026-10-02">2026.10.02</time>
+      <p class="daily-log-excerpt">数学Ⅲ/1ページ
+47関数の極限
+48極限値の条件から関数の係数決定
+まあまあだった。</p>
+      <div class="daily-log-pages">1 page</div>
+    </div>
+  </a>
+</article></div>
+    <section class="daily-log-archive" id="daily-log-archive" aria-labelledby="daily-log-archive-title" hidden>
+      <div class="daily-log-archive-heading" id="daily-log-archive-title">過去の学習記録</div>
+      <div id="daily-log-years"></div>
+    </section>
   </section>
   <div class="guide-divider" aria-hidden="true"><img class="divider-guide" src="./images/kuumo/s2.png" alt=""></div>
   <section class="about-section">
@@ -157,6 +174,128 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
   </section>
 </main>
 <footer>Math Study Log © 2026</footer>
+<script>
+(() => {
+  const latestGrid = document.querySelector("#daily-log-latest");
+  const archive = document.querySelector("#daily-log-archive");
+  const yearsContainer = document.querySelector("#daily-log-years");
+  const entries = [...document.querySelectorAll("[data-daily-log-entry]")]
+    .map((element) => ({ ...element.dataset }))
+    .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+  const tablet = window.matchMedia("(max-width: 820px)");
+  const mobile = window.matchMedia("(max-width: 600px)");
+  if (!latestGrid || !archive || !yearsContainer || entries.length === 0) return;
 
+  const applyData = (element, entry) => {
+    element.dataset.dailyLogEntry = "";
+    for (const key of ["dateKey", "date", "year", "month", "cardExcerpt", "archiveExcerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
+  };
+  const japaneseDate = (date) => {
+    const [year, month, day] = date.split("-").map(Number);
+    return year + "年" + month + "月" + day + "日";
+  };
+  const createCard = (entry) => {
+    const article = document.createElement("article");
+    article.className = "daily-log-card";
+    applyData(article, entry);
+    const link = document.createElement("a");
+    link.className = "daily-log-card-link";
+    link.href = "./daily/" + entry.dateKey + "/";
+    link.setAttribute("aria-label", japaneseDate(entry.date) + "の学習記録を開く");
+    const media = document.createElement("div");
+    media.className = "daily-log-media";
+    if (entry.coverImage) {
+      const image = document.createElement("img");
+      image.className = "daily-log-image";
+      image.src = "./daily/" + entry.dateKey + "/images/" + encodeURIComponent(entry.coverImage);
+      image.alt = japaneseDate(entry.date) + "の学習写真";
+      image.loading = "lazy";
+      media.append(image);
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.className = "daily-log-image-placeholder";
+      placeholder.setAttribute("aria-label", "学習写真なし");
+      placeholder.textContent = "NO IMAGE";
+      media.append(placeholder);
+    }
+    const body = document.createElement("div");
+    body.className = "daily-log-body";
+    const time = document.createElement("time");
+    time.className = "daily-log-date";
+    time.dateTime = entry.date;
+    time.textContent = entry.date.replace(/-/g, ".");
+    const excerpt = document.createElement("p");
+    excerpt.className = "daily-log-excerpt";
+    excerpt.textContent = entry.cardExcerpt;
+    const pages = document.createElement("div");
+    pages.className = "daily-log-pages";
+    pages.textContent = entry.pageCount + " " + (entry.pageCount === "1" ? "page" : "pages");
+    body.append(time, excerpt, pages);
+    link.append(media, body);
+    article.append(link);
+    return article;
+  };
+  const createArchiveItem = (entry) => {
+    const article = document.createElement("article");
+    article.className = "daily-log-archive-item";
+    applyData(article, entry);
+    const link = document.createElement("a");
+    link.className = "daily-log-archive-link";
+    link.href = "./daily/" + entry.dateKey + "/";
+    link.setAttribute("aria-label", japaneseDate(entry.date) + "の学習記録を開く");
+    const time = document.createElement("time");
+    time.className = "daily-log-archive-date";
+    time.dateTime = entry.date;
+    time.textContent = entry.date.replace(/-/g, ".");
+    const excerpt = document.createElement("span");
+    excerpt.className = "daily-log-archive-excerpt";
+    excerpt.textContent = entry.archiveExcerpt;
+    link.append(time, excerpt);
+    article.append(link);
+    return article;
+  };
+  const arrange = () => {
+    const latestCount = mobile.matches ? 5 : tablet.matches ? 12 : 20;
+    const openMonths = new Set([...yearsContainer.querySelectorAll(".daily-log-month[open]")].map((details) => details.dataset.archiveMonth));
+    latestGrid.replaceChildren(...entries.slice(0, latestCount).map(createCard));
+    yearsContainer.replaceChildren();
+    const years = new Map();
+    for (const entry of entries.slice(latestCount)) {
+      if (!years.has(entry.year)) years.set(entry.year, new Map());
+      if (!years.get(entry.year).has(entry.month)) years.get(entry.year).set(entry.month, []);
+      years.get(entry.year).get(entry.month).push(entry);
+    }
+    years.forEach((months, year) => {
+      const section = document.createElement("section");
+      section.className = "daily-log-year";
+      section.dataset.archiveYear = year;
+      const heading = document.createElement("h3");
+      heading.textContent = year;
+      section.append(heading);
+      months.forEach((monthEntries, month) => {
+        const monthKey = year + "-" + month;
+        const details = document.createElement("details");
+        details.className = "daily-log-month";
+        details.dataset.archiveMonth = monthKey;
+        details.open = openMonths.has(monthKey);
+        const summary = document.createElement("summary");
+        summary.textContent = Number(month) + "月";
+        const list = document.createElement("div");
+        list.className = "daily-log-archive-list";
+        list.append(...monthEntries.map(createArchiveItem));
+        details.append(summary, list);
+        section.append(details);
+      });
+      yearsContainer.append(section);
+    });
+    archive.hidden = entries.length <= latestCount;
+  };
+  for (const query of [tablet, mobile]) {
+    if (query.addEventListener) query.addEventListener("change", arrange);
+    else query.addListener(arrange);
+  }
+  arrange();
+})();
+</script>
 </body>
 </html>

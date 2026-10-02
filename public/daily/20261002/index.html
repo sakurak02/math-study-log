@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026.10.02 | 数学学習記録</title>
+<link rel="icon" type="image/svg+xml" href="https://sakurak02.github.io/math-study-log/assets/cloud.svg">
+<meta name="description" content="-数学Ⅲ/1ページ -47関数の極限 -48極限値の条件から関数の係数決定 -まあまあだった。">
+<meta property="og:title" content="2026.10.02 | 数学学習記録">
+<meta property="og:description" content="-数学Ⅲ/1ページ -47関数の極限 -48極限値の条件から関数の係数決定 -まあまあだった。">
+<meta property="og:url" content="https://sakurak02.github.io/math-study-log/daily/20261002/">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/daily/20261002/images/20261002-1.webp">
+<meta property="og:image:alt" content="2026.10.02 | 数学学習記録">
+<meta property="og:site_name" content="Math Study Log">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="2026.10.02 | 数学学習記録">
+<meta name="twitter:description" content="-数学Ⅲ/1ページ -47関数の極限 -48極限値の条件から関数の係数決定 -まあまあだった。">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/daily/20261002/images/20261002-1.webp">
+<link rel="canonical" href="https://sakurak02.github.io/math-study-log/daily/20261002/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LTZZZFVRKP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LTZZZFVRKP');
+</script>
+<script>window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>:root {
+  --bg: #f7fafa;
+  --panel: #ffffff;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --accent: #315f63;
+  --line: #d4e1e1;
+  --empty: #edf4f4;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { min-width: 320px; margin: 0; background: var(--bg); color: var(--ink); font-family: "Noto Sans JP", sans-serif; line-height: 1.8; }
+a { color: inherit; }
+img { max-width: 100%; }
+p, h1, h2, h3, figure { margin: 0; }
+.some-clouds-link { position: fixed; top: 10px; right: 14px; z-index: 10; color: var(--ink-soft); font: 500 9px/1.5 "JetBrains Mono", monospace; letter-spacing: .08em; text-decoration: none; }
+.some-clouds-link:hover, .some-clouds-link:focus-visible { color: var(--accent); }
+header { border-bottom: 1px solid var(--line); background: var(--panel); }
+.header-inner { position: relative; width: min(1120px, calc(100% - 48px)); min-height: 112px; margin: 0 auto; padding: 30px 150px 24px 0; }
+.header-title, .page-kicker { color: var(--accent); font: 600 11px/1.5 "JetBrains Mono", monospace; letter-spacing: .1em; }
+.header-date { margin-top: 5px; font-size: 27px; font-weight: 700; line-height: 1.45; }
+.header-guide-wrap { position: absolute; top: 18px; right: 0; display: flex; align-items: center; gap: 8px; }
+.header-guide-copy { color: var(--ink-soft); font-size: 10px; }
+.header-guide { width: 108px; height: auto; }
+main { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 34px 0 48px; }
+footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 11px; text-align: center; }
+@media (max-width: 600px) {
+  .some-clouds-link { top: 6px; right: 9px; }
+  .header-inner { width: calc(100% - 28px); min-height: 98px; padding: 24px 116px 18px 0; }
+  .header-date { font-size: 22px; }
+  .header-guide-wrap { top: 15px; gap: 4px; }
+  .header-guide-copy { font-size: 8px; }
+  .header-guide { width: 88px; }
+  main { width: calc(100% - 24px); padding: 24px 0 36px; }
+}
+.record-main { width: min(860px, calc(100% - 48px)); }
+.page-head { margin-bottom: 26px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.page-head h1 { margin-top: 4px; font-size: 25px; line-height: 1.5; }
+.page-actions { margin-bottom: 14px; }
+.text-link { color: var(--accent); font-size: 12px; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.daily-entry { width: min(760px, 100%); margin: 0 auto; }
+.daily-sheets { display: grid; gap: 30px; }
+.daily-sheet-label { margin-bottom: 7px; color: var(--ink-soft); font: 600 10px/1.5 "JetBrains Mono", monospace; letter-spacing: .08em; }
+.daily-sheet-link { display: block; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.daily-sheet-link:hover, .daily-sheet-link:focus-visible { border-color: var(--accent); }
+.daily-sheet-image { display: block; width: 100%; height: auto; border-radius: 7px; }
+.daily-no-images { padding: 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink-soft); font-size: 13px; text-align: center; }
+.daily-markdown { margin-top: 38px; padding-top: 26px; border-top: 1px solid var(--line); }
+.daily-markdown-heading { margin-bottom: 18px; color: var(--accent); font: 600 11px/1.5 "JetBrains Mono", monospace; letter-spacing: .1em; }
+.daily-markdown-content { font-size: 15px; line-height: 1.9; }
+.daily-markdown-content > *:first-child { margin-top: 0; }
+.daily-markdown-content h1, .daily-markdown-content h2, .daily-markdown-content h3 { margin: 30px 0 12px; line-height: 1.55; }
+.daily-markdown-content h1 { font-size: 21px; } .daily-markdown-content h2 { font-size: 18px; } .daily-markdown-content h3 { font-size: 16px; }
+.daily-markdown-content p, .daily-markdown-content ul, .daily-markdown-content ol, .daily-markdown-content blockquote, .daily-markdown-content pre, .daily-markdown-content table { margin: 0 0 18px; }
+.daily-markdown-content ul, .daily-markdown-content ol { padding-left: 1.5em; }
+.daily-markdown-content blockquote { padding: 9px 14px; border-left: 3px solid var(--line); color: var(--ink-soft); }
+.daily-markdown-content pre { max-width: 100%; padding: 13px 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.daily-markdown-content code { font-family: "JetBrains Mono", monospace; }
+.daily-markdown-content table { display: block; width: max-content; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.daily-markdown-content th, .daily-markdown-content td { padding: 7px 9px; border: 1px solid var(--line); text-align: left; }
+.daily-markdown-content a { color: var(--accent); }
+.day-navigation { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); }
+.day-navigation > :last-child { text-align: right; }
+@media (max-width: 600px) { .record-main { width: calc(100% - 24px); } .page-head h1 { font-size: 22px; } .daily-sheets { gap: 24px; } .daily-markdown { margin-top: 30px; padding-top: 22px; } .daily-markdown-content { font-size: 14px; } }</style>
+</head>
+<body>
+<a class="some-clouds-link" href="https://sakurak02.github.io/some-clouds/">some clouds</a>
+<header><div class="header-inner"><div class="header-title">MATH STUDY LOG</div><div class="header-date">数学学習記録</div><div class="header-guide-wrap"><span class="header-guide-copy">クーモとまなぶ</span><img class="header-guide" src="../../images/kuumo/s1.png" alt="案内キャラクター クーモ"></div></div></header>
+<main class="record-main">
+  <div class="page-actions"><a class="text-link" href="../../index.html">← 学習記録へ戻る</a></div>
+  <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>2026.10.02</h1></div>
+  <article class="daily-entry">
+    <section class="daily-sheets" aria-label="2026年10月2日の学習写真"><figure class="daily-sheet">
+  <figcaption class="daily-sheet-label">PAGE 1</figcaption>
+  <a class="daily-sheet-link" href="./images/20261002-1.webp" target="_blank" rel="noopener" aria-label="2026年10月2日 ページ1を原寸で開く">
+    <img class="daily-sheet-image" src="./images/20261002-1.webp" alt="2026年10月2日 学習記録 ページ1" loading="lazy">
+  </a>
+</figure></section>
+    <section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2><div class="daily-markdown-content"><p>-数学Ⅲ/1ページ
+-47関数の極限
+-48極限値の条件から関数の係数決定
+-まあまあだった。</p>
+</div></section>
+    <nav class="day-navigation" aria-label="学習日を移動"><span></span><span></span></nav>
+  </article>
+</main>
+<footer>Math Study Log © 2026</footer>
+</body>
+</html>
