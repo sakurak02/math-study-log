@@ -321,16 +321,22 @@ test("daily logs use responsive latest limits and non-duplicated year-month arch
   assert.deepEqual(latestKeys, expectedOrder.slice(0, 20));
   assert.deepEqual(archiveKeys, expectedOrder.slice(20));
   assert.equal(new Set([...latestKeys, ...archiveKeys]).size, dateKeys.length);
+  assert.equal((archiveHtml.match(/class="daily-log-archive-item"/g) || []).length, archiveKeys.length);
   for (const dateKey of archiveKeys) {
     assert.match(archiveHtml, new RegExp(`href="\\.\\/daily\\/${dateKey}\\/"`));
   }
+  assert.match(archiveHtml, /<time class="daily-log-archive-date"[^>]*>2026\.09\.05<\/time>[\s\S]*<span class="daily-log-archive-excerpt">Log 20260905<\/span>/);
+  assert.doesNotMatch(archiveHtml, /class="daily-log-card"|class="daily-log-media"|class="daily-log-pages"|<img\b/);
   assert.doesNotMatch(archiveHtml, /data-archive-month="2026-10"/);
   assert.match(archiveHtml, /<h3>2026<\/h3>[\s\S]*data-archive-month="2026-09"[\s\S]*<summary>9月<\/summary>/);
   assert.match(archiveHtml, /<h3>2025<\/h3>[\s\S]*data-archive-month="2025-08"[\s\S]*<summary>8月<\/summary>/);
   assert.ok(archiveHtml.indexOf("<h3>2026</h3>") < archiveHtml.indexOf("<h3>2025</h3>"));
   assert.match(page, /const latestCount = mobileLogs\.matches \? 5 : tabletLogs\.matches \? 12 : 20;/);
   assert.match(page, /latestGrid\.replaceChildren\(\.\.\.latestCards\)/);
-  assert.match(page, /archive\.hidden = archivedCards\.length === 0;/);
+  assert.match(page, /list\.append\(\.\.\.entries\.map\(createDailyArchiveItem\)\)/);
+  assert.match(page, /archive\.hidden = archivedEntries\.length === 0;/);
+  assert.match(page, /\.daily-log-archive-link \{[\s\S]*?grid-template-columns: 110px minmax\(0, 1fr\);/);
+  assert.match(page, /@media \(max-width: 600px\)[\s\S]*?\.daily-log-archive-link \{\s*display: block;/);
   assert.doesNotMatch(page, /<div class="calendar-grid">|class="day-cell/);
 
   const buildSource = fs.readFileSync(path.join(__dirname, "build.js"), "utf8");

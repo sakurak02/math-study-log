@@ -1316,33 +1316,118 @@ function homepageInteractionScript() {
   const latestGrid = document.querySelector("#daily-log-latest");
   const archive = document.querySelector("#daily-log-archive");
   const yearsContainer = document.querySelector("#daily-log-years");
-  const dailyCards = [...document.querySelectorAll(".daily-log-card")]
-    .sort((a, b) => b.dataset.dateKey.localeCompare(a.dataset.dateKey));
+  const dailyEntries = [...document.querySelectorAll("[data-daily-log-entry]")]
+    .map((element) => ({ ...element.dataset }))
+    .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   const tabletLogs = window.matchMedia("(max-width: 820px)");
   const mobileLogs = window.matchMedia("(max-width: 600px)");
 
+  const applyDailyEntryData = (element, entry) => {
+    element.dataset.dailyLogEntry = "";
+    element.dataset.dateKey = entry.dateKey;
+    element.dataset.date = entry.date;
+    element.dataset.year = entry.year;
+    element.dataset.month = entry.month;
+    element.dataset.excerpt = entry.excerpt;
+    element.dataset.coverImage = entry.coverImage;
+    element.dataset.pageCount = entry.pageCount;
+  };
+
+  const japaneseDate = (date) => {
+    const [year, month, day] = date.split("-").map(Number);
+    return year + "年" + month + "月" + day + "日";
+  };
+
+  const createDailyCard = (entry) => {
+    const article = document.createElement("article");
+    article.className = "daily-log-card";
+    applyDailyEntryData(article, entry);
+
+    const link = document.createElement("a");
+    link.className = "daily-log-card-link";
+    link.href = "./daily/" + entry.dateKey + "/";
+    link.setAttribute("aria-label", japaneseDate(entry.date) + "の学習記録を開く");
+
+    const media = document.createElement("div");
+    media.className = "daily-log-media";
+    if (entry.coverImage) {
+      const image = document.createElement("img");
+      image.className = "daily-log-image";
+      image.src = "./daily/" + entry.dateKey + "/images/" + encodeURIComponent(entry.coverImage);
+      image.alt = japaneseDate(entry.date) + "の学習写真";
+      image.loading = "lazy";
+      media.append(image);
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.className = "daily-log-image-placeholder";
+      placeholder.setAttribute("aria-label", "学習写真なし");
+      const label = document.createElement("span");
+      label.textContent = "NO IMAGE";
+      placeholder.append(label);
+      media.append(placeholder);
+    }
+
+    const body = document.createElement("div");
+    body.className = "daily-log-body";
+    const time = document.createElement("time");
+    time.className = "daily-log-date";
+    time.dateTime = entry.date;
+    time.textContent = entry.date.replace(/-/g, ".");
+    const excerpt = document.createElement("p");
+    excerpt.className = "daily-log-excerpt";
+    excerpt.textContent = entry.excerpt;
+    const pages = document.createElement("div");
+    pages.className = "daily-log-pages";
+    pages.textContent = entry.pageCount + " " + (entry.pageCount === "1" ? "page" : "pages");
+    body.append(time, excerpt, pages);
+    link.append(media, body);
+    article.append(link);
+    return article;
+  };
+
+  const createDailyArchiveItem = (entry) => {
+    const article = document.createElement("article");
+    article.className = "daily-log-archive-item";
+    applyDailyEntryData(article, entry);
+
+    const link = document.createElement("a");
+    link.className = "daily-log-archive-link";
+    link.href = "./daily/" + entry.dateKey + "/";
+    link.setAttribute("aria-label", japaneseDate(entry.date) + "の学習記録を開く");
+    const time = document.createElement("time");
+    time.className = "daily-log-archive-date";
+    time.dateTime = entry.date;
+    time.textContent = entry.date.replace(/-/g, ".");
+    const excerpt = document.createElement("span");
+    excerpt.className = "daily-log-archive-excerpt";
+    excerpt.textContent = entry.excerpt;
+    link.append(time, excerpt);
+    article.append(link);
+    return article;
+  };
+
   const arrangeDailyLogs = () => {
-    if (!latestGrid || !archive || !yearsContainer || dailyCards.length === 0) return;
+    if (!latestGrid || !archive || !yearsContainer || dailyEntries.length === 0) return;
 
     const latestCount = mobileLogs.matches ? 5 : tabletLogs.matches ? 12 : 20;
     const openMonths = new Set(
       [...yearsContainer.querySelectorAll(".daily-log-month[open]")]
         .map((details) => details.dataset.archiveMonth)
     );
-    const latestCards = dailyCards.slice(0, latestCount);
-    const archivedCards = dailyCards.slice(latestCount);
+    const latestCards = dailyEntries.slice(0, latestCount).map(createDailyCard);
+    const archivedEntries = dailyEntries.slice(latestCount);
 
     latestGrid.replaceChildren(...latestCards);
     yearsContainer.replaceChildren();
 
     const years = new Map();
 
-    archivedCards.forEach((card) => {
-      const year = card.dataset.year;
-      const month = card.dataset.month;
+    archivedEntries.forEach((entry) => {
+      const year = entry.year;
+      const month = entry.month;
       if (!years.has(year)) years.set(year, new Map());
       if (!years.get(year).has(month)) years.get(year).set(month, []);
-      years.get(year).get(month).push(card);
+      years.get(year).get(month).push(entry);
     });
 
     years.forEach((months, year) => {
@@ -1354,7 +1439,7 @@ function homepageInteractionScript() {
       yearHeading.textContent = year;
       yearSection.append(yearHeading);
 
-      months.forEach((cards, month) => {
+      months.forEach((entries, month) => {
         const monthKey = year + "-" + month;
         const details = document.createElement("details");
         details.className = "daily-log-month";
@@ -1364,17 +1449,17 @@ function homepageInteractionScript() {
         const summary = document.createElement("summary");
         summary.textContent = Number(month) + "月";
 
-        const grid = document.createElement("div");
-        grid.className = "daily-log-grid";
-        grid.append(...cards);
-        details.append(summary, grid);
+        const list = document.createElement("div");
+        list.className = "daily-log-archive-list";
+        list.append(...entries.map(createDailyArchiveItem));
+        details.append(summary, list);
         yearSection.append(details);
       });
 
       yearsContainer.append(yearSection);
     });
 
-    archive.hidden = archivedCards.length === 0;
+    archive.hidden = archivedEntries.length === 0;
   };
 
   [tabletLogs, mobileLogs].forEach((query) => {
@@ -1387,6 +1472,10 @@ function homepageInteractionScript() {
 </script>`;
 }
 
+function dailyLogDataAttributes(log) {
+  return `data-daily-log-entry data-date-key="${log.dateKey}" data-date="${escapeHtml(log.date)}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}" data-excerpt="${escapeHtml(dailyLogExcerpt(log.markdown))}" data-cover-image="${escapeHtml(log.coverImage || "")}" data-page-count="${log.pageCount}"`;
+}
+
 function createDailyLogCard(log) {
   const excerpt = dailyLogExcerpt(log.markdown);
   const pageLabel = `${log.pageCount} ${log.pageCount === 1 ? "page" : "pages"}`;
@@ -1395,7 +1484,7 @@ function createDailyLogCard(log) {
     : `<div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div>`;
 
   return `
-      <article class="daily-log-card" data-date-key="${log.dateKey}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}">
+      <article class="daily-log-card" ${dailyLogDataAttributes(log)}>
         <a class="daily-log-card-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
           <div class="daily-log-media">${image}</div>
           <div class="daily-log-body">
@@ -1405,6 +1494,18 @@ function createDailyLogCard(log) {
           </div>
         </a>
       </article>`;
+}
+
+function createDailyLogArchiveItem(log) {
+  const excerpt = dailyLogExcerpt(log.markdown);
+
+  return `
+            <article class="daily-log-archive-item" ${dailyLogDataAttributes(log)}>
+              <a class="daily-log-archive-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
+                <time class="daily-log-archive-date" datetime="${escapeHtml(log.date)}">${escapeHtml(formatDotDate(log.date))}</time>
+                <span class="daily-log-archive-excerpt">${escapeHtml(excerpt)}</span>
+              </a>
+            </article>`;
 }
 
 function createDailyLogArchive(logs) {
@@ -1427,7 +1528,7 @@ ${[...months.entries()]
   .map(([month, monthLogs]) => `
         <details class="daily-log-month" data-archive-month="${year}-${month}">
           <summary>${Number(month)}月</summary>
-          <div class="daily-log-grid">${monthLogs.map(createDailyLogCard).join("")}
+          <div class="daily-log-archive-list">${monthLogs.map(createDailyLogArchiveItem).join("")}
           </div>
         </details>`)
   .join("")}
@@ -1828,8 +1929,46 @@ main {
   border-bottom: 1px solid var(--line);
 }
 
-.daily-log-month > .daily-log-grid {
-  padding: 12px;
+.daily-log-archive-list {
+  background: var(--panel);
+}
+
+.daily-log-archive-item + .daily-log-archive-item {
+  border-top: 1px solid var(--line);
+}
+
+.daily-log-archive-link {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 9px 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.daily-log-archive-link:hover,
+.daily-log-archive-link:focus-visible {
+  background: var(--empty);
+  outline: 0;
+}
+
+.daily-log-archive-date {
+  color: var(--ink);
+  font: 600 10px/1.6 "JetBrains Mono", monospace;
+  letter-spacing: 0.02em;
+}
+
+.daily-log-archive-excerpt {
+  display: -webkit-box;
+  max-height: calc(1.6em * 2);
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .month-section {
@@ -2388,6 +2527,16 @@ footer {
   .daily-log-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
+  }
+
+  .daily-log-archive-link {
+    display: block;
+    padding: 8px 10px;
+  }
+
+  .daily-log-archive-date {
+    display: block;
+    margin-bottom: 1px;
   }
 
   .header-date {
