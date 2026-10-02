@@ -7,6 +7,7 @@ const rootDir = path.join(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
 const imagesDir = path.join(publicDir, "images");
 const recordsDir = path.join(publicDir, "records");
+const dailyOutputDir = path.join(publicDir, "daily");
 const contentRecordsDir = path.join(rootDir, "content", "records");
 const logsDir = path.join(rootDir, "logs");
 const classificationMasterPath = path.join(rootDir, "content", "classification-master.json");
@@ -355,6 +356,32 @@ function descriptionFromMarkdown(source) {
   }
 
   return "";
+}
+
+function dailyLogExcerpt(source) {
+  if (!source?.trim()) return "";
+
+  const withoutLeadingH1 = source.replace(
+    /^\uFEFF?[ \t]*#[ \t]+[^\r\n]*(?:\r?\n|$)/,
+    ""
+  );
+
+  return markdown
+    .parse(withoutLeadingH1, {})
+    .filter((token) => token.type === "inline")
+    .map((token) =>
+      (token.children || [])
+        .map((child) => {
+          if (["text", "code_inline"].includes(child.type)) return child.content;
+          if (child.type === "image") return child.content;
+          if (["softbreak", "hardbreak"].includes(child.type)) return " ";
+          return "";
+        })
+        .join("")
+    )
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function descriptionForStudy(study) {
@@ -1289,6 +1316,41 @@ function homepageInteractionScript() {
 </script>`;
 }
 
+function createDailyLogGrid() {
+  const cards = [...dailyLogs]
+    .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+    .map((log) => {
+      const excerpt = dailyLogExcerpt(log.markdown);
+      const pageLabel = `${log.pageCount} ${log.pageCount === 1 ? "page" : "pages"}`;
+      const image = log.coverImage
+        ? `<img class="daily-log-image" src="./daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}" alt="${escapeHtml(formatJapaneseDate(log.date))}の学習写真" loading="lazy">`
+        : `<div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div>`;
+
+      return `
+      <article class="daily-log-card">
+        <div class="daily-log-media">${image}</div>
+        <div class="daily-log-body">
+          <time class="daily-log-date" datetime="${escapeHtml(log.date)}">${escapeHtml(formatDotDate(log.date))}</time>
+          <p class="daily-log-excerpt">${escapeHtml(excerpt)}</p>
+          <div class="daily-log-pages">${pageLabel}</div>
+        </div>
+      </article>`;
+    })
+    .join("");
+
+  return `
+  <section class="daily-log-section" aria-labelledby="daily-log-title">
+    <div class="daily-log-heading">
+      <div class="daily-log-kicker">LEARNING LOG</div>
+      <h2 id="daily-log-title">学習記録</h2>
+    </div>
+    ${cards
+      ? `<div class="daily-log-grid">${cards}
+    </div>`
+      : `<p class="daily-log-empty">学習記録はまだありません。</p>`}
+  </section>`;
+}
+
 /*
 トップページ
 */
@@ -1351,6 +1413,7 @@ ${pastMonthSections}
     ? latest.date.slice(0, 4)
     : new Date().getFullYear();
   const tableOfContents = createTableOfContents();
+  const dailyLogGrid = createDailyLogGrid();
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -1462,6 +1525,115 @@ main {
   max-width: 940px;
   margin: 0 auto;
   padding: 24px 24px 42px;
+}
+
+.daily-log-section {
+  margin-bottom: 28px;
+}
+
+.daily-log-heading {
+  margin-bottom: 14px;
+}
+
+.daily-log-kicker {
+  margin-bottom: 2px;
+  color: var(--accent);
+  font: 600 10px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.1em;
+}
+
+.daily-log-heading h2 {
+  font-size: 20px;
+  line-height: 1.5;
+}
+
+.daily-log-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.daily-log-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.daily-log-media {
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: var(--empty);
+}
+
+.daily-log-image,
+.daily-log-image-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.daily-log-image {
+  object-fit: cover;
+  object-position: top;
+}
+
+.daily-log-image-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font: 500 10px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.08em;
+}
+
+.daily-log-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.daily-log-date {
+  color: var(--ink);
+  font: 600 11px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.03em;
+}
+
+.daily-log-excerpt {
+  display: -webkit-box;
+  min-height: calc(1.7em * 3);
+  max-height: calc(1.7em * 3);
+  margin-top: 7px;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.daily-log-pages {
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+  color: var(--accent);
+  font: 600 10px/1.5 "JetBrains Mono", monospace;
+  letter-spacing: 0.05em;
+}
+
+.daily-log-empty {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink-soft);
+  font-size: 13px;
+  text-align: center;
 }
 
 .month-section {
@@ -1981,6 +2153,10 @@ footer {
 }
 
 @media (max-width: 820px) {
+  .daily-log-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .about-with-guide {
     min-height: 168px;
     padding-right: 180px;
@@ -1992,6 +2168,12 @@ footer {
   }
 }
 
+@media (max-width: 700px) {
+  .daily-log-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 600px) {
   header {
     padding: 16px;
@@ -1999,6 +2181,11 @@ footer {
 
   main {
     padding: 18px 12px 32px;
+  }
+
+  .daily-log-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
   }
 
   .header-date {
@@ -2195,6 +2382,10 @@ ${someCloudsLink()}
 </header>
 
 <main>
+
+${dailyLogGrid}
+
+  <div class="section-divider"></div>
 
 ${calendarSections}
 
@@ -2903,6 +3094,24 @@ function createArchivePage(kind, entries) {
 /*
 トップページ生成
 */
+
+// 新方式の画像はソースのlogsとは分け、ブラウザから参照できる専用パスへ公開する。
+fs.rmSync(dailyOutputDir, { recursive: true, force: true });
+
+for (const log of dailyLogs) {
+  if (log.images.length === 0) continue;
+
+  const sourceDir = path.join(logsDir, log.dateKey.slice(0, 4), log.dateKey);
+  const outputImagesDir = path.join(dailyOutputDir, log.dateKey, "images");
+  fs.mkdirSync(outputImagesDir, { recursive: true });
+
+  for (const image of log.images) {
+    fs.copyFileSync(
+      path.join(sourceDir, image),
+      path.join(outputImagesDir, image)
+    );
+  }
+}
 
 fs.writeFileSync(
   path.join(publicDir, "index.html"),

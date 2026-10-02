@@ -2,7 +2,7 @@
 
 数学学習記録の静的サイトです。`content/records/` に記事を置き、GitHub Actions のビルドで目次・カレンダー・公開HTMLを自動生成します。
 
-## 新方式の学習記録（読み込み基盤）
+## 新方式の学習記録
 
 2026年10月以降の学習記録は、旧方式とは独立した `logs/` に次の形で置けます。
 
@@ -13,7 +13,7 @@ logs/YYYY/YYYYMMDD/
   YYYYMMDD-2.webp
 ```
 
-ビルド時に `scripts/load-logs.js` が日付、Markdown本文とHTML、画像一覧、代表画像、画像枚数を読み込みます。Markdownや画像がない日も安全に扱います。現段階では読み込みだけを行い、既存ページの表示やURLは変更しません。
+ビルド時に `scripts/load-logs.js` が日付、Markdown本文とHTML、画像一覧、代表画像、画像枚数を読み込みます。Markdownや画像がない日も安全に扱います。代表画像は `public/daily/YYYYMMDD/images/` にコピーされ、トップページの学習記録グリッドに日付の新しい順で表示されます。
 
 ## 記事の追加
 

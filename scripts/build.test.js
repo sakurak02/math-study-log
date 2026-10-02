@@ -227,6 +227,46 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   assert.doesNotMatch(page, /padding-bottom: 76px/);
 });
 
+test("homepage renders new daily log cards with published cover images", (t) => {
+  const webp = createVp8xWebp();
+  const build = fixture(t, {
+    ...recordFiles(),
+    "logs/2026/20261002/20261002.md": "# 2026-10-02\n\n数学III。極限。\n\n新しい学習記録方式のテスト。",
+    "logs/2026/20261002/20261002-1.webp": webp,
+    "logs/2026/20261002/20261002-2.webp": webp,
+    "logs/2026/20261002/20261002-10.webp": webp,
+    "logs/2026/20261003/20261003.md": "# 2026-10-03\n\n**翌日**の記録。",
+    "logs/2026/20261003/20261003-1.webp": webp
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+
+  const page = build.read("public/index.html");
+  const cards = [...page.matchAll(/<article class="daily-log-card">([\s\S]*?)<\/article>/g)]
+    .map((match) => match[1]);
+
+  assert.equal(cards.length, 2);
+  assert.match(page, /<div class="daily-log-kicker">LEARNING LOG<\/div>/);
+  assert.match(page, /<h2 id="daily-log-title">学習記録<\/h2>/);
+  assert.ok(page.indexOf("2026.10.03") < page.indexOf("2026.10.02"));
+  assert.match(cards[1], /src="\.\/daily\/20261002\/images\/20261002-1\.webp"/);
+  assert.match(cards[1], /<time[^>]*>2026\.10\.02<\/time>/);
+  assert.match(cards[1], /<p class="daily-log-excerpt">数学III。極限。 新しい学習記録方式のテスト。<\/p>/);
+  assert.doesNotMatch(cards[1], /<h1>|# 2026-10-02|<a\b/);
+  assert.match(cards[1], /<div class="daily-log-pages">3 pages<\/div>/);
+  assert.match(cards[0], /<div class="daily-log-pages">1 page<\/div>/);
+  assert.equal(build.exists("public/daily/20261002/images/20261002-1.webp"), true);
+  assert.equal(build.exists("public/daily/20261002/images/20261002-2.webp"), true);
+  assert.equal(build.exists("public/daily/20261002/images/20261002-10.webp"), true);
+  assert.match(page, /\.daily-log-media \{[\s\S]*?aspect-ratio: 3 \/ 4;/);
+  assert.match(page, /\.daily-log-image \{[\s\S]*?object-fit: cover;[\s\S]*?object-position: top;/);
+  assert.match(page, /\.daily-log-excerpt \{[\s\S]*?-webkit-line-clamp: 3;/);
+  assert.match(page, /\.daily-log-grid \{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+  assert.match(page, /@media \(max-width: 820px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
+  assert.match(page, /@media \(max-width: 700px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(page, /@media \(max-width: 600px\)[\s\S]*?\.daily-log-grid \{\s*grid-template-columns: minmax\(0, 1fr\);/);
+});
+
 test("one LOG is displayed directly without more", (t) => {
   const build = fixture(t, recordFiles());
   const result = build.run();
