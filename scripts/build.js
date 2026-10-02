@@ -2568,10 +2568,6 @@ ${someCloudsLink()}
 
 ${dailyLogGrid}
 
-  <div class="section-divider guide-divider" aria-hidden="true">
-    <img class="divider-guide" src="./images/kuumo/s2.png" alt="">
-  </div>
-
   <section class="topic-entry" aria-labelledby="topic-entry-title">
     <h2 class="topic-entry-title" id="topic-entry-title">分野から見る</h2>
     <p class="topic-entry-description">数学I・A・II・B・III・Cをテーマ別に探す</p>
@@ -2582,7 +2578,9 @@ ${dailyLogGrid}
 
 ${tableOfContents}
 
-  <div class="section-divider"></div>
+  <div class="section-divider guide-divider" aria-hidden="true">
+    <img class="divider-guide" src="./images/kuumo/s2.png" alt="">
+  </div>
 
   <section class="about-section">
     <div class="about-kicker">MY GOAL</div>

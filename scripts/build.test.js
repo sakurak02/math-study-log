@@ -202,13 +202,19 @@ test("homepage adds MY GOAL before the unchanged ABOUT THIS STUDY section", (t) 
   const page = build.read("public/index.html");
   const goal = page.indexOf('<div class="about-kicker">MY GOAL</div>');
   const about = page.indexOf('<div class="about-kicker">ABOUT THIS STUDY</div>');
+  const guideDivider = page.indexOf('<div class="section-divider guide-divider"');
   assert.ok(goal >= 0 && about > goal);
+  assert.ok(guideDivider >= 0 && guideDivider < goal);
+  assert.match(
+    page,
+    /<div class="section-divider guide-divider" aria-hidden="true">\s*<img class="divider-guide" src="\.\/images\/kuumo\/s2\.png" alt="">\s*<\/div>\s*<section class="about-section">\s*<div class="about-kicker">MY GOAL<\/div>/
+  );
   assert.match(page, /<div class="about-title">64歳から、数学を学びなおしたい<\/div>/);
   assert.match(page, /<div class="about-title">このサイトについて<\/div>/);
   assert.match(page, /<div class="about-start">STARTED AUGUST 2026<\/div>/);
   assert.match(page, /<link rel="icon" type="image\/svg\+xml" href="https:\/\/sakurak02\.github\.io\/math-study-log\/assets\/cloud\.svg">/);
   assert.match(page, /<div class="header-guide-wrap">[\s\S]*<span class="header-guide-copy">クーモとまなぶ<\/span>[\s\S]*class="header-guide" src="\.\/images\/kuumo\/s1\.png"[\s\S]*<\/div>/);
-  assert.match(page, /class="divider-guide" src="\.\/images\/kuumo\/s2\.png"/);
+  assert.equal((page.match(/class="divider-guide" src="\.\/images\/kuumo\/s2\.png"/g) || []).length, 1);
   assert.match(page, /<figure class="about-guide">[\s\S]*class="about-guide-image" src="\.\/images\/kuumo\/s3\.png"[\s\S]*<figcaption class="about-guide-caption">some clouds からちぎれて生まれた、学びの案内役クーモ。<\/figcaption>[\s\S]*<\/figure>/);
   assert.match(page, /<section class="topic-entry" aria-labelledby="topic-entry-title">/);
   assert.match(page, /<h2 class="topic-entry-title" id="topic-entry-title">分野から見る<\/h2>/);
