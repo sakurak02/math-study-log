@@ -78,6 +78,29 @@ function cardExcerptFromMarkdown(source = "", maxLength = 240) {
   return text.length > maxLength ? `${text.slice(0, maxLength - 1).trimEnd()}…` : text;
 }
 
+function normalizeStudyNoteMarkdown(source = "") {
+  const lines = source.split(/\r?\n/);
+
+  for (let start = 0; start < lines.length;) {
+    if (!/^[ \t]*-(?![- \t])\S/.test(lines[start])) {
+      start += 1;
+      continue;
+    }
+
+    let end = start;
+    while (end < lines.length && /^[ \t]*-(?![- \t])\S/.test(lines[end])) end += 1;
+
+    if (end - start >= 2) {
+      for (let index = start; index < end; index += 1) {
+        lines[index] = lines[index].replace(/^([ \t]*)-/, "$1- ");
+      }
+    }
+    start = end;
+  }
+
+  return lines.join("\n");
+}
+
 const formatDotDate = (date) => date.replace(/-/g, ".");
 
 function formatJapaneseDate(date) {
@@ -484,7 +507,8 @@ function dailyStyles() {
 .daily-markdown-content h1, .daily-markdown-content h2, .daily-markdown-content h3 { margin: 30px 0 12px; line-height: 1.55; }
 .daily-markdown-content h1 { font-size: 21px; } .daily-markdown-content h2 { font-size: 18px; } .daily-markdown-content h3 { font-size: 16px; }
 .daily-markdown-content p, .daily-markdown-content ul, .daily-markdown-content ol, .daily-markdown-content blockquote, .daily-markdown-content pre, .daily-markdown-content table { margin: 0 0 18px; }
-.daily-markdown-content ul, .daily-markdown-content ol { padding-left: 1.5em; }
+.daily-markdown-content ul, .daily-markdown-content ol { max-width: 100%; margin: .75rem 0 .75rem 1.5rem; padding-left: 1rem; }
+.daily-markdown-content li { margin: .35rem 0; line-height: 1.8; overflow-wrap: anywhere; }
 .daily-markdown-content blockquote { padding: 9px 14px; border-left: 3px solid var(--line); color: var(--ink-soft); }
 .daily-markdown-content pre { max-width: 100%; padding: 13px 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
 .daily-markdown-content code { font-family: "JetBrains Mono", monospace; }
@@ -526,7 +550,7 @@ ${someCloudsLink()}
   <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1></div>
   <article class="daily-entry">
     <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${images}</section>
-    <section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2><div class="daily-markdown-content">${markdownSource ? markdown.render(markdownSource) : ""}</div></section>
+    <section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2><div class="daily-markdown-content">${markdownSource ? markdown.render(normalizeStudyNoteMarkdown(markdownSource)) : ""}</div></section>
     <nav class="day-navigation" aria-label="学習日を移動">${previousLink}${nextLink}</nav>
   </article>
 </main>

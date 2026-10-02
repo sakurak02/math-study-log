@@ -215,6 +215,29 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   assert.doesNotMatch(sitemap, /records|\/log\/|\/session\//);
 });
 
+test("study note renders compact dash lines as a list between paragraphs", (t) => {
+  const source = `# 2026-10-02
+
+今日は極限を勉強した。
+
+-47 関数の極限
+-48 極限値の条件から係数決定
+
+48番は少し迷った。`;
+  const build = fixture(t, {
+    "logs/2026/20261002/20261002.md": source
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const page = build.read("public/daily/20261002/index.html");
+  const note = page.match(/<div class="daily-markdown-content">([\s\S]*?)<\/div>/)?.[1] || "";
+
+  assert.match(note, /<p>今日は極限を勉強した。<\/p>[\s\S]*<ul>[\s\S]*<li>47 関数の極限<\/li>[\s\S]*<li>48 極限値の条件から係数決定<\/li>[\s\S]*<\/ul>[\s\S]*<p>48番は少し迷った。<\/p>/);
+  assert.doesNotMatch(note, /<h1>|# 2026-10-02|<p>-47/);
+  assert.match(page, /\.daily-markdown-content ul, \.daily-markdown-content ol \{[^}]*margin: \.75rem 0 \.75rem 1\.5rem;[^}]*padding-left: 1rem;/);
+  assert.match(page, /\.daily-markdown-content li \{[^}]*line-height: 1\.8;[^}]*overflow-wrap: anywhere;/);
+});
+
 test("runtime and dependencies contain only the new log system", () => {
   const source = fs.readFileSync(path.join(__dirname, "build.js"), "utf8");
   const packageJson = JSON.parse(fs.readFileSync(path.join(projectDir, "package.json"), "utf8"));
