@@ -1,8 +1,8 @@
 {
   "name": "math-study-log",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "Daily math study photos and Markdown notes",
   "scripts": {
     "build": "node scripts/build.js",
     "test": "node --test"
@@ -11,14 +11,12 @@
     "type": "git",
     "url": "git+https://github.com/sakurak02/math-study-log.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/sakurak02/math-study-log/issues"
+  "engines": {
+    "node": ">=22"
   },
-  "homepage": "https://github.com/sakurak02/math-study-log#readme",
+  "homepage": "https://sakurak02.github.io/math-study-log/",
+  "license": "ISC",
   "dependencies": {
     "markdown-it": "^15.0.0"
   }

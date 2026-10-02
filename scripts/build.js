@@ -1,133 +1,58 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 const MarkdownIt = require("markdown-it");
 const { loadLogs } = require("./load-logs");
 
-const rootDir = path.join(__dirname, "..");
+const rootDir = path.resolve(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
-const imagesDir = path.join(publicDir, "images");
-const recordsDir = path.join(publicDir, "records");
-const dailyOutputDir = path.join(publicDir, "daily");
-const contentRecordsDir = path.join(rootDir, "content", "records");
 const logsDir = path.join(rootDir, "logs");
-const classificationMasterPath = path.join(rootDir, "content", "classification-master.json");
-const legacyQuestionOutputDir = path.join(publicDir, "question");
+const dailyOutputDir = path.join(publicDir, "daily");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
 const siteName = "Math Study Log";
 const defaultDescription =
-  "64歳から数学を学び直す学習記録。間違い・迷い・修正までそのまま残しています。";
+  "64歳から数学を学び直し、毎日の勉強を写真と短い記録で残す学習記録サイトです。";
 const siteOgImageUrl = `${siteUrl}/og-image.png`;
 const faviconUrl = `${siteUrl}/assets/cloud.svg`;
 const gaMeasurementId = "G-LTZZZFVRKP";
-const visibleCalendarMonthCount = 3;
-const markdown = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: false
-});
+const markdown = new MarkdownIt({ html: false, linkify: true, typographer: false });
 
-// 新方式は旧recordsとは別に読み込み、後続の生成処理から利用できる状態にする。
-const dailyLogs = loadLogs(logsDir);
-
-function loadClassificationMaster() {
-  let source;
-
-  try {
-    source = JSON.parse(fs.readFileSync(classificationMasterPath, "utf8"));
-  } catch (error) {
-    throw new Error(`分類マスターを読み込めません: ${classificationMasterPath}\n${error.message}`);
-  }
-
-  if (!source || !Array.isArray(source.subjects) || source.subjects.length === 0) {
-    throw new Error(`分類マスターのsubjectsを配列で指定してください: ${classificationMasterPath}`);
-  }
-
-  const subjectByName = new Map();
-
-  source.subjects.forEach((subject, subjectOrder) => {
-    if (
-      !subject ||
-      typeof subject.name !== "string" ||
-      !subject.name.trim() ||
-      typeof subject.short !== "string" ||
-      !subject.short.trim() ||
-      !Array.isArray(subject.categories) ||
-      subject.categories.length === 0
-    ) {
-      throw new Error(`分類マスターの科目定義が不正です: ${classificationMasterPath}`);
-    }
-
-    const name = subject.name.trim();
-    if (subjectByName.has(name)) {
-      throw new Error(`分類マスターに重複した科目があります: ${name}`);
-    }
-
-    const categoryByName = new Map();
-    subject.categories.forEach((category, categoryOrder) => {
-      if (
-        !category ||
-        typeof category.name !== "string" ||
-        !category.name.trim() ||
-        typeof category.short !== "string" ||
-        !category.short.trim()
-      ) {
-        throw new Error(`分類マスターの中分類定義が不正です: ${name}`);
-      }
-
-      const categoryName = category.name.trim();
-      if (categoryByName.has(categoryName)) {
-        throw new Error(`分類マスターに重複した中分類があります: ${name} → ${categoryName}`);
-      }
-
-      let topicByName = null;
-      if (Object.hasOwn(category, "topics")) {
-        if (!Array.isArray(category.topics) || category.topics.length === 0) {
-          throw new Error(`分類マスターの小分類定義が不正です: ${name} → ${categoryName}`);
-        }
-
-        topicByName = new Map();
-        category.topics.forEach((topic, topicOrder) => {
-          if (
-            typeof topic !== "string" ||
-            !topic.trim() ||
-            topic.length > 80 ||
-            /[\u0000-\u001f\u007f]/.test(topic)
-          ) {
-            throw new Error(`分類マスターの小分類定義が不正です: ${name} → ${categoryName}`);
-          }
-
-          const topicName = topic.trim();
-          if (topicByName.has(topicName)) {
-            throw new Error(`分類マスターに重複した小分類があります: ${name} → ${categoryName} → ${topicName}`);
-          }
-
-          topicByName.set(topicName, {
-            name: topicName,
-            order: topicOrder
-          });
-        });
-      }
-
-      categoryByName.set(categoryName, {
-        name: categoryName,
-        short: category.short.trim(),
-        order: categoryOrder,
-        topicByName
-      });
-    });
-
-    subjectByName.set(name, {
-      name,
-      short: subject.short.trim(),
-      order: subjectOrder,
-      categoryByName
-    });
-  });
-
-  return { subjects: source.subjects, subjectByName };
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-const classificationMaster = loadClassificationMaster();
+function withoutFirstHeading(source = "") {
+  return source.replace(/^\uFEFF?[ \t]*#[ \t]+[^\r\n]*(?:\r?\n|$)/, "").trim();
+}
+
+function excerptFromMarkdown(source = "", maxLength = 180) {
+  const text = markdown
+    .parse(withoutFirstHeading(source), {})
+    .filter((token) => token.type === "inline")
+    .map((token) =>
+      (token.children || [])
+        .map((child) => {
+          if (["text", "code_inline", "image"].includes(child.type)) return child.content;
+          if (["softbreak", "hardbreak"].includes(child.type)) return " ";
+          return "";
+        })
+        .join("")
+    )
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1).trimEnd()}…` : text;
+}
+
+const formatDotDate = (date) => date.replace(/-/g, ".");
+
+function formatJapaneseDate(date) {
+  const [year, month, day] = date.split("-").map(Number);
+  return `${year}年${month}月${day}日`;
+}
 
 function gaTag() {
   return `
@@ -141,1213 +66,153 @@ function gaTag() {
 </script>`;
 }
 
-fs.mkdirSync(imagesDir, { recursive: true });
-fs.mkdirSync(recordsDir, { recursive: true });
-fs.rmSync(legacyQuestionOutputDir, { recursive: true, force: true });
-
-/* 公開LOG画像: YYYYMMDD-NNN-M.webp（Mは必ず1から開始） */
-const imagePattern = /^(\d{4})(\d{2})(\d{2})-(\d{3})-([1-9]\d*)\.webp$/;
-
-function isImageFile(entry) {
-  return entry.isFile() && /\.(?:jpe?g|png|gif|webp|avif|bmp|tiff?|heic|svg)$/i.test(entry.name);
-}
-
-function validateRecordImage(file, sourcePath, expectedDate, expectedSequence) {
-  const match = file.match(imagePattern);
-
-  if (!match) {
-    throw new Error(
-      `LOG画像の命名形式が不正です: ${sourcePath}\n` +
-      "形式: YYYYMMDD-NNN-M.webp。Mは1以上の整数（先頭の0なし）で、必ず-1から始めてください。"
-    );
-  }
-
-  const imageDate = `${match[1]}${match[2]}${match[3]}`;
-  if (expectedDate && imageDate !== expectedDate) {
-    throw new Error(
-      `LOG画像の日付が保存先と一致しません: ${sourcePath}\n` +
-      `保存先の日付: ${expectedDate} / 画像名の日付: ${imageDate}`
-    );
-  }
-
-  if (expectedSequence && match[4] !== expectedSequence) {
-    throw new Error(
-      `LOG画像の学習セット番号が保存先と一致しません: ${sourcePath}\n` +
-      `保存先の学習セット番号: ${expectedSequence} / 画像名の学習セット番号: ${match[4]}`
-    );
-  }
-}
-
-function collectRecordImageSources() {
-  const sources = new Map();
-
-  // 従来の入力場所でも、旧形式や不正な画像名を黙って無視しない。
-  for (const entry of fs.readdirSync(imagesDir, { withFileTypes: true }).filter(isImageFile)) {
-    const sourcePath = path.join(imagesDir, entry.name);
-    validateRecordImage(entry.name, sourcePath);
-    sources.set(entry.name, sourcePath);
-  }
-
-  if (!fs.existsSync(contentRecordsDir)) {
-    return sources;
-  }
-
-  const dateDirectories = fs
-    .readdirSync(contentRecordsDir, { withFileTypes: true })
-    .filter(
-      (entry) => entry.isDirectory() && /^\d{8}$/.test(entry.name)
-    );
-
-  for (const dateEntry of dateDirectories) {
-    const dateContentDir = path.join(contentRecordsDir, dateEntry.name);
-    const studyDirectories = fs
-      .readdirSync(dateContentDir, { withFileTypes: true })
-      .filter(
-        (entry) => entry.isDirectory() && /^\d{3}$/.test(entry.name)
-      );
-
-    for (const studyEntry of studyDirectories) {
-      const inputImagesDir = path.join(
-        dateContentDir,
-        studyEntry.name,
-        "images"
-      );
-
-      if (!fs.existsSync(inputImagesDir)) {
-        continue;
-      }
-
-      const inputImages = fs
-        .readdirSync(inputImagesDir, { withFileTypes: true })
-        .filter(isImageFile);
-
-      for (const imageEntry of inputImages) {
-        const sourcePath = path.join(inputImagesDir, imageEntry.name);
-        validateRecordImage(
-          imageEntry.name,
-          sourcePath,
-          dateEntry.name,
-          studyEntry.name
-        );
-        const existingSourcePath = sources.get(imageEntry.name);
-
-        if (existingSourcePath) {
-          const source = fs.readFileSync(sourcePath);
-          const existingSource = fs.readFileSync(existingSourcePath);
-
-          if (!source.equals(existingSource)) {
-            throw new Error(
-              `同名で内容が異なるLOG画像があります: ${imageEntry.name}`
-            );
-          }
-
-          continue;
-        }
-
-        sources.set(imageEntry.name, sourcePath);
-      }
-    }
-  }
-
-  return sources;
-}
-
-const imageSources = collectRecordImageSources();
-const imageFiles = [...imageSources.keys()];
-
-// 各問題のLOGは必ず-1から始める。
-for (const file of imageFiles) {
-  const match = file.match(imagePattern);
-  const firstPage = `${match[1]}${match[2]}${match[3]}-${match[4]}-1.webp`;
-
-  if (!imageSources.has(firstPage)) {
-    throw new Error(
-      `LOG画像の1ページ目がありません: ${imageSources.get(file)}\n` +
-      `必要な画像名: ${firstPage}。ページ番号はリトライ回数ではありません。`
-    );
-  }
-
-}
-
-/*
-日付ごとに画像をまとめる
-*/
-
-const grouped = new Map();
-
-for (const file of imageFiles) {
-  const match = file.match(imagePattern);
-
-  if (!match) continue;
-
-  const date = `${match[1]}-${match[2]}-${match[3]}`;
-  const problemNumber = Number(match[4]);
-  const imageNumber = BigInt(match[5]);
-
-  if (!grouped.has(date)) {
-    grouped.set(date, []);
-  }
-
-  grouped.get(date).push({
-    file,
-    problemNumber,
-    imageNumber
-  });
-}
-
-/*
-日付順・学習セット番号順・first→retry・画像ページ番号の数値順に整理
-*/
-
-const records = [...grouped.entries()]
-  .map(([date, images]) => ({
-    date,
-    problemCount: new Set(
-      images.map((item) => item.problemNumber)
-    ).size,
-    images: images
-      .sort(
-        (a, b) =>
-          a.problemNumber - b.problemNumber ||
-          (a.imageNumber < b.imageNumber ? -1 : a.imageNumber > b.imageNumber ? 1 : 0) ||
-          a.file.localeCompare(b.file)
-      )
-      .map((item) => item.file)
-  }))
-  .sort((a, b) => a.date.localeCompare(b.date));
-
-function escapeHtml(value = "") {
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function truncateDescription(value, maxLength = 140) {
-  const normalized = value.replace(/\s+/g, " ").trim();
-
-  return normalized.length > maxLength
-    ? `${normalized.slice(0, maxLength - 1).trimEnd()}…`
-    : normalized;
-}
-
-function descriptionFromMarkdown(source) {
-  if (!source?.trim()) return "";
-
-  const tokens = markdown.parse(source, {});
-
-  for (let index = 0; index < tokens.length - 1; index++) {
-    if (tokens[index].type !== "paragraph_open") continue;
-
-    const inline = tokens[index + 1];
-    if (inline?.type !== "inline") continue;
-
-    const text = (inline.children || [])
-      .map((child) => {
-        if (["text", "code_inline"].includes(child.type)) return child.content;
-        if (["softbreak", "hardbreak"].includes(child.type)) return " ";
-        return "";
-      })
-      .join("");
-    const description = truncateDescription(text);
-
-    if (description) return description;
-  }
-
-  return "";
-}
-
-function dailyLogExcerpt(source) {
-  if (!source?.trim()) return "";
-
-  const withoutLeadingH1 = source.replace(
-    /^\uFEFF?[ \t]*#[ \t]+[^\r\n]*(?:\r?\n|$)/,
-    ""
-  );
-
-  return markdown
-    .parse(withoutLeadingH1, {})
-    .filter((token) => token.type === "inline")
-    .map((token) =>
-      (token.children || [])
-        .map((child) => {
-          if (["text", "code_inline"].includes(child.type)) return child.content;
-          if (child.type === "image") return child.content;
-          if (["softbreak", "hardbreak"].includes(child.type)) return " ";
-          return "";
-        })
-        .join("")
-    )
-    .join(" ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function descriptionForStudy(study) {
-  const sources = [
-    study.sessionMarkdown,
-    study.questionMarkdown,
-    study.answerMarkdown
-  ];
-
-  for (const source of sources) {
-    const description = descriptionFromMarkdown(source);
-    if (description) return description;
-  }
-
-  return defaultDescription;
-}
-
-function imageMetadata(filePath) {
-  if (!filePath || !fs.existsSync(filePath)) return null;
-
-  const buffer = fs.readFileSync(filePath);
-  const extension = path.extname(filePath).toLowerCase();
-
-  if (
-    extension === ".png" &&
-    buffer.length >= 24 &&
-    buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-  ) {
-    return {
-      width: buffer.readUInt32BE(16),
-      height: buffer.readUInt32BE(20),
-      type: "image/png"
-    };
-  }
-
-  if (
-    extension === ".webp" &&
-    buffer.length >= 20 &&
-    buffer.toString("ascii", 0, 4) === "RIFF" &&
-    buffer.toString("ascii", 8, 12) === "WEBP"
-  ) {
-    let offset = 12;
-
-    while (offset + 8 <= buffer.length) {
-      const chunkType = buffer.toString("ascii", offset, offset + 4);
-      const chunkLength = buffer.readUInt32LE(offset + 4);
-      const dataOffset = offset + 8;
-      const chunkEnd = dataOffset + chunkLength;
-
-      if (chunkEnd > buffer.length) break;
-
-      if (chunkType === "VP8X" && chunkLength >= 10) {
-        return {
-          width: 1 + buffer.readUIntLE(dataOffset + 4, 3),
-          height: 1 + buffer.readUIntLE(dataOffset + 7, 3),
-          type: "image/webp"
-        };
-      }
-
-      if (
-        chunkType === "VP8 " &&
-        chunkLength >= 10 &&
-        buffer[dataOffset + 3] === 0x9d &&
-        buffer[dataOffset + 4] === 0x01 &&
-        buffer[dataOffset + 5] === 0x2a
-      ) {
-        return {
-          width: buffer.readUInt16LE(dataOffset + 6) & 0x3fff,
-          height: buffer.readUInt16LE(dataOffset + 8) & 0x3fff,
-          type: "image/webp"
-        };
-      }
-
-      if (
-        chunkType === "VP8L" &&
-        chunkLength >= 5 &&
-        buffer[dataOffset] === 0x2f
-      ) {
-        const bits = buffer.readUInt32LE(dataOffset + 1);
-
-        return {
-          width: 1 + (bits & 0x3fff),
-          height: 1 + ((bits >>> 14) & 0x3fff),
-          type: "image/webp"
-        };
-      }
-
-      offset = chunkEnd + (chunkLength % 2);
-    }
-  }
-
-  if (
-    [".jpg", ".jpeg"].includes(extension) &&
-    buffer.length >= 4 &&
-    buffer[0] === 0xff &&
-    buffer[1] === 0xd8
-  ) {
-    const startOfFrameMarkers = new Set([
-      0xc0, 0xc1, 0xc2, 0xc3,
-      0xc5, 0xc6, 0xc7,
-      0xc9, 0xca, 0xcb,
-      0xcd, 0xce, 0xcf
-    ]);
-    let offset = 2;
-
-    while (offset < buffer.length) {
-      while (offset < buffer.length && buffer[offset] === 0xff) offset++;
-      if (offset >= buffer.length) break;
-
-      const marker = buffer[offset++];
-      if (marker === 0xd9 || marker === 0xda) break;
-      if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
-      if (offset + 2 > buffer.length) break;
-
-      const segmentLength = buffer.readUInt16BE(offset);
-      if (segmentLength < 2 || offset + segmentLength > buffer.length) break;
-
-      if (startOfFrameMarkers.has(marker) && segmentLength >= 7) {
-        return {
-          width: buffer.readUInt16BE(offset + 5),
-          height: buffer.readUInt16BE(offset + 3),
-          type: "image/jpeg"
-        };
-      }
-
-      offset += segmentLength;
-    }
-  }
-
-  return null;
-}
-
-function socialMetaTags({
-  title,
-  description,
-  url,
-  image,
-  type = "article",
-  imageMeta = null
-}) {
-  const values = { title, description, url, image };
-
-  for (const [name, value] of Object.entries(values)) {
-    if (!value) throw new Error(`SNSメタタグの${name}が空です`);
-  }
-
-  const imageMetaTags = imageMeta
-    ? `
-<meta property="og:image:width" content="${escapeHtml(imageMeta.width)}">
-<meta property="og:image:height" content="${escapeHtml(imageMeta.height)}">
-<meta property="og:image:type" content="${escapeHtml(imageMeta.type)}">`
-    : "";
-
+function socialMetaTags({ title, description, url, image }) {
   return `<meta name="description" content="${escapeHtml(description)}">
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:url" content="${escapeHtml(url)}">
-<meta property="og:type" content="${escapeHtml(type)}">
-<meta property="og:image" content="${escapeHtml(image)}">${imageMetaTags}
+<meta property="og:type" content="website">
+<meta property="og:image" content="${escapeHtml(image)}">
 <meta property="og:image:alt" content="${escapeHtml(title)}">
 <meta property="og:site_name" content="${siteName}">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(title)}">
 <meta name="twitter:description" content="${escapeHtml(description)}">
-<meta name="twitter:image" content="${escapeHtml(image)}">
-<meta name="twitter:image:alt" content="${escapeHtml(title)}">`;
+<meta name="twitter:image" content="${escapeHtml(image)}">`;
 }
 
-function problemCount(record) {
-  return record.problemCount;
+function documentHead({ title, description, url, image = siteOgImageUrl, extra = "" }) {
+  return `<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(title)}</title>
+<link rel="icon" type="image/svg+xml" href="${faviconUrl}">
+${socialMetaTags({ title, description, url, image })}
+<link rel="canonical" href="${url}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+${gaTag()}${extra ? `\n${extra}` : ""}`;
 }
 
-function formatJapaneseDate(dateString) {
-  const [year, month, day] = dateString.split("-").map(Number);
-  return `${year}年${month}月${day}日`;
+const someCloudsLink = () =>
+  `<a class="some-clouds-link" href="https://sakurak02.github.io/some-clouds/">some clouds</a>`;
+
+function baseStyles() {
+  return `:root {
+  --bg: #f7fafa;
+  --panel: #ffffff;
+  --ink: #192323;
+  --ink-soft: #6b7777;
+  --accent: #315f63;
+  --line: #d4e1e1;
+  --empty: #edf4f4;
 }
-
-function formatDotDate(dateString) {
-  return dateString.replace(/-/g, ".");
-}
-
-function dateKey(dateString) {
-  return dateString.replace(/-/g, "");
-}
-
-function parseSessionFrontMatter(source) {
-  const frontMatter = source.match(
-    /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/
-  );
-
-  if (!frontMatter) {
-    return { title: null, markdown: source };
-  }
-
-  const titleLine = frontMatter[1]
-    .split(/\r?\n/)
-    .find((line) => /^title[ \t]*:/.test(line));
-  let title = titleLine
-    ? titleLine.replace(/^title[ \t]*:/, "").trim()
-    : "";
-
-  if (
-    title.length >= 2 &&
-    ((title.startsWith('"') && title.endsWith('"')) ||
-      (title.startsWith("'") && title.endsWith("'")))
-  ) {
-    title = title.slice(1, -1).trim();
-  }
-
-  return {
-    title,
-    markdown: source.slice(frontMatter[0].length)
-  };
-}
-
-function isValidPublicTitle(title) {
-  return (
-    typeof title === "string" &&
-    title.trim() &&
-    title.length <= 120 &&
-    !/[\u0000-\u001f\u007f]/.test(title)
-  );
-}
-
-function classificationFromMeta(meta, metaPath) {
-  const keys = ["subject", "category", "topic"];
-  const presentKeys = keys.filter((key) => Object.hasOwn(meta, key));
-
-  if (presentKeys.length === 0) return null;
-
-  if (
-    presentKeys.length !== keys.length ||
-    keys.some(
-      (key) =>
-        typeof meta[key] !== "string" ||
-        !meta[key].trim() ||
-        meta[key].length > 80 ||
-        /[\u0000-\u001f\u007f]/.test(meta[key])
-    )
-  ) {
-    throw new Error(`分類情報はsubject・category・topicをすべて指定してください: ${metaPath}`);
-  }
-
-  const subjectName = meta.subject.trim();
-  const categoryName = meta.category.trim();
-  const subject = classificationMaster.subjectByName.get(subjectName);
-
-  if (!subject) {
-    throw new Error(`分類マスターにない科目です: ${subjectName} (${metaPath})`);
-  }
-
-  const category = subject.categoryByName.get(categoryName);
-  if (!category) {
-    throw new Error(`分類マスターにない中分類です: ${subjectName} → ${categoryName} (${metaPath})`);
-  }
-
-  const topicName = meta.topic.trim();
-  if (category.topicByName && !category.topicByName.has(topicName)) {
-    throw new Error(
-      `分類マスターにない小分類です:\n${subjectName} → ${categoryName} → ${topicName} (${metaPath})`
-    );
-  }
-
-  return {
-    subject: subjectName,
-    category: categoryName,
-    topic: topicName,
-    subjectShort: subject.short,
-    categoryShort: category.short,
-    subjectOrder: subject.order,
-    categoryOrder: category.order
-  };
-}
-
-function extractSessionClassification(source, sourcePath) {
-  const comment = source.match(
-    /^\uFEFF?[ \t]*(?:\r?\n[ \t]*)*<!--[ \t]*\r?\n([\s\S]*?)\r?\n--[ \t]*>[ \t]*(?:\r?\n)?/
-  );
-
-  if (!comment) return { markdown: source, classification: null };
-
-  const supportedKeys = new Set(["subject", "category", "subcategory"]);
-  const values = {};
-  let hasClassificationKey = false;
-
-  for (const rawLine of comment[1].split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    const pair = line.match(/^([a-z]+)[ \t]*:[ \t]*(.*)$/i);
-    if (!pair || !supportedKeys.has(pair[1].toLowerCase())) {
-      if (/^(?:subject|category|subcategory)\b/i.test(line)) {
-        throw new Error(`SESSION分類コメントの形式が不正です: ${sourcePath}`);
-      }
-      continue;
-    }
-
-    const key = pair[1].toLowerCase();
-    if (Object.hasOwn(values, key)) {
-      throw new Error(`SESSION分類コメントに重複した項目があります: ${key} (${sourcePath})`);
-    }
-
-    values[key] = pair[2].trim();
-    hasClassificationKey = true;
-  }
-
-  if (!hasClassificationKey) {
-    return { markdown: source, classification: null };
-  }
-
-  const classification = classificationFromMeta(
-    {
-      subject: values.subject,
-      category: values.category,
-      topic: values.subcategory
-    },
-    sourcePath
-  );
-
-  return {
-    markdown: source.slice(comment[0].length),
-    classification
-  };
-}
-
-function parseSessionDocument(source, sourcePath) {
-  const beforeFrontMatter = extractSessionClassification(source, sourcePath);
-  const session = parseSessionFrontMatter(beforeFrontMatter.markdown);
-  const afterFrontMatter = beforeFrontMatter.classification
-    ? { markdown: session.markdown, classification: null }
-    : extractSessionClassification(session.markdown, sourcePath);
-
-  return {
-    title: session.title,
-    markdown: afterFrontMatter.markdown,
-    classification: beforeFrontMatter.classification || afterFrontMatter.classification
-  };
-}
-
-function sessionTitleFromMarkdown(session, record, study) {
-  if (isValidPublicTitle(session.title)) {
-    return session.title.trim();
-  }
-
-  const tokens = markdown.parse(session.markdown, {});
-  const headingIndex = tokens.findIndex(
-    (token) => token.type === "heading_open" && token.tag === "h1"
-  );
-  const heading = headingIndex >= 0
-    ? tokens[headingIndex + 1]?.content
-    : null;
-
-  if (isValidPublicTitle(heading)) {
-    return heading.trim();
-  }
-
-  return `${formatDotDate(record.date)} 学習記録 ${study.number}`;
-}
-
-function loadStudyContent(record, study) {
-  const studyContentDir = path.join(
-    contentRecordsDir,
-    dateKey(record.date),
-    study.number
-  );
-  const metaPath = path.join(studyContentDir, "meta.json");
-  const sessionPath = path.join(studyContentDir, "session.md");
-  const sessionSource = fs.existsSync(sessionPath)
-    ? fs.readFileSync(sessionPath, "utf8")
-    : "";
-  const session = parseSessionDocument(sessionSource, sessionPath);
-  const questionPath = path.join(studyContentDir, "question.md");
-  const answerPath = path.join(studyContentDir, "answer.md");
-  const question = fs.existsSync(questionPath)
-    ? parseSessionDocument(fs.readFileSync(questionPath, "utf8"), questionPath)
-    : null;
-  const answer = fs.existsSync(answerPath)
-    ? parseSessionDocument(fs.readFileSync(answerPath, "utf8"), answerPath)
-    : null;
-  const allowedKeys = new Set([
-    "studyId",
-    "date",
-    "sequence",
-    "title",
-    "subject",
-    "category",
-    "topic"
-  ]);
-
-  const expectedStudyId = `${dateKey(record.date)}-${study.number}`;
-  const sessionClassifications = [session, question, answer]
-    .map((item) => item?.classification)
-    .filter(Boolean);
-  const classificationSignatures = new Set(
-    sessionClassifications.map(
-      (item) => `${item.subject}\u0000${item.category}\u0000${item.topic}`
-    )
-  );
-
-  if (classificationSignatures.size > 1) {
-    throw new Error(`同じ学習記録内のSESSION分類が一致しません: ${studyContentDir}`);
-  }
-
-  const sessionClassification = sessionClassifications[0] || null;
-  let title;
-  let metaClassification = null;
-
-  if (fs.existsSync(metaPath)) {
-    let meta;
-
-    try {
-      meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
-    } catch (error) {
-      throw new Error(`meta.jsonを読み込めません: ${metaPath}\n${error.message}`);
-    }
-
-    if (!meta || Array.isArray(meta) || typeof meta !== "object") {
-      throw new Error(`meta.jsonはオブジェクトで指定してください: ${metaPath}`);
-    }
-
-    const unexpectedKeys = Object.keys(meta).filter(
-      (key) => !allowedKeys.has(key)
-    );
-
-    if (unexpectedKeys.length > 0) {
-      throw new Error(
-        `meta.jsonに公開対象外の項目があります: ${unexpectedKeys.join(", ")}`
-      );
-    }
-
-    if (meta.studyId !== expectedStudyId) {
-      throw new Error(`studyIdが一致しません: ${metaPath}`);
-    }
-
-    if (meta.date !== record.date) {
-      throw new Error(`dateが一致しません: ${metaPath}`);
-    }
-
-    if (meta.sequence !== study.number || !/^\d{3}$/.test(meta.sequence)) {
-      throw new Error(`sequenceが一致しません: ${metaPath}`);
-    }
-
-    if (!isValidPublicTitle(meta.title)) {
-      throw new Error(`公開タイトルが不正です: ${metaPath}`);
-    }
-
-    title = meta.title.trim();
-    metaClassification = classificationFromMeta(meta, metaPath);
-  } else {
-    title = sessionTitleFromMarkdown(session, record, study);
-  }
-
-  const missingFiles = [
-    [sessionPath, "session.md"],
-    [questionPath, "question.md"]
-  ].filter(([filePath]) => !fs.existsSync(filePath));
-  if (missingFiles.length > 0) {
-    throw new Error(`新形式の必須ファイルがありません: ${missingFiles.map(([, name]) => name).join(", ")} (${studyContentDir})`);
-  }
-
-  return {
-    ...study,
-    id: expectedStudyId,
-    title,
-    classification: sessionClassification || metaClassification,
-    sessionMarkdown: session.markdown,
-    questionMarkdown: question.markdown,
-    answerMarkdown: answer?.markdown ?? null
-  };
-}
-
-function studiesForRecord(record) {
-  const studies = new Map();
-
-  for (const image of record.images) {
-    const match = image.match(imagePattern);
-
-    if (!match) continue;
-
-    const number = match[4];
-
-    if (!studies.has(number)) {
-      studies.set(number, {
-        id: `${dateKey(record.date)}-${number}`,
-        number,
-        title: "学習記録",
-        images: []
-      });
-    }
-
-    studies.get(number).images.push(image);
-  }
-
-  return [...studies.values()].map((study) =>
-    loadStudyContent(record, study)
-  );
-}
-
-function renderMarkdown(source, inlineDollarMath = false) {
-  const mathBlocks = [];
-  const mathPattern = inlineDollarMath
-    ? /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|(?<!\\)\$(?!\$)[^\r\n$]+?(?<!\\)\$/g
-    : /\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)|\$\$[\s\S]*?\$\$/g;
-  const protectedSource = source.replace(
-    mathPattern,
-    (mathSource) => {
-      const token = `MATHJAXTOKEN${mathBlocks.length}END`;
-      mathBlocks.push({ token, source: mathSource });
-      return token;
-    }
-  );
-
-  let html = markdown.render(protectedSource);
-
-  for (const mathBlock of mathBlocks) {
-    html = html.replace(
-      mathBlock.token,
-      () => escapeHtml(mathBlock.source)
-    );
-  }
-
-  return html;
-}
-
-function recordImageFilenameFromUrl(url) {
-  if (
-    !url ||
-    /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(url) ||
-    url.startsWith("/") ||
-    url.startsWith("#")
-  ) {
-    return null;
-  }
-
-  const cleanUrl = url.split(/[?#]/, 1)[0].replace(/\\/g, "/");
-  const encodedFilename = cleanUrl.slice(cleanUrl.lastIndexOf("/") + 1);
-  let filename;
-
-  try {
-    filename = decodeURIComponent(encodedFilename);
-  } catch {
-    filename = encodedFilename;
-  }
-
-  return imagePattern.test(filename) ? filename : null;
-}
-
-function sessionLogImageReferences(source, availableImages) {
-  if (!source?.trim()) return new Set();
-
-  const available = new Set(availableImages || []);
-  const references = new Set();
-  const tokens = markdown.parse(source, {});
-
-  for (const token of tokens) {
-    for (const child of token.children || []) {
-      if (child.type !== "image") continue;
-
-      const filename = recordImageFilenameFromUrl(child.attrGet("src"));
-      if (!filename) continue;
-
-      if (!available.has(filename)) {
-        throw new Error(
-          `SESSION内のLOG画像が記事の実画像と一致しません: ${filename}`
-        );
-      }
-
-      references.add(filename);
-    }
-  }
-
-  return references;
-}
-
-function resolveSessionLogImages(html, references) {
-  let resolved = html.replace(
-    /<img\b[^>]*\bsrc="([^"]+)"[^>]*>/g,
-    (imageTag, source) => {
-      const filename = recordImageFilenameFromUrl(source);
-      if (!filename || !references.has(filename)) return imageTag;
-
-      return imageTag
-        .replace("<img", '<img class="session-log-image"')
-        .replace(
-          /\bsrc="[^"]+"/,
-          `src="./images/${encodeURIComponent(filename)}"`
-        );
-    }
-  );
-
-  resolved = resolved.replace(
-    /<p>\s*(<img class="session-log-image"[^>]*>)\s*<\/p>/g,
-    '<p class="session-log-image-block">$1</p>'
-  );
-
-  return resolved;
-}
-
-function renderSessionMarkdown(study) {
-  const allowedHtml = [];
-  const protectHtml = (html) => {
-    const token = `SESSIONHTMLTOKEN${allowedHtml.length}END`;
-    allowedHtml.push({ token, html });
-    return `\n\n${token}\n\n`;
-  };
-  const imageReferences = sessionLogImageReferences(
-    study.sessionMarkdown,
-    study.images
-  );
-  const source = study.sessionMarkdown
-    .trim()
-    .replace(
-      /^[ \t]*<summary>([^\r\n]*)<\/summary>[ \t]*$/gm,
-      (_, label) => protectHtml(`<summary>${escapeHtml(label.trim())}</summary>`)
-    )
-    .replace(
-      /^[ \t]*<details>[ \t]*$/gm,
-      () => protectHtml("<details>")
-    )
-    .replace(
-      /^[ \t]*<\/details>[ \t]*$/gm,
-      () => protectHtml("</details>")
-    );
-  let html = renderMarkdown(source, true);
-
-  for (const allowed of allowedHtml) {
-    html = html.replace(
-      new RegExp(`<p>${allowed.token}<\\/p>\\s*`, "g"),
-      `${allowed.html}\n`
-    );
-  }
-
-  return resolveSessionLogImages(html, imageReferences);
-}
-
-function daysInMonth(year, month) {
-  return new Date(year, month, 0).getDate();
-}
-
-function firstWeekday(year, month) {
-  return new Date(year, month - 1, 1).getDay();
-}
-
-/*
-最新日から何日連続で記録しているか
-*/
-
-function currentStreak(sortedRecords) {
-  if (!sortedRecords.length) return 0;
-
-  const dates = sortedRecords
-    .map((record) => record.date)
-    .sort()
-    .reverse();
-
-  let streak = 1;
-
-  for (let i = 0; i < dates.length - 1; i++) {
-    const current = new Date(`${dates[i]}T00:00:00`);
-    const previous = new Date(`${dates[i + 1]}T00:00:00`);
-
-    const difference = Math.round(
-      (current - previous) / (1000 * 60 * 60 * 24)
-    );
-
-    if (difference === 1) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-
-  return streak;
-}
-
-function compareStudiesByClassification(a, b) {
-  const first = a.classification;
-  const second = b.classification;
-
-  if (first && !second) return -1;
-  if (!first && second) return 1;
-  if (!first && !second) return a.number.localeCompare(b.number);
-
-  return (
-    first.subjectOrder - second.subjectOrder ||
-    first.categoryOrder - second.categoryOrder ||
-    first.topic.localeCompare(second.topic, "ja") ||
-    a.number.localeCompare(b.number)
-  );
-}
-
-function calendarClassificationData(record) {
-  const studies = studiesForRecord(record).sort(compareStudiesByClassification);
-  const groupMap = new Map();
-
-  for (const study of studies) {
-    const classification = study.classification;
-    const key = classification
-      ? `${classification.subject}\u0000${classification.category}`
-      : "\u0000unclassified";
-
-    if (!groupMap.has(key)) {
-      groupMap.set(key, classification
-        ? {
-            desktop: `${classification.subject}・${classification.category}`,
-            mobile: `${classification.subjectShort} ${classification.categoryShort}`
-          }
-        : { desktop: "未分類", mobile: "未" });
-    }
-  }
-
-  return {
-    summaries: [...groupMap.values()],
-    details: studies.map((study) => ({
-      path: study.classification
-        ? `${study.classification.subject} → ${study.classification.category} → ${study.classification.topic}`
-        : "未分類",
-      title: study.title
-    }))
-  };
-}
-
-/*
-月間カレンダー
-*/
-
-function createMonthCalendar(year, month, monthRecords) {
-  const recordMap = new Map(
-    monthRecords.map((record) => [
-      Number(record.date.slice(8, 10)),
-      record
-    ])
-  );
-
-  const totalDays = daysInMonth(year, month);
-  const start = firstWeekday(year, month);
-
-  let cells = `
-      <div class="day-header">日</div>
-      <div class="day-header">月</div>
-      <div class="day-header">火</div>
-      <div class="day-header">水</div>
-      <div class="day-header">木</div>
-      <div class="day-header">金</div>
-      <div class="day-header">土</div>
-`;
-
-  for (let i = 0; i < start; i++) {
-    cells += `      <div class="day-cell empty"></div>\n`;
-  }
-
-  for (let day = 1; day <= totalDays; day++) {
-    const record = recordMap.get(day);
-
-    if (record) {
-      const classification = calendarClassificationData(record);
-      const visibleSummaries = classification.summaries.slice(0, 2);
-      const remaining = Math.max(0, classification.summaries.length - visibleSummaries.length);
-      const detailId = `calendar-detail-${dateKey(record.date)}`;
-      const summaryHtml = visibleSummaries
-        .map(
-          (item) => `<span class="day-topic"><span class="day-topic-desktop">${escapeHtml(item.desktop)}</span><span class="day-topic-mobile">${escapeHtml(item.mobile)}</span></span>`
-        )
-        .join("");
-      const moreHtml = remaining > 0
-        ? `<span class="day-topic-more">+${remaining}</span>`
-        : "";
-      const detailHtml = classification.details
-        .map(
-          (item) => `<li><span class="calendar-detail-path">${escapeHtml(item.path)}</span><span class="calendar-detail-title">${escapeHtml(item.title)}</span></li>`
-        )
-        .join("");
-      const accessibleSummary = classification.summaries
-        .map((item) => item.desktop)
-        .join("、");
-
-      cells += `      <div class="day-cell has-record">
-        <a href="./records/${dateKey(record.date)}/index.html" class="day-link" aria-label="${day}日 ${escapeHtml(accessibleSummary)}の学習記録を開く"><span class="day-number">${day}</span><span class="day-topics">${summaryHtml}${moreHtml}</span></a>
-        <button class="day-detail-toggle" type="button" aria-expanded="false" aria-controls="${detailId}" aria-label="${day}日の分類詳細を表示">ⓘ</button>
-        <div class="calendar-detail" id="${detailId}" role="tooltip"><div class="calendar-detail-date">${escapeHtml(formatJapaneseDate(record.date))}</div><ul>${detailHtml}</ul></div>
-      </div>\n`;
-    } else {
-      cells += `      <div class="day-cell empty"><span class="day-number">${day}</span></div>\n`;
-    }
-  }
-
-  return cells;
-}
-
-function someCloudsLink() {
-  return `<a class="some-clouds-link" href="https://sakurak02.github.io/some-clouds/">some clouds</a>`;
-}
-
-function someCloudsLinkStyles() {
-  return `.some-clouds-link {
-  position: absolute;
-  top: 3px;
-  left: 12px;
-  z-index: 2;
-  color: #000;
-  font: 400 10px/1.2 "JetBrains Mono", monospace;
-  letter-spacing: 0.02em;
-  text-decoration: none;
-  opacity: 0.62;
-}
-
-.some-clouds-link:hover {
-  opacity: 0.82;
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { min-width: 320px; margin: 0; background: var(--bg); color: var(--ink); font-family: "Noto Sans JP", sans-serif; line-height: 1.8; }
+a { color: inherit; }
+img { max-width: 100%; }
+p, h1, h2, h3, figure { margin: 0; }
+.some-clouds-link { position: fixed; top: 10px; right: 14px; z-index: 10; color: var(--ink-soft); font: 500 9px/1.5 "JetBrains Mono", monospace; letter-spacing: .08em; text-decoration: none; }
+.some-clouds-link:hover, .some-clouds-link:focus-visible { color: var(--accent); }
+header { border-bottom: 1px solid var(--line); background: var(--panel); }
+.header-inner { position: relative; width: min(1120px, calc(100% - 48px)); min-height: 112px; margin: 0 auto; padding: 30px 150px 24px 0; }
+.header-title, .page-kicker { color: var(--accent); font: 600 11px/1.5 "JetBrains Mono", monospace; letter-spacing: .1em; }
+.header-date { margin-top: 5px; font-size: 27px; font-weight: 700; line-height: 1.45; }
+.header-guide-wrap { position: absolute; top: 18px; right: 0; display: flex; align-items: center; gap: 8px; }
+.header-guide-copy { color: var(--ink-soft); font-size: 10px; }
+.header-guide { width: 108px; height: auto; }
+main { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 34px 0 48px; }
+footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 11px; text-align: center; }
+@media (max-width: 600px) {
+  .some-clouds-link { top: 6px; right: 9px; }
+  .header-inner { width: calc(100% - 28px); min-height: 98px; padding: 24px 116px 18px 0; }
+  .header-date { font-size: 22px; }
+  .header-guide-wrap { top: 15px; gap: 4px; }
+  .header-guide-copy { font-size: 8px; }
+  .header-guide { width: 88px; }
+  main { width: calc(100% - 24px); padding: 24px 0 36px; }
 }`;
 }
 
-function createTableOfContents() {
-  const seenStudies = new Set();
-  const classifiedStudies = [];
-
-  for (const record of records) {
-    for (const study of studiesForRecord(record)) {
-      if (!study.classification || seenStudies.has(study.id)) continue;
-      seenStudies.add(study.id);
-      classifiedStudies.push({ record, study });
-    }
-  }
-
-  classifiedStudies.sort(
-    (a, b) =>
-      b.record.date.localeCompare(a.record.date) ||
-      b.study.number.localeCompare(a.study.number)
-  );
-
-  const subjectsHtml = classificationMaster.subjects
-    .map((subject) => {
-      const categoriesHtml = subject.categories
-        .map((category) => {
-          const categoryEntries = classifiedStudies.filter(
-            ({ study }) =>
-              study.classification.subject === subject.name &&
-              study.classification.category === category.name
-          );
-
-          if (categoryEntries.length === 0) return "";
-
-          const subcategoryMap = new Map();
-          for (const entry of categoryEntries) {
-            const subcategory = entry.study.classification.topic;
-            if (!subcategoryMap.has(subcategory)) subcategoryMap.set(subcategory, []);
-            subcategoryMap.get(subcategory).push(entry);
-          }
-
-          const subcategoriesHtml = [...subcategoryMap.entries()]
-            .sort(([a], [b]) => a.localeCompare(b, "ja"))
-            .map(([subcategory, entries]) => {
-              const articlesHtml = entries
-                .map(({ record, study }) => `
-                  <li class="toc-article">
-                    <a href="./records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/">${escapeHtml(study.title)}</a>
-                    <time datetime="${record.date}">${record.date.replace(/-/g, "/")}</time>
-                  </li>`)
-                .join("");
-
-              return `
-              <section class="toc-subcategory">
-                <h4>${escapeHtml(subcategory)}</h4>
-                <ul>${articlesHtml}
-                </ul>
-              </section>`;
-            })
-            .join("");
-
-          return `
-          <section class="toc-category">
-            <h3>${escapeHtml(category.name)}</h3>${subcategoriesHtml}
-          </section>`;
-        })
-        .join("");
-
-      const subjectContent = categoriesHtml || '<p class="toc-empty">記事はまだありません。</p>';
-
-      return `
-      <details class="toc-subject">
-        <summary>${escapeHtml(subject.name)}</summary>${subjectContent}
-      </details>`;
-    })
-    .join("");
-
-  return `
-  <section class="toc-section" id="study-toc" aria-label="科目・分野別の目次" hidden>
-    <div class="toc-list">${subjectsHtml}
-    </div>
-  </section>`;
+function dailyLogDataAttributes(log) {
+  return `data-daily-log-entry data-date-key="${log.dateKey}" data-date="${escapeHtml(log.date)}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}" data-excerpt="${escapeHtml(excerptFromMarkdown(log.markdown))}" data-cover-image="${escapeHtml(log.coverImage || "")}" data-page-count="${log.pageCount}"`;
 }
 
-function homepageInteractionScript() {
+function createDailyLogCard(log) {
+  const image = log.coverImage
+    ? `<img class="daily-log-image" src="./daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}" alt="${escapeHtml(formatJapaneseDate(log.date))}の学習写真" loading="lazy">`
+    : `<div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div>`;
+  const pageLabel = `${log.pageCount} ${log.pageCount === 1 ? "page" : "pages"}`;
+  return `<article class="daily-log-card" ${dailyLogDataAttributes(log)}>
+  <a class="daily-log-card-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
+    <div class="daily-log-media">${image}</div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="${log.date}">${formatDotDate(log.date)}</time>
+      <p class="daily-log-excerpt">${escapeHtml(excerptFromMarkdown(log.markdown))}</p>
+      <div class="daily-log-pages">${pageLabel}</div>
+    </div>
+  </a>
+</article>`;
+}
+
+function createDailyLogArchiveItem(log) {
+  return `<article class="daily-log-archive-item" ${dailyLogDataAttributes(log)}>
+  <a class="daily-log-archive-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
+    <time class="daily-log-archive-date" datetime="${log.date}">${formatDotDate(log.date)}</time>
+    <span class="daily-log-archive-excerpt">${escapeHtml(excerptFromMarkdown(log.markdown))}</span>
+  </a>
+</article>`;
+}
+
+function groupArchive(logs) {
+  const years = new Map();
+  for (const log of logs) {
+    const year = log.dateKey.slice(0, 4);
+    const month = log.dateKey.slice(4, 6);
+    if (!years.has(year)) years.set(year, new Map());
+    if (!years.get(year).has(month)) years.get(year).set(month, []);
+    years.get(year).get(month).push(log);
+  }
+  return [...years.entries()].map(([year, months]) => `<section class="daily-log-year" data-archive-year="${year}">
+  <h3>${year}</h3>
+  ${[...months.entries()].map(([month, monthLogs]) => `<details class="daily-log-month" data-archive-month="${year}-${month}">
+    <summary>${Number(month)}月</summary>
+    <div class="daily-log-archive-list">${monthLogs.map(createDailyLogArchiveItem).join("\n")}</div>
+  </details>`).join("\n")}
+</section>`).join("\n");
+}
+
+function homepageScript() {
   return `<script>
 (() => {
-  const closeDetails = (except = null) => {
-    document.querySelectorAll(".day-cell.detail-open").forEach((cell) => {
-      if (cell === except) return;
-      cell.classList.remove("detail-open");
-      cell.querySelector(".day-detail-toggle")?.setAttribute("aria-expanded", "false");
-    });
-  };
-
-  document.addEventListener("click", (event) => {
-    const button = event.target.closest(".day-detail-toggle");
-
-    if (button) {
-      const cell = button.closest(".day-cell");
-      const shouldOpen = !cell.classList.contains("detail-open");
-      closeDetails(cell);
-      cell.classList.toggle("detail-open", shouldOpen);
-      button.setAttribute("aria-expanded", String(shouldOpen));
-      return;
-    }
-
-    if (!event.target.closest(".day-cell.detail-open")) closeDetails();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeDetails();
-  });
-
-  const tocToggle = document.querySelector(".toc-toggle");
-  const toc = document.querySelector("#study-toc");
-
-  tocToggle?.addEventListener("click", () => {
-    const shouldOpen = toc.hasAttribute("hidden");
-    toc.toggleAttribute("hidden", !shouldOpen);
-    tocToggle.setAttribute("aria-expanded", String(shouldOpen));
-  });
-
   const latestGrid = document.querySelector("#daily-log-latest");
   const archive = document.querySelector("#daily-log-archive");
   const yearsContainer = document.querySelector("#daily-log-years");
-  const dailyEntries = [...document.querySelectorAll("[data-daily-log-entry]")]
+  const entries = [...document.querySelectorAll("[data-daily-log-entry]")]
     .map((element) => ({ ...element.dataset }))
     .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
-  const tabletLogs = window.matchMedia("(max-width: 820px)");
-  const mobileLogs = window.matchMedia("(max-width: 600px)");
+  const tablet = window.matchMedia("(max-width: 820px)");
+  const mobile = window.matchMedia("(max-width: 600px)");
+  if (!latestGrid || !archive || !yearsContainer || entries.length === 0) return;
 
-  const applyDailyEntryData = (element, entry) => {
+  const applyData = (element, entry) => {
     element.dataset.dailyLogEntry = "";
-    element.dataset.dateKey = entry.dateKey;
-    element.dataset.date = entry.date;
-    element.dataset.year = entry.year;
-    element.dataset.month = entry.month;
-    element.dataset.excerpt = entry.excerpt;
-    element.dataset.coverImage = entry.coverImage;
-    element.dataset.pageCount = entry.pageCount;
+    for (const key of ["dateKey", "date", "year", "month", "excerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
   };
-
   const japaneseDate = (date) => {
     const [year, month, day] = date.split("-").map(Number);
     return year + "年" + month + "月" + day + "日";
   };
-
-  const createDailyCard = (entry) => {
+  const createCard = (entry) => {
     const article = document.createElement("article");
     article.className = "daily-log-card";
-    applyDailyEntryData(article, entry);
-
+    applyData(article, entry);
     const link = document.createElement("a");
     link.className = "daily-log-card-link";
     link.href = "./daily/" + entry.dateKey + "/";
     link.setAttribute("aria-label", japaneseDate(entry.date) + "の学習記録を開く");
-
     const media = document.createElement("div");
     media.className = "daily-log-media";
     if (entry.coverImage) {
@@ -1361,12 +226,9 @@ function homepageInteractionScript() {
       const placeholder = document.createElement("div");
       placeholder.className = "daily-log-image-placeholder";
       placeholder.setAttribute("aria-label", "学習写真なし");
-      const label = document.createElement("span");
-      label.textContent = "NO IMAGE";
-      placeholder.append(label);
+      placeholder.textContent = "NO IMAGE";
       media.append(placeholder);
     }
-
     const body = document.createElement("div");
     body.className = "daily-log-body";
     const time = document.createElement("time");
@@ -1384,12 +246,10 @@ function homepageInteractionScript() {
     article.append(link);
     return article;
   };
-
-  const createDailyArchiveItem = (entry) => {
+  const createArchiveItem = (entry) => {
     const article = document.createElement("article");
     article.className = "daily-log-archive-item";
-    applyDailyEntryData(article, entry);
-
+    applyData(article, entry);
     const link = document.createElement("a");
     link.className = "daily-log-archive-link";
     link.href = "./daily/" + entry.dateKey + "/";
@@ -1405,2414 +265,285 @@ function homepageInteractionScript() {
     article.append(link);
     return article;
   };
-
-  const arrangeDailyLogs = () => {
-    if (!latestGrid || !archive || !yearsContainer || dailyEntries.length === 0) return;
-
-    const latestCount = mobileLogs.matches ? 5 : tabletLogs.matches ? 12 : 20;
-    const openMonths = new Set(
-      [...yearsContainer.querySelectorAll(".daily-log-month[open]")]
-        .map((details) => details.dataset.archiveMonth)
-    );
-    const latestCards = dailyEntries.slice(0, latestCount).map(createDailyCard);
-    const archivedEntries = dailyEntries.slice(latestCount);
-
-    latestGrid.replaceChildren(...latestCards);
+  const arrange = () => {
+    const latestCount = mobile.matches ? 5 : tablet.matches ? 12 : 20;
+    const openMonths = new Set([...yearsContainer.querySelectorAll(".daily-log-month[open]")].map((details) => details.dataset.archiveMonth));
+    latestGrid.replaceChildren(...entries.slice(0, latestCount).map(createCard));
     yearsContainer.replaceChildren();
-
     const years = new Map();
-
-    archivedEntries.forEach((entry) => {
-      const year = entry.year;
-      const month = entry.month;
-      if (!years.has(year)) years.set(year, new Map());
-      if (!years.get(year).has(month)) years.get(year).set(month, []);
-      years.get(year).get(month).push(entry);
-    });
-
+    for (const entry of entries.slice(latestCount)) {
+      if (!years.has(entry.year)) years.set(entry.year, new Map());
+      if (!years.get(entry.year).has(entry.month)) years.get(entry.year).set(entry.month, []);
+      years.get(entry.year).get(entry.month).push(entry);
+    }
     years.forEach((months, year) => {
-      const yearSection = document.createElement("section");
-      yearSection.className = "daily-log-year";
-      yearSection.dataset.archiveYear = year;
-
-      const yearHeading = document.createElement("h3");
-      yearHeading.textContent = year;
-      yearSection.append(yearHeading);
-
-      months.forEach((entries, month) => {
+      const section = document.createElement("section");
+      section.className = "daily-log-year";
+      section.dataset.archiveYear = year;
+      const heading = document.createElement("h3");
+      heading.textContent = year;
+      section.append(heading);
+      months.forEach((monthEntries, month) => {
         const monthKey = year + "-" + month;
         const details = document.createElement("details");
         details.className = "daily-log-month";
         details.dataset.archiveMonth = monthKey;
         details.open = openMonths.has(monthKey);
-
         const summary = document.createElement("summary");
         summary.textContent = Number(month) + "月";
-
         const list = document.createElement("div");
         list.className = "daily-log-archive-list";
-        list.append(...entries.map(createDailyArchiveItem));
+        list.append(...monthEntries.map(createArchiveItem));
         details.append(summary, list);
-        yearSection.append(details);
+        section.append(details);
       });
-
-      yearsContainer.append(yearSection);
+      yearsContainer.append(section);
     });
-
-    archive.hidden = archivedEntries.length === 0;
+    archive.hidden = entries.length <= latestCount;
   };
-
-  [tabletLogs, mobileLogs].forEach((query) => {
-    if (query.addEventListener) query.addEventListener("change", arrangeDailyLogs);
-    else query.addListener(arrangeDailyLogs);
-  });
-
-  arrangeDailyLogs();
+  for (const query of [tablet, mobile]) {
+    if (query.addEventListener) query.addEventListener("change", arrange);
+    else query.addListener(arrange);
+  }
+  arrange();
 })();
 </script>`;
 }
 
-function dailyLogDataAttributes(log) {
-  return `data-daily-log-entry data-date-key="${log.dateKey}" data-date="${escapeHtml(log.date)}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}" data-excerpt="${escapeHtml(dailyLogExcerpt(log.markdown))}" data-cover-image="${escapeHtml(log.coverImage || "")}" data-page-count="${log.pageCount}"`;
+function homeStyles() {
+  return `.daily-log-heading { margin-bottom: 14px; }
+.daily-log-heading h2 { margin-top: 2px; font-size: 22px; }
+.daily-log-kicker, .daily-log-subheading, .about-kicker, .about-start { font-family: "JetBrains Mono", monospace; }
+.daily-log-kicker, .about-kicker { color: var(--accent); font-size: 10px; font-weight: 600; letter-spacing: .1em; }
+.daily-log-subheading { margin-bottom: 9px; color: var(--ink-soft); font-size: 9px; font-weight: 600; letter-spacing: .1em; }
+.daily-log-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.daily-log-card { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.daily-log-card-link { display: flex; height: 100%; flex-direction: column; color: inherit; text-decoration: none; }
+.daily-log-card:has(.daily-log-card-link:hover), .daily-log-card:has(.daily-log-card-link:focus-visible) { border-color: var(--accent); }
+.daily-log-media { aspect-ratio: 1 / 1; overflow: hidden; border-bottom: 1px solid var(--line); background: var(--empty); }
+.daily-log-image, .daily-log-image-placeholder { display: block; width: 100%; height: 100%; }
+.daily-log-image { object-fit: cover; object-position: top; }
+.daily-log-image-placeholder { display: grid; place-items: center; color: var(--ink-soft); font: 500 10px/1.5 "JetBrains Mono", monospace; }
+.daily-log-body { display: flex; min-height: 88px; flex: 1; flex-direction: column; padding: 8px; }
+.daily-log-date { font: 600 10px/1.45 "JetBrains Mono", monospace; }
+.daily-log-excerpt { display: -webkit-box; min-height: 3.1em; max-height: 3.1em; margin-top: 4px; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.daily-log-pages { margin-top: auto; padding-top: 5px; border-top: 1px solid var(--line); color: var(--ink-soft); font: 500 9px/1.4 "JetBrains Mono", monospace; }
+.daily-log-empty { padding: 20px 0; color: var(--ink-soft); font-size: 13px; }
+.daily-log-archive { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.daily-log-archive[hidden] { display: none; }
+.daily-log-archive-heading { margin-bottom: 14px; color: var(--ink-soft); font-size: 12px; font-weight: 600; }
+.daily-log-year + .daily-log-year { margin-top: 24px; }
+.daily-log-year > h3 { margin-bottom: 8px; font: 600 16px/1.5 "JetBrains Mono", monospace; }
+.daily-log-month { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.daily-log-month + .daily-log-month { margin-top: 8px; }
+.daily-log-month > summary { padding: 9px 12px; color: var(--ink-soft); cursor: pointer; font-size: 12px; font-weight: 600; }
+.daily-log-month > summary:hover, .daily-log-month > summary:focus-visible { color: var(--accent); }
+.daily-log-month[open] > summary { border-bottom: 1px solid var(--line); }
+.daily-log-archive-item + .daily-log-archive-item { border-top: 1px solid var(--line); }
+.daily-log-archive-link { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 14px; padding: 9px 12px; color: inherit; text-decoration: none; }
+.daily-log-archive-link:hover, .daily-log-archive-link:focus-visible { background: var(--empty); outline: 0; }
+.daily-log-archive-date { font: 600 10px/1.6 "JetBrains Mono", monospace; }
+.daily-log-archive-excerpt { display: -webkit-box; max-height: 3.2em; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.guide-divider { position: relative; height: 64px; margin: 24px 0 14px; }
+.guide-divider::before, .guide-divider::after { position: absolute; top: 53px; border-top: 1px solid var(--line); content: ""; }
+.guide-divider::before { right: calc(50% + 45px); left: 0; }
+.guide-divider::after { right: 0; left: calc(50% + 45px); }
+.divider-guide { position: absolute; top: -20px; left: 50%; z-index: 1; width: 100px; transform: translateX(-50%); }
+.section-divider { margin: 28px 0; border-top: 1px solid var(--line); }
+.about-section { max-width: 720px; }
+.about-title { margin-top: 3px; font-size: 19px; font-weight: 700; }
+.about-start { margin-top: 8px; color: var(--ink-soft); font-size: 9px; letter-spacing: .06em; }
+.about-text { margin-top: 12px; color: var(--ink-soft); font-size: 13px; line-height: 1.9; }
+.about-with-guide { position: relative; max-width: none; min-height: 190px; padding-right: 230px; }
+.about-guide { position: absolute; top: -2px; right: 0; width: 220px; text-align: center; pointer-events: none; }
+.about-guide-image { display: block; width: 100%; height: auto; }
+.about-guide-caption { margin: 3px auto 0; padding: 0 6px; color: var(--ink-soft); font-size: 10px; overflow-wrap: anywhere; }
+@media (max-width: 900px) { .daily-log-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 820px) { .daily-log-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .about-with-guide { min-height: 168px; padding-right: 180px; } .about-guide { width: 170px; } }
+@media (max-width: 700px) { .daily-log-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .daily-log-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .daily-log-archive-link { display: block; padding: 8px 10px; }
+  .daily-log-archive-date { display: block; margin-bottom: 1px; }
+  .guide-divider { height: 58px; margin: 20px 0 12px; }
+  .guide-divider::before, .guide-divider::after { top: 51px; }
+  .divider-guide { top: -13px; width: 88px; }
+  .about-title { font-size: 18px; }
+  .about-with-guide { min-height: 0; padding-right: 0; }
+  .about-guide { position: static; width: min(240px, 82%); margin: 22px auto 0; }
+  .about-guide-image { width: 120px; margin: 0 auto; }
+}`;
 }
 
-function createDailyLogCard(log) {
-  const excerpt = dailyLogExcerpt(log.markdown);
-  const pageLabel = `${log.pageCount} ${log.pageCount === 1 ? "page" : "pages"}`;
-  const image = log.coverImage
-    ? `<img class="daily-log-image" src="./daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}" alt="${escapeHtml(formatJapaneseDate(log.date))}の学習写真" loading="lazy">`
-    : `<div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div>`;
-
-  return `
-      <article class="daily-log-card" ${dailyLogDataAttributes(log)}>
-        <a class="daily-log-card-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
-          <div class="daily-log-media">${image}</div>
-          <div class="daily-log-body">
-            <time class="daily-log-date" datetime="${escapeHtml(log.date)}">${escapeHtml(formatDotDate(log.date))}</time>
-            <p class="daily-log-excerpt">${escapeHtml(excerpt)}</p>
-            <div class="daily-log-pages">${pageLabel}</div>
-          </div>
-        </a>
-      </article>`;
-}
-
-function createDailyLogArchiveItem(log) {
-  const excerpt = dailyLogExcerpt(log.markdown);
-
-  return `
-            <article class="daily-log-archive-item" ${dailyLogDataAttributes(log)}>
-              <a class="daily-log-archive-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
-                <time class="daily-log-archive-date" datetime="${escapeHtml(log.date)}">${escapeHtml(formatDotDate(log.date))}</time>
-                <span class="daily-log-archive-excerpt">${escapeHtml(excerpt)}</span>
-              </a>
-            </article>`;
-}
-
-function createDailyLogArchive(logs) {
-  const years = new Map();
-
-  for (const log of logs) {
-    const year = log.dateKey.slice(0, 4);
-    const month = log.dateKey.slice(4, 6);
-
-    if (!years.has(year)) years.set(year, new Map());
-    if (!years.get(year).has(month)) years.get(year).set(month, []);
-    years.get(year).get(month).push(log);
-  }
-
-  return [...years.entries()]
-    .map(([year, months]) => `
-      <section class="daily-log-year" data-archive-year="${year}">
-        <h3>${year}</h3>
-${[...months.entries()]
-  .map(([month, monthLogs]) => `
-        <details class="daily-log-month" data-archive-month="${year}-${month}">
-          <summary>${Number(month)}月</summary>
-          <div class="daily-log-archive-list">${monthLogs.map(createDailyLogArchiveItem).join("")}
-          </div>
-        </details>`)
-  .join("")}
-      </section>`)
-    .join("");
-}
-
-function createDailyLogGrid() {
-  const sortedLogs = [...dailyLogs]
-    .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
-  const latestLogs = sortedLogs.slice(0, 20);
-  const archivedLogs = sortedLogs.slice(20);
-
-  return `
-  <section class="daily-log-section" aria-labelledby="daily-log-title">
-    <div class="daily-log-heading">
-      <div class="daily-log-kicker">LEARNING LOG</div>
-      <h2 id="daily-log-title">学習記録</h2>
-    </div>
-    ${sortedLogs.length
-      ? `<div class="daily-log-subheading">LATEST</div>
-    <div class="daily-log-grid" id="daily-log-latest">${latestLogs.map(createDailyLogCard).join("")}
-    </div>
-    <section class="daily-log-archive" id="daily-log-archive" aria-labelledby="daily-log-archive-title"${archivedLogs.length ? "" : " hidden"}>
+function createHomePage(logs) {
+  const sorted = [...logs].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+  const latest = sorted.slice(0, 20);
+  const archived = sorted.slice(20);
+  const year = sorted[0]?.date.slice(0, 4) || new Date().getFullYear();
+  const logContent = sorted.length
+    ? `<div class="daily-log-subheading">LATEST</div>
+    <div class="daily-log-grid" id="daily-log-latest">${latest.map(createDailyLogCard).join("\n")}</div>
+    <section class="daily-log-archive" id="daily-log-archive" aria-labelledby="daily-log-archive-title"${archived.length ? "" : " hidden"}>
       <div class="daily-log-archive-heading" id="daily-log-archive-title">過去の学習記録</div>
-      <div id="daily-log-years">${createDailyLogArchive(archivedLogs)}
-      </div>
+      <div id="daily-log-years">${groupArchive(archived)}</div>
     </section>`
-      : `<p class="daily-log-empty">学習記録はまだありません。</p>`}
-  </section>`;
-}
-
-function createCalendarSections() {
-  const months = new Map();
-
-  for (const record of records) {
-    const key = record.date.slice(0, 7);
-
-    if (!months.has(key)) {
-      months.set(key, []);
-    }
-
-    months.get(key).push(record);
-  }
-
-  const sortedMonths = [...months.entries()]
-    .sort((a, b) => b[0].localeCompare(a[0]));
-
-  const createMonthSections = (monthEntries) => monthEntries
-    .map(([key, monthRecords]) => {
-      const [year, month] = key.split("-").map(Number);
-
-      return `
-  <section class="month-section">
-    <div class="month-head">
-      <div class="month-title">${year}年${month}月</div>
-    </div>
-
-    <div class="calendar-grid">
-${createMonthCalendar(year, month, monthRecords)}
-    </div>
-  </section>`;
-    })
-    .join("\n");
-
-  const recentMonthSections = createMonthSections(
-    sortedMonths.slice(0, visibleCalendarMonthCount)
-  );
-  const pastMonthSections = createMonthSections(
-    sortedMonths.slice(visibleCalendarMonthCount)
-  );
-
-  return `
-  <div class="recent-calendars">
-${recentMonthSections}
-  </div>
-${pastMonthSections ? `
-  <details class="past-calendars">
-    <summary>過去のカレンダー</summary>
-    <div class="past-calendar-list">
-${pastMonthSections}
-    </div>
-  </details>` : ""}`;
-}
-
-/*
-トップページ
-*/
-
-function createIndexPage() {
-  const latest =
-    records.length > 0 ? records[records.length - 1] : null;
-
-  const displayYear = latest
-    ? latest.date.slice(0, 4)
-    : new Date().getFullYear();
-  const dailyLogGrid = createDailyLogGrid();
-
+    : `<p class="daily-log-empty">学習記録はまだありません。</p>`;
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>数学学習記録 | Math Study Log</title>
-<link rel="icon" type="image/svg+xml" href="${faviconUrl}">
-${socialMetaTags({
-  title: "数学学習記録 | Math Study Log",
-  description: defaultDescription,
-  url: `${siteUrl}/`,
-  image: siteOgImageUrl,
-  imageMeta: imageMetadata(path.join(publicDir, "og-image.png")),
-  type: "website"
-})}
-<link rel="canonical" href="${siteUrl}/">
-
-${gaTag()}
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-<style>
-:root {
-  --bg: #fbfcfc;
-  --panel: #ffffff;
-  --line: #dfe7e7;
-  --ink: #192323;
-  --ink-soft: #6b7777;
-  --accent: #315f63;
-  --calendar-active: #e8f0f0;
-  --empty: #f5f7f7;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: "Noto Sans JP", sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-}
-
-${someCloudsLinkStyles()}
-
-header {
-  border-bottom: 1px solid var(--line);
-  padding: 20px 24px 18px;
-  background: rgba(255, 255, 255, 0.88);
-}
-
-.header-inner {
-  position: relative;
-  max-width: 940px;
-  margin: 0 auto;
-  padding-right: 220px;
-}
-
-.header-guide-wrap {
-  position: absolute;
-  top: -16px;
-  right: 6px;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  pointer-events: none;
-}
-
-.header-guide-copy {
-  color: var(--ink-soft);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
-.header-guide {
-  display: block;
-  width: 132px;
-  height: auto;
-}
-
-.header-title {
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
-  margin-bottom: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.header-date {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-main {
-  max-width: 940px;
-  margin: 0 auto;
-  padding: 24px 24px 42px;
-}
-
-.daily-log-section {
-  margin-bottom: 28px;
-}
-
-.daily-log-heading {
-  margin-bottom: 14px;
-}
-
-.daily-log-kicker {
-  margin-bottom: 2px;
-  color: var(--accent);
-  font: 600 10px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.1em;
-}
-
-.daily-log-heading h2 {
-  font-size: 20px;
-  line-height: 1.5;
-}
-
-.daily-log-subheading {
-  margin-bottom: 9px;
-  color: var(--ink-soft);
-  font: 600 9px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.1em;
-}
-
-.daily-log-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.daily-log-card {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-}
-
-.daily-log-card-link {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  color: inherit;
-  text-decoration: none;
-}
-
-.daily-log-card-link:hover,
-.daily-log-card-link:focus-visible {
-  outline: 0;
-}
-
-.daily-log-card:has(.daily-log-card-link:hover),
-.daily-log-card:has(.daily-log-card-link:focus-visible) {
-  border-color: var(--accent);
-}
-
-.daily-log-media {
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  border-bottom: 1px solid var(--line);
-  background: var(--empty);
-}
-
-.daily-log-image,
-.daily-log-image-placeholder {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.daily-log-image {
-  object-fit: cover;
-  object-position: top;
-}
-
-.daily-log-image-placeholder {
-  display: grid;
-  place-items: center;
-  color: var(--ink-soft);
-  font: 500 10px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.08em;
-}
-
-.daily-log-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  padding: 8px;
-}
-
-.daily-log-date {
-  color: var(--ink);
-  font: 600 10px/1.45 "JetBrains Mono", monospace;
-  letter-spacing: 0.03em;
-}
-
-.daily-log-excerpt {
-  display: -webkit-box;
-  min-height: calc(1.55em * 2);
-  max-height: calc(1.55em * 2);
-  margin-top: 4px;
-  overflow: hidden;
-  color: var(--ink-soft);
-  font-size: 11px;
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.daily-log-pages {
-  margin-top: 7px;
-  padding-top: 5px;
-  border-top: 1px solid var(--line);
-  color: var(--ink-soft);
-  font: 500 9px/1.4 "JetBrains Mono", monospace;
-  letter-spacing: 0.04em;
-}
-
-.daily-log-empty {
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--ink-soft);
-  font-size: 13px;
-  text-align: center;
-}
-
-.daily-log-archive {
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
-}
-
-.daily-log-archive[hidden] {
-  display: none;
-}
-
-.daily-log-archive-heading {
-  margin-bottom: 14px;
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.daily-log-year + .daily-log-year {
-  margin-top: 24px;
-}
-
-.daily-log-year > h3 {
-  margin-bottom: 8px;
-  font: 600 16px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.03em;
-}
-
-.daily-log-month {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel);
-}
-
-.daily-log-month + .daily-log-month {
-  margin-top: 8px;
-}
-
-.daily-log-month > summary {
-  padding: 9px 12px;
-  color: var(--ink-soft);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.daily-log-month > summary:hover,
-.daily-log-month > summary:focus-visible {
-  color: var(--accent);
-}
-
-.daily-log-month[open] > summary {
-  border-bottom: 1px solid var(--line);
-}
-
-.daily-log-archive-list {
-  background: var(--panel);
-}
-
-.daily-log-archive-item + .daily-log-archive-item {
-  border-top: 1px solid var(--line);
-}
-
-.daily-log-archive-link {
-  display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-  padding: 9px 12px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.daily-log-archive-link:hover,
-.daily-log-archive-link:focus-visible {
-  background: var(--empty);
-  outline: 0;
-}
-
-.daily-log-archive-date {
-  color: var(--ink);
-  font: 600 10px/1.6 "JetBrains Mono", monospace;
-  letter-spacing: 0.02em;
-}
-
-.daily-log-archive-excerpt {
-  display: -webkit-box;
-  max-height: calc(1.6em * 2);
-  overflow: hidden;
-  color: var(--ink-soft);
-  font-size: 11px;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.month-section {
-  margin-bottom: 26px;
-}
-
-.past-calendars {
-  margin: -4px 0 26px;
-}
-
-.past-calendars > summary {
-  width: fit-content;
-  color: var(--ink-soft);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-}
-
-.past-calendars > summary:hover,
-.past-calendars > summary:focus-visible {
-  color: var(--ink);
-}
-
-.past-calendars[open] > summary {
-  margin-bottom: 20px;
-}
-
-.past-calendar-list .month-section:last-child {
-  margin-bottom: 0;
-}
-
-.month-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.month-title {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.day-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-
-.day-cell {
-  position: relative;
-  height: 78px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel);
-  color: var(--ink);
-  transition: 0.18s ease;
-}
-
-.day-cell.has-record {
-  background: var(--calendar-active);
-}
-
-.day-cell.has-record:hover {
-  border-color: var(--accent);
-  transform: translateY(-1px);
-  z-index: 5;
-}
-
-.day-cell.empty {
-  display: flex;
-  align-items: flex-start;
-  padding: 7px 9px;
-  background: var(--empty);
-  color: #a5adad;
-}
-
-.day-link {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  padding: 6px 28px 6px 8px;
-  overflow: hidden;
-  color: inherit;
-  text-decoration: none;
-}
-
-.day-number {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.day-topics {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-.day-topic,
-.day-topic-more {
-  display: block;
-  overflow: hidden;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.day-topic-mobile {
-  display: none;
-}
-
-.day-topic-more {
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-}
-
-.day-detail-toggle {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  z-index: 2;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  background: transparent;
-  color: var(--ink-soft);
-  font: 11px/1 "Noto Sans JP", sans-serif;
-  cursor: pointer;
-  opacity: 0.72;
-}
-
-.day-detail-toggle:hover,
-.day-detail-toggle:focus-visible {
-  color: var(--accent);
-  opacity: 1;
-}
-
-.calendar-detail {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 7px);
-  z-index: 20;
-  display: none;
-  width: min(300px, calc(100vw - 24px));
-  padding: 12px 14px;
-  transform: translateX(-50%);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: 0 8px 24px rgba(25, 35, 35, 0.14);
-  color: var(--ink);
-  font-size: 11px;
-  line-height: 1.55;
-  text-align: left;
-}
-
-.day-cell:hover .calendar-detail,
-.day-cell:focus-within .calendar-detail,
-.day-cell.detail-open .calendar-detail {
-  display: block;
-}
-
-.day-cell:nth-child(7n + 1) .calendar-detail {
-  left: 0;
-  transform: none;
-}
-
-.day-cell:nth-child(7n) .calendar-detail {
-  right: 0;
-  left: auto;
-  transform: none;
-}
-
-.calendar-detail-date {
-  margin-bottom: 6px;
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.calendar-detail ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.calendar-detail li + li {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-}
-
-.calendar-detail-path,
-.calendar-detail-title {
-  display: block;
-}
-
-.calendar-detail-path {
-  font-weight: 600;
-}
-
-.calendar-detail-title {
-  color: var(--ink-soft);
-}
-
-.section-divider {
-  border-top: 1px solid var(--line);
-  margin: 28px 0;
-}
-
-.guide-divider {
-  position: relative;
-  height: 64px;
-  margin: 8px 0 14px;
-  border-top: 0;
-}
-
-.guide-divider::before,
-.guide-divider::after {
-  position: absolute;
-  top: 53px;
-  border-top: 1px solid var(--line);
-  content: "";
-}
-
-.guide-divider::before {
-  right: calc(50% + 45px);
-  left: 0;
-}
-
-.guide-divider::after {
-  right: 0;
-  left: calc(50% + 45px);
-}
-
-.divider-guide {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  z-index: 1;
-  display: block;
-  width: 100px;
-  height: auto;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.topic-entry {
-  width: 100%;
-  padding: 18px 20px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--panel);
-}
-
-.topic-entry-title {
-  color: var(--ink);
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.topic-entry-description {
-  margin-top: 3px;
-  color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.topic-entry-action {
-  display: flex;
-  justify-content: center;
-  margin-top: 14px;
-}
-
-.topic-toc-button {
-  width: min(220px, 100%);
-  padding: 10px 18px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--bg);
-  color: var(--accent);
-  font: 600 11px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: 0.18s ease;
-}
-
-.topic-toc-button:hover {
-  border-color: var(--accent);
-  background: var(--panel);
-}
-
-.about-kicker,
-.about-start,
-.total-label,
-.total-value {
-  font-family: "JetBrains Mono", monospace;
-}
-
-.toc-section {
-  margin-top: 12px;
-  padding: 8px 18px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--panel);
-}
-
-.toc-section[hidden] {
-  display: none;
-}
-
-.toc-subject + .toc-subject {
-  border-top: 1px solid var(--line);
-}
-
-.toc-subject > summary {
-  padding: 11px 2px;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.toc-subject[open] > summary {
-  color: var(--accent);
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-}
-
-.toc-category {
-  margin: 0 0 16px 22px;
-  padding-left: 16px;
-  border-left: 2px solid var(--line);
-}
-
-.toc-category h3 {
-  margin-bottom: 9px;
-  color: var(--ink);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.toc-subcategory {
-  margin-left: 18px;
-  padding-left: 14px;
-  border-left: 1px solid var(--line);
-}
-
-.toc-subcategory + .toc-subcategory {
-  margin-top: 11px;
-}
-
-.toc-subcategory h4 {
-  margin-bottom: 5px;
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.5;
-}
-
-.toc-subcategory ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.toc-article {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 5px 0;
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.toc-article + .toc-article {
-  border-top: 1px solid var(--line);
-}
-
-.toc-article a {
-  color: var(--ink);
-  text-decoration-color: var(--line);
-  text-underline-offset: 3px;
-}
-
-.toc-article a:hover {
-  color: var(--accent);
-  text-decoration-color: var(--accent);
-}
-
-.toc-article time {
-  flex: 0 0 auto;
-  color: var(--ink-soft);
-  font: 10px/1.5 "JetBrains Mono", monospace;
-}
-
-.toc-empty {
-  margin: 0 0 12px 22px;
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-
-.about-section {
-  max-width: 720px;
-}
-
-.about-with-guide {
-  position: relative;
-  max-width: none;
-  min-height: 190px;
-  padding-right: 230px;
-  overflow: visible;
-}
-
-.about-guide {
-  position: absolute;
-  top: -2px;
-  right: 0;
-  width: 220px;
-  margin: 0;
-  text-align: center;
-  pointer-events: none;
-}
-
-.about-guide-image {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.about-guide-caption {
-  box-sizing: border-box;
-  max-width: 100%;
-  margin: 3px auto 0;
-  padding: 0 6px;
-  overflow: visible;
-  color: var(--ink-soft);
-  font-size: 10px;
-  line-height: 1.6;
-  letter-spacing: 0.02em;
-  overflow-wrap: anywhere;
-  white-space: normal;
-}
-
-.about-kicker {
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  font-weight: 600;
-  margin-bottom: 7px;
-}
-
-.about-title {
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.5;
-  margin-bottom: 5px;
-}
-
-.about-start {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
-  margin-bottom: 14px;
-}
-
-.about-text {
-  font-size: 13px;
-  line-height: 1.9;
-  color: var(--ink-soft);
-}
-
-.total-section {
-  border-top: 1px solid var(--line);
-  padding-top: 18px;
-  margin-top: 28px;
-}
-
-.total-label {
-  font-size: 11px;
-  color: var(--ink-soft);
-  letter-spacing: 0.06em;
-  margin-bottom: 2px;
-}
-
-.total-value {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-footer {
-  border-top: 1px solid var(--line);
-  padding: 18px 24px;
-  text-align: center;
-  font-size: 11px;
-  color: var(--ink-soft);
-}
-
-@media (max-width: 900px) {
-  .daily-log-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 820px) {
-  .daily-log-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .about-with-guide {
-    min-height: 168px;
-    padding-right: 180px;
-  }
-
-  .about-guide {
-    right: 0;
-    width: 170px;
-  }
-}
-
-@media (max-width: 700px) {
-  .daily-log-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 600px) {
-  header {
-    padding: 16px;
-  }
-
-  main {
-    padding: 18px 12px 32px;
-  }
-
-  .daily-log-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
-  }
-
-  .daily-log-archive-link {
-    display: block;
-    padding: 8px 10px;
-  }
-
-  .daily-log-archive-date {
-    display: block;
-    margin-bottom: 1px;
-  }
-
-  .header-date {
-    font-size: 23px;
-  }
-
-  .header-inner {
-    padding-right: 150px;
-  }
-
-  .header-guide-wrap {
-    top: -9px;
-    right: -2px;
-    gap: 4px;
-  }
-
-  .header-guide-copy {
-    font-size: 9px;
-    letter-spacing: 0.04em;
-  }
-
-  .header-guide {
-    width: 96px;
-  }
-
-  .calendar-grid {
-    gap: 4px;
-  }
-
-  .day-cell {
-    height: 68px;
-    border-radius: 6px;
-  }
-
-  .day-cell.empty {
-    padding: 5px;
-  }
-
-  .day-cell.has-record:hover {
-    transform: none;
-  }
-
-  .day-link {
-    padding: 5px 20px 5px 5px;
-  }
-
-  .day-number {
-    font-size: 12px;
-    line-height: 1.2;
-  }
-
-  .day-topic,
-  .day-topic-more {
-    font-size: 8px;
-    line-height: 1.2;
-  }
-
-  .day-topic-desktop {
-    display: none;
-  }
-
-  .day-topic-mobile {
-    display: inline;
-  }
-
-  .day-detail-toggle {
-    top: 1px;
-    right: 0;
-    width: 22px;
-    height: 22px;
-    font-size: 10px;
-  }
-
-  .calendar-detail {
-    position: fixed;
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
-    width: auto;
-    max-height: 48vh;
-    overflow-y: auto;
-    transform: none;
-    font-size: 12px;
-  }
-
-  .day-cell:hover .calendar-detail,
-  .day-cell:focus-within .calendar-detail {
-    display: none;
-  }
-
-  .day-cell.detail-open .calendar-detail {
-    display: block;
-  }
-
-  .topic-entry {
-    padding: 16px;
-  }
-
-  .topic-entry-title {
-    font-size: 17px;
-  }
-
-  .topic-entry-action {
-    margin-top: 12px;
-  }
-
-  .topic-toc-button {
-    width: 100%;
-  }
-
-  .guide-divider {
-    height: 58px;
-    margin: 7px 0 12px;
-  }
-
-  .guide-divider::before,
-  .guide-divider::after {
-    top: 51px;
-  }
-
-  .guide-divider::before {
-    right: calc(50% + 40px);
-  }
-
-  .guide-divider::after {
-    left: calc(50% + 40px);
-  }
-
-  .divider-guide {
-    top: -13px;
-    width: 88px;
-  }
-
-  .toc-section {
-    padding: 6px 12px;
-  }
-
-  .toc-category {
-    margin-left: 10px;
-    padding-left: 10px;
-  }
-
-  .toc-subcategory {
-    margin-left: 8px;
-    padding-left: 8px;
-  }
-
-  .toc-article {
-    display: block;
-    padding: 5px 0;
-  }
-
-  .toc-article time {
-    display: block;
-    margin-top: 2px;
-  }
-
-  .about-title {
-    font-size: 18px;
-  }
-
-  .about-with-guide {
-    min-height: 0;
-    padding-right: 0;
-  }
-
-  .about-guide {
-    position: static;
-    width: min(240px, 82%);
-    margin: 22px auto 0;
-  }
-
-  .about-guide-image {
-    width: 120px;
-    margin: 0 auto;
-  }
-}
-</style>
+${documentHead({ title: "数学学習記録 | Math Study Log", description: defaultDescription, url: `${siteUrl}/` })}
+<style>${baseStyles()}\n${homeStyles()}</style>
 </head>
-
 <body>
-
 ${someCloudsLink()}
-
-<header>
-  <div class="header-inner">
-    <div class="header-title">MATH STUDY LOG</div>
-    <div class="header-date">数学学習記録</div>
-    <div class="header-guide-wrap">
-      <span class="header-guide-copy">クーモとまなぶ</span>
-      <img class="header-guide" src="./images/kuumo/s1.png" alt="案内キャラクター クーモ">
-    </div>
-  </div>
-</header>
-
+<header><div class="header-inner">
+  <div class="header-title">MATH STUDY LOG</div>
+  <div class="header-date">数学学習記録</div>
+  <div class="header-guide-wrap"><span class="header-guide-copy">クーモとまなぶ</span><img class="header-guide" src="./images/kuumo/s1.png" alt="案内キャラクター クーモ"></div>
+</div></header>
 <main>
-
-${dailyLogGrid}
-
-  <div class="section-divider guide-divider" aria-hidden="true">
-    <img class="divider-guide" src="./images/kuumo/s2.png" alt="">
-  </div>
-
+  <section class="daily-log-section" aria-labelledby="daily-log-title">
+    <div class="daily-log-heading"><div class="daily-log-kicker">LEARNING LOG</div><h2 id="daily-log-title">学習記録</h2></div>
+    ${logContent}
+  </section>
+  <div class="guide-divider" aria-hidden="true"><img class="divider-guide" src="./images/kuumo/s2.png" alt=""></div>
   <section class="about-section">
     <div class="about-kicker">MY GOAL</div>
     <div class="about-title">64歳から、数学を学びなおしたい</div>
-    <p class="about-text">
-      数学をひとつずつ学び直しながら、<br>
-      毎日の勉強を、紙の記録として残しています。<br><br>
-      たくさん進む日も、少しだけの日も。<br>
-      5年かけて、少しずつ積み上げていきます。
-    </p>
+    <p class="about-text">数学をひとつずつ学び直しながら、<br>毎日の勉強を、紙の記録として残しています。<br><br>たくさん進む日も、少しだけの日も。<br>5年かけて、少しずつ積み上げていきます。</p>
   </section>
-
   <div class="section-divider"></div>
-
   <section class="about-section about-with-guide">
     <div class="about-kicker">ABOUT THIS STUDY</div>
     <div class="about-title">このサイトについて</div>
     <div class="about-start">STARTED AUGUST 2026</div>
-    <p class="about-text">
-      その日に勉強したノートや答案を、写真と短い記録で残しています。<br><br>
-      見に来てくださって、ありがとうございます。<br>
-      ここを見たあと、ほんの少しでも「自分もやろうかな」と思ってもらえたらうれしいです。<br><br>
-      クーモと一緒に、今日も少しずつ。
-    </p>
-    <figure class="about-guide">
-      <img class="about-guide-image" src="./images/kuumo/s3.png" alt="" aria-hidden="true" loading="lazy">
-      <figcaption class="about-guide-caption">some clouds からちぎれて生まれた、学びの案内役クーモ。</figcaption>
-    </figure>
+    <p class="about-text">その日に勉強したノートや答案を、写真と短い記録で残しています。<br><br>見に来てくださって、ありがとうございます。<br>ここを見たあと、ほんの少しでも「自分もやろうかな」と思ってもらえたらうれしいです。<br><br>クーモと一緒に、今日も少しずつ。</p>
+    <figure class="about-guide"><img class="about-guide-image" src="./images/kuumo/s3.png" alt="" aria-hidden="true" loading="lazy"><figcaption class="about-guide-caption">some clouds からちぎれて生まれた、学びの案内役クーモ。</figcaption></figure>
   </section>
-
-  <section class="total-section">
-    <div class="total-label">TOTAL STUDY DAYS</div>
-    <div class="total-value">${records.length} days</div>
-  </section>
-
 </main>
-
-<footer>
-  Math Study Log © ${displayYear}
-</footer>
-
-${homepageInteractionScript()}
-
+<footer>Math Study Log © ${year}</footer>
+${sorted.length ? homepageScript() : ""}
 </body>
-</html>`;
+</html>
+`;
 }
 
-/*
-日別ページ
-*/
-
-function renderLogImage(record, study, file) {
-    const page = file.match(imagePattern)[5];
-    const alt = `${formatDotDate(record.date)} ${study.number} LOG ページ${page}`;
-    return `<figure class="study-sheet">
-      <button class="sheet-button" type="button" aria-label="${escapeHtml(alt)}を拡大">
-        <img class="sheet" src="./images/${encodeURIComponent(file)}" alt="${escapeHtml(alt)}" loading="lazy">
-      </button>
-      <figcaption>LOG · ${page}</figcaption>
-    </figure>`;
+function mathJaxTags() {
+  return `<script>window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] } };</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>`;
 }
 
-function renderStudyLog(record, study) {
-  const [first, ...rest] = study.images;
-  const firstHtml = renderLogImage(record, study, first);
-  if (rest.length === 0) return firstHtml;
-
-  return `${firstHtml}
-    <details class="more-logs">
-      <summary>more</summary>
-      <div class="more-log-list">${rest.map((file) => renderLogImage(record, study, file)).join("\n")}</div>
-    </details>`;
+function dailyStyles() {
+  return `.record-main { width: min(860px, calc(100% - 48px)); }
+.page-head { margin-bottom: 26px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.page-head h1 { margin-top: 4px; font-size: 25px; line-height: 1.5; }
+.page-actions { margin-bottom: 14px; }
+.text-link { color: var(--accent); font-size: 12px; text-decoration-color: var(--line); text-underline-offset: 3px; }
+.daily-entry { width: min(760px, 100%); margin: 0 auto; }
+.daily-sheets { display: grid; gap: 30px; }
+.daily-sheet-label { margin-bottom: 7px; color: var(--ink-soft); font: 600 10px/1.5 "JetBrains Mono", monospace; letter-spacing: .08em; }
+.daily-sheet-link { display: block; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.daily-sheet-link:hover, .daily-sheet-link:focus-visible { border-color: var(--accent); }
+.daily-sheet-image { display: block; width: 100%; height: auto; border-radius: 7px; }
+.daily-no-images { padding: 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink-soft); font-size: 13px; text-align: center; }
+.daily-markdown { margin-top: 38px; padding-top: 26px; border-top: 1px solid var(--line); }
+.daily-markdown-heading { margin-bottom: 18px; color: var(--accent); font: 600 11px/1.5 "JetBrains Mono", monospace; letter-spacing: .1em; }
+.daily-markdown-content { font-size: 15px; line-height: 1.9; }
+.daily-markdown-content > *:first-child { margin-top: 0; }
+.daily-markdown-content h1, .daily-markdown-content h2, .daily-markdown-content h3 { margin: 30px 0 12px; line-height: 1.55; }
+.daily-markdown-content h1 { font-size: 21px; } .daily-markdown-content h2 { font-size: 18px; } .daily-markdown-content h3 { font-size: 16px; }
+.daily-markdown-content p, .daily-markdown-content ul, .daily-markdown-content ol, .daily-markdown-content blockquote, .daily-markdown-content pre, .daily-markdown-content table { margin: 0 0 18px; }
+.daily-markdown-content ul, .daily-markdown-content ol { padding-left: 1.5em; }
+.daily-markdown-content blockquote { padding: 9px 14px; border-left: 3px solid var(--line); color: var(--ink-soft); }
+.daily-markdown-content pre { max-width: 100%; padding: 13px 14px; overflow-x: auto; border: 1px solid var(--line); border-radius: 7px; background: var(--panel); }
+.daily-markdown-content code { font-family: "JetBrains Mono", monospace; }
+.daily-markdown-content table { display: block; width: max-content; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.daily-markdown-content th, .daily-markdown-content td { padding: 7px 9px; border: 1px solid var(--line); text-align: left; }
+.daily-markdown-content a { color: var(--accent); }
+.day-navigation { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--line); }
+.day-navigation > :last-child { text-align: right; }
+@media (max-width: 600px) { .record-main { width: calc(100% - 24px); } .page-head h1 { font-size: 22px; } .daily-sheets { gap: 24px; } .daily-markdown { margin-top: 30px; padding-top: 22px; } .daily-markdown-content { font-size: 14px; } }`;
 }
 
-function withoutFirstHeading(source) {
-  return source.replace(/^#(?!#)[ \t]+[^\r\n]+(?:\r?\n|$)/m, "").trim();
-}
-
-function studyPageStyles() {
-  return `${sessionPageStyles()}
-.study-flow { display: grid; gap: 28px; }
-.study-section {
-  min-width: 0;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-}
-.section-heading {
-  margin-bottom: 18px;
-  color: var(--accent);
-  font: 600 13px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.1em;
-}
-.study-section .session-content { padding: 0; border: 0; }
-.study-section .session-content > :first-child { margin-top: 0; }
-.study-sheet + .study-sheet { margin-top: 24px; }
-.sheet-button {
-  display: block;
-  width: 100%;
-  border: 0;
-  border-radius: 6px;
-  background: var(--panel);
-  cursor: zoom-in;
-}
-.sheet-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-.sheet { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
-.study-sheet figcaption { margin-top: 6px; color: var(--ink-soft); font: 11px/1.5 "JetBrains Mono", monospace; }
-.more-logs { margin-top: 18px; border-top: 1px solid var(--line); }
-.more-logs > summary {
-  padding: 14px 0 2px;
-  color: var(--accent);
-  cursor: pointer;
-  font: 600 12px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.08em;
-}
-.more-log-list { padding-top: 18px; }
-.answer-details { margin: 0; }
-.answer-details > summary {
-  color: var(--accent);
-  cursor: pointer;
-  font-weight: 600;
-}
-.answer-details[open] > summary {
-  margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-}
-.session-content details { margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
-.session-content summary { color: var(--accent); cursor: pointer; font-weight: 600; }
-.lightbox { margin: auto; max-width: 96vw; max-height: 96vh; padding: 12px; border: 0; border-radius: 8px; background: var(--panel); }
-.lightbox::backdrop { background: rgba(12, 20, 15, 0.82); }
-.lightbox img { display: block; max-width: calc(100vw - 72px); max-height: 82vh; width: auto; height: auto; }
-.lightbox-close { display: block; margin: 0 0 10px auto; cursor: pointer; }
-@media (max-width: 900px) {
-  .study-flow { gap: 18px; }
-  .study-section { padding: 14px; }
-}`;
-}
-
-function createStudyPage(record, study, view = "study") {
-  const showLog = view !== "session";
-  const showSession = view !== "log";
-  const pageFile = view === "study" ? "index.html" : `${view}.html`;
-  const pageUrl = view === "study"
-    ? `${siteUrl}/records/${dateKey(record.date)}/${study.number}/`
-    : `${siteUrl}/records/${dateKey(record.date)}/${study.number}/${pageFile}`;
-  const cardImageFile = study.images[0];
-  const cardImageUrl = `${siteUrl}/records/${dateKey(record.date)}/${study.number}/images/${encodeURIComponent(cardImageFile)}`;
-  const cardImageMeta = imageMetadata(imageSources.get(cardImageFile));
-  const cardTitle = `${study.title} | 数学学習記録`;
-  const cardDescription = descriptionForStudy(study);
-  const sessionSection = `<section class="study-section" aria-labelledby="session-heading"><h2 class="section-heading" id="session-heading">SESSION</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: study.sessionMarkdown, images: [] })}</article></section>`;
-  const questionSection = `<section class="study-section" aria-labelledby="question-heading"><h2 class="section-heading" id="question-heading">ORIGINAL QUESTION　by ChatGPT</h2><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.questionMarkdown), images: [] })}</article></section>`;
-  const logSection = `<section class="study-section" aria-labelledby="log-heading"><h2 class="section-heading" id="log-heading">LOG</h2>${renderStudyLog(record, study)}</section>`;
-  const answerSection = study.answerMarkdown === null
-    ? ""
-    : `<section class="study-section" aria-labelledby="answer-heading"><h2 class="section-heading" id="answer-heading">ANSWER</h2><details class="answer-details"><summary>ANSWERを開く</summary><article class="session-content">${renderSessionMarkdown({ sessionMarkdown: withoutFirstHeading(study.answerMarkdown), images: [] })}</article></details></section>`;
-  const content = view === "log"
-    ? `<div class="study-flow">${logSection}</div>`
-    : view === "session"
-      ? `<div class="study-flow">${sessionSection}</div>`
-      : `<div class="study-flow">${questionSection}${answerSection}${logSection}${sessionSection}</div>`;
-
-  return createSimpleRecordPage({
-    documentTitle: `${view === "study" ? "" : `${view.toUpperCase()} | `}${study.title} | 学習記録 ${study.number} - ${formatJapaneseDate(record.date)}`,
-    kicker: view === "study" ? "MATH STUDY LOG" : view.toUpperCase(),
-    title: study.title,
-    date: `${formatDotDate(record.date)} / ${study.number}`,
-    actions: view === "study"
-      ? `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="../index.html">${formatDotDate(record.date)} の学習セット</a>`
-      : `<a class="text-link" href="../../../index.html">TOP</a>\n    <a class="text-link" href="../../../${view}/index.html">${view.toUpperCase()} 一覧</a>\n    <a class="text-link" href="./index.html">学習セット全体</a>`,
-    content,
-    displayYear: record.date.slice(0, 4),
-    headExtra: `${socialMetaTags({
-      title: cardTitle,
-      description: cardDescription,
-      url: pageUrl,
-      image: cardImageUrl,
-      imageMeta: cardImageMeta
-    })}\n${showSession ? mathJaxHead(true) : ""}\n<link rel="canonical" href="${pageUrl}">`,
-    extraStyles: studyPageStyles(),
-    bodyScripts: showLog ? `<dialog class="lightbox" aria-label="答案画像の拡大">
-  <button class="text-link lightbox-close" type="button">閉じる</button>
-  <img alt="">
-</dialog>
-<script>
-const lightbox = document.querySelector(".lightbox");
-document.querySelectorAll(".sheet-button").forEach((button) => {
-  button.addEventListener("click", () => {
-    const source = button.querySelector("img");
-    const enlarged = lightbox.querySelector("img");
-    enlarged.src = source.src;
-    enlarged.alt = source.alt;
-    lightbox.showModal();
-  });
-});
-lightbox.querySelector("button").addEventListener("click", () => lightbox.close());
-lightbox.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") lightbox.close();
-});
-lightbox.addEventListener("click", (event) => {
-  if (event.target === lightbox) lightbox.close();
-});
-</script>` : ""
-  });
-}
-
-function createSimpleRecordPage({
-  documentTitle,
-  kicker,
-  title,
-  date = "",
-  actions,
-  content,
-  displayYear,
-  headExtra = "",
-  bodyScripts = "",
-  extraStyles = ""
-}) {
-  const dateHtml = date
-    ? `<div class="page-date">${escapeHtml(date)}</div>`
-    : "";
-
+function createDailyPage(log, index, logs) {
+  const previous = index > 0 ? logs[index - 1] : null;
+  const next = index < logs.length - 1 ? logs[index + 1] : null;
+  const markdownSource = withoutFirstHeading(log.markdown);
+  const description = excerptFromMarkdown(log.markdown, 140) || defaultDescription;
+  const coverUrl = log.coverImage ? `${siteUrl}/daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}` : siteOgImageUrl;
+  const images = log.images.length
+    ? log.images.map((image, imageIndex) => `<figure class="daily-sheet">
+  <figcaption class="daily-sheet-label">PAGE ${imageIndex + 1}</figcaption>
+  <a class="daily-sheet-link" href="./images/${encodeURIComponent(image)}" target="_blank" rel="noopener" aria-label="${escapeHtml(formatJapaneseDate(log.date))} ページ${imageIndex + 1}を原寸で開く">
+    <img class="daily-sheet-image" src="./images/${encodeURIComponent(image)}" alt="${escapeHtml(formatJapaneseDate(log.date))} 学習記録 ページ${imageIndex + 1}" loading="lazy">
+  </a>
+</figure>`).join("\n")
+    : `<p class="daily-no-images">学習写真はありません。</p>`;
+  const previousLink = previous ? `<a class="text-link" href="../${previous.dateKey}/">← ${formatDotDate(previous.date)}</a>` : `<span></span>`;
+  const nextLink = next ? `<a class="text-link" href="../${next.dateKey}/">${formatDotDate(next.date)} →</a>` : `<span></span>`;
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${escapeHtml(documentTitle)}</title>
-<link rel="icon" type="image/svg+xml" href="${faviconUrl}">
-
-${gaTag()}
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">${headExtra ? `\n${headExtra}` : ""}
-
-<style>
-:root {
-  --bg: #fbfcfc;
-  --panel: #ffffff;
-  --line: #dfe7e7;
-  --ink: #192323;
-  --ink-soft: #6b7777;
-  --accent: #315f63;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: "Noto Sans JP", sans-serif;
-  line-height: 1.7;
-}
-
-${someCloudsLinkStyles()}
-
-header {
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.header-inner,
-main {
-  width: min(900px, calc(100% - 32px));
-  margin: 0 auto;
-}
-
-.header-inner {
-  padding: 22px 0 16px;
-}
-
-.page-kicker,
-.page-date,
-.record-number {
-  font-family: "JetBrains Mono", monospace;
-}
-
-.page-kicker {
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-}
-
-h1 {
-  margin-top: 3px;
-  font-size: 24px;
-  line-height: 1.45;
-}
-
-.page-date {
-  margin-top: 4px;
-  color: var(--ink-soft);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-}
-
-main {
-  min-height: calc(100vh - 164px);
-  padding: 24px 0 42px;
-}
-
-.page-actions,
-.record-links,
-.day-navigation {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-}
-
-.page-actions {
-  margin-bottom: 24px;
-}
-
-.text-link {
-  display: inline-flex;
-  min-height: 36px;
-  align-items: center;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel);
-  color: var(--accent);
-  text-decoration: none;
-  font: 600 11px/1.3 "JetBrains Mono", monospace;
-}
-
-.text-link:hover {
-  border-color: var(--accent);
-}
-
-.record-list {
-  border-top: 1px solid var(--line);
-}
-
-.record-item {
-  display: grid;
-  grid-template-columns: 72px 1fr auto;
-  align-items: center;
-  gap: 18px;
-  padding: 18px 2px;
-  border-bottom: 1px solid var(--line);
-}
-
-.record-number {
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-
-.record-title {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.record-links .text-link {
-  min-height: 32px;
-}
-
-.day-navigation {
-  justify-content: space-between;
-  margin-top: 24px;
-}
-
-.session-shell {
-  min-height: 160px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.move-notice {
-  padding: 28px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  color: var(--ink-soft);
-  font-size: 14px;
-}
-
-.move-notice .text-link {
-  margin-top: 16px;
-}
-
-footer {
-  border-top: 1px solid var(--line);
-  padding: 18px 24px;
-  background: var(--panel);
-  color: var(--ink-soft);
-  text-align: center;
-  font-size: 11px;
-}${extraStyles ? `\n${extraStyles}` : ""}
-
-@media (max-width: 600px) {
-  .header-inner,
-  main {
-    width: calc(100% - 24px);
-  }
-
-  .header-inner {
-    padding: 17px 0 13px;
-  }
-
-  h1 {
-    font-size: 21px;
-  }
-
-  main {
-    padding-top: 19px;
-  }
-
-  .record-item {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    padding: 16px 1px;
-  }
-}
-</style>
+${documentHead({ title: `${formatDotDate(log.date)} | 数学学習記録`, description, url: `${siteUrl}/daily/${log.dateKey}/`, image: coverUrl, extra: mathJaxTags() })}
+<style>${baseStyles()}\n${dailyStyles()}</style>
 </head>
-
 <body>
-
 ${someCloudsLink()}
-
-<header>
-  <div class="header-inner">
-    <div class="page-kicker">${escapeHtml(kicker)}</div>
-    <h1>${escapeHtml(title)}</h1>
-${dateHtml}
-  </div>
-</header>
-
-<main>
-  <nav class="page-actions" aria-label="ページメニュー">
-    ${actions}
-  </nav>
-
-  ${content}
+<header><div class="header-inner"><div class="header-title">MATH STUDY LOG</div><div class="header-date">数学学習記録</div><div class="header-guide-wrap"><span class="header-guide-copy">クーモとまなぶ</span><img class="header-guide" src="../../images/kuumo/s1.png" alt="案内キャラクター クーモ"></div></div></header>
+<main class="record-main">
+  <div class="page-actions"><a class="text-link" href="../../index.html">← 学習記録へ戻る</a></div>
+  <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1></div>
+  <article class="daily-entry">
+    <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${images}</section>
+    <section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2><div class="daily-markdown-content">${markdownSource ? markdown.render(markdownSource) : ""}</div></section>
+    <nav class="day-navigation" aria-label="学習日を移動">${previousLink}${nextLink}</nav>
+  </article>
 </main>
-
-<footer>Math Study Log © ${escapeHtml(displayYear)}</footer>${bodyScripts ? `\n${bodyScripts}` : ""}
-
+<footer>Math Study Log © ${log.date.slice(0, 4)}</footer>
 </body>
-</html>`;
+</html>
+`;
 }
 
-function dailyLogPageStyles() {
-  return `.daily-entry {
-  width: min(760px, 100%);
-  margin: 0 auto;
-}
-
-.daily-sheets {
-  display: grid;
-  gap: 30px;
-}
-
-.daily-sheet {
-  margin: 0;
-}
-
-.daily-sheet-label {
-  margin-bottom: 7px;
-  color: var(--ink-soft);
-  font: 600 10px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.08em;
-}
-
-.daily-sheet-link {
-  display: block;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-}
-
-.daily-sheet-link:hover,
-.daily-sheet-link:focus-visible {
-  border-color: var(--accent);
-}
-
-.daily-sheet-image {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 7px;
-}
-
-.daily-no-images {
-  padding: 28px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--ink-soft);
-  font-size: 13px;
-  text-align: center;
-}
-
-.daily-markdown {
-  margin-top: 38px;
-  padding-top: 26px;
-  border-top: 1px solid var(--line);
-}
-
-.daily-markdown-heading {
-  margin: 0 0 18px;
-  color: var(--accent);
-  font: 600 11px/1.5 "JetBrains Mono", monospace;
-  letter-spacing: 0.1em;
-}
-
-.daily-markdown-content {
-  font-size: 15px;
-  line-height: 1.9;
-}
-
-.daily-markdown-content > *:first-child {
-  margin-top: 0;
-}
-
-.daily-markdown-content h1,
-.daily-markdown-content h2,
-.daily-markdown-content h3 {
-  margin: 30px 0 12px;
-  line-height: 1.55;
-}
-
-.daily-markdown-content h1 { font-size: 21px; }
-.daily-markdown-content h2 { font-size: 18px; }
-.daily-markdown-content h3 { font-size: 16px; }
-
-.daily-markdown-content p,
-.daily-markdown-content ul,
-.daily-markdown-content ol,
-.daily-markdown-content blockquote,
-.daily-markdown-content pre,
-.daily-markdown-content table {
-  margin: 0 0 18px;
-}
-
-.daily-markdown-content ul,
-.daily-markdown-content ol {
-  padding-left: 1.5em;
-}
-
-.daily-markdown-content blockquote {
-  padding: 9px 14px;
-  border-left: 3px solid var(--line);
-  color: var(--ink-soft);
-}
-
-.daily-markdown-content pre {
-  max-width: 100%;
-  padding: 13px 14px;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel);
-}
-
-.daily-markdown-content code {
-  font-family: "JetBrains Mono", monospace;
-}
-
-.daily-markdown-content table {
-  display: block;
-  width: max-content;
-  max-width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
-}
-
-.daily-markdown-content th,
-.daily-markdown-content td {
-  padding: 7px 9px;
-  border: 1px solid var(--line);
-  text-align: left;
-}
-
-.daily-markdown-content a {
-  color: var(--accent);
-}
-
-@media (max-width: 600px) {
-  .daily-sheets { gap: 24px; }
-  .daily-markdown { margin-top: 30px; padding-top: 22px; }
-  .daily-markdown-content { font-size: 14px; }
-}`;
-}
-
-function createDailyLogPage(log, index) {
-  const previous = index > 0 ? dailyLogs[index - 1] : null;
-  const next = index < dailyLogs.length - 1 ? dailyLogs[index + 1] : null;
-  const markdownSource = withoutFirstHeading(log.markdown);
-  const markdownHtml = renderMarkdown(markdownSource, true);
-  const description = descriptionFromMarkdown(markdownSource) || defaultDescription;
-  const coverUrl = log.coverImage
-    ? `${siteUrl}/daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}`
-    : siteOgImageUrl;
-  const coverPath = log.coverImage
-    ? path.join(logsDir, log.dateKey.slice(0, 4), log.dateKey, log.coverImage)
-    : path.join(publicDir, "og-image.png");
-  const imagesHtml = log.images.length
-    ? log.images
-      .map((image, imageIndex) => `
-      <figure class="daily-sheet">
-        <figcaption class="daily-sheet-label">PAGE ${imageIndex + 1}</figcaption>
-        <a class="daily-sheet-link" href="./images/${encodeURIComponent(image)}" target="_blank" rel="noopener" aria-label="${escapeHtml(formatJapaneseDate(log.date))} ページ${imageIndex + 1}を原寸で開く">
-          <img class="daily-sheet-image" src="./images/${encodeURIComponent(image)}" alt="${escapeHtml(formatJapaneseDate(log.date))} 学習記録 ページ${imageIndex + 1}" loading="lazy">
-        </a>
-      </figure>`)
-      .join("")
-    : `<p class="daily-no-images">学習写真はありません。</p>`;
-  const previousLink = previous
-    ? `<a class="text-link" href="../${previous.dateKey}/">← ${formatDotDate(previous.date)}</a>`
-    : `<span></span>`;
-  const nextLink = next
-    ? `<a class="text-link" href="../${next.dateKey}/">${formatDotDate(next.date)} →</a>`
-    : `<span></span>`;
-
-  return createSimpleRecordPage({
-    documentTitle: `${formatDotDate(log.date)} | 数学学習記録`,
-    kicker: "LEARNING LOG",
-    title: formatDotDate(log.date),
-    actions: `<a class="text-link" href="../../index.html">← 学習記録へ戻る</a>`,
-    content: `<article class="daily-entry">
-    <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${imagesHtml}
-    </section>
-    <section class="daily-markdown" aria-labelledby="daily-markdown-heading">
-      <h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2>
-      <div class="daily-markdown-content">${markdownHtml}</div>
-    </section>
-    <nav class="day-navigation" aria-label="新方式の学習日を移動">${previousLink}${nextLink}</nav>
-  </article>`,
-    displayYear: log.date.slice(0, 4),
-    headExtra: `${socialMetaTags({
-      title: `${formatDotDate(log.date)} | 数学学習記録`,
-      description,
-      url: `${siteUrl}/daily/${log.dateKey}/`,
-      image: coverUrl,
-      imageMeta: imageMetadata(coverPath)
-    })}
-<link rel="canonical" href="${siteUrl}/daily/${log.dateKey}/">
-${mathJaxHead(true)}`,
-    extraStyles: dailyLogPageStyles()
-  });
-}
-
-function createRecordIndexPage(record, index) {
-  const studies = studiesForRecord(record);
-  const previous = index > 0 ? records[index - 1] : null;
-  const next = index < records.length - 1 ? records[index + 1] : null;
-
-  const studyItems = studies
-    .map(
-      (study) => `
-    <article class="record-item">
-      <div class="record-number">${escapeHtml(study.number)}</div>
-      <div class="record-title">${escapeHtml(study.title)}</div>
-      <nav class="record-links" aria-label="${escapeHtml(study.number)} 学習記録">
-        <a class="text-link" href="./${encodeURIComponent(study.number)}/index.html" aria-label="${escapeHtml(study.number)} ${escapeHtml(study.title)}を開く">OPEN</a>
-      </nav>
-    </article>`
-    )
-    .join("\n");
-
-  const previousLink = previous
-    ? `<a class="text-link" href="../${dateKey(previous.date)}/index.html">← ${formatDotDate(previous.date)}</a>`
-    : `<span></span>`;
-
-  const nextLink = next
-    ? `<a class="text-link" href="../${dateKey(next.date)}/index.html">${formatDotDate(next.date)} →</a>`
-    : `<span></span>`;
-
-  return createSimpleRecordPage({
-    documentTitle: `${formatJapaneseDate(record.date)} | 数学学習記録`,
-    kicker: "MATH STUDY LOG",
-    title: formatDotDate(record.date),
-    actions: `<a class="text-link" href="../../index.html">TOP</a>`,
-    content: `<section class="record-list">${studyItems}\n  </section>\n  <nav class="day-navigation" aria-label="学習日の移動">${previousLink}${nextLink}</nav>`,
-    displayYear: record.date.slice(0, 4)
-  });
-}
-
-function sessionPageStyles() {
-  return `.session-content {
-  padding: 4px 0 24px;
-  border-top: 1px solid var(--line);
-  overflow-wrap: anywhere;
-}
-
-.session-content > *:first-child {
-  margin-top: 22px;
-}
-
-.session-content h2 {
-  margin: 34px 0 14px;
-  color: var(--accent);
-  font-size: 17px;
-  line-height: 1.55;
-}
-
-.session-content h3 {
-  margin: 26px 0 10px;
-  font-size: 15px;
-}
-
-.session-content p,
-.session-content ul,
-.session-content ol,
-.session-content blockquote,
-.session-content pre,
-.session-content table {
-  margin: 0 0 18px;
-}
-
-.session-content ul,
-.session-content ol {
-  padding-left: 1.5em;
-}
-
-.session-content blockquote {
-  padding: 10px 14px;
-  border-left: 3px solid var(--accent);
-  background: var(--panel);
-  color: var(--ink-soft);
-}
-
-.session-content pre {
-  max-width: 100%;
-  padding: 13px 14px;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--panel);
-  font: 12px/1.7 "JetBrains Mono", monospace;
-}
-
-.session-content code {
-  font-family: "JetBrains Mono", monospace;
-}
-
-.session-content table {
-  display: block;
-  width: max-content;
-  max-width: 100%;
-  overflow-x: auto;
-  border-collapse: collapse;
-}
-
-.session-content th,
-.session-content td {
-  min-width: 120px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  text-align: left;
-}
-
-.session-content th {
-  background: #e8f0f0;
-}
-
-.session-content img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin: 20px auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-}
-
-.session-content a {
-  color: var(--accent);
-}
-
-mjx-container[display="true"] {
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 4px 0;
-}`;
-}
-
-function mathJaxHead(inlineDollarMath = false) {
-  const inlineMath = inlineDollarMath
-    ? `[["\\\\(", "\\\\)"], ["$", "$"]]`
-    : `[["\\\\(", "\\\\)"]]`;
-
-  return `<script>
-window.MathJax = {
-  tex: {
-    inlineMath: ${inlineMath},
-    displayMath: [["\\\\[", "\\\\]"], ["$$", "$$"]]
-  },
-  options: {
-    skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"]
+function cleanPublicOutput() {
+  fs.mkdirSync(publicDir, { recursive: true });
+  const preserved = new Set(["assets", "images", "og-image.png"]);
+  for (const entry of fs.readdirSync(publicDir, { withFileTypes: true })) {
+    if (!preserved.has(entry.name)) fs.rmSync(path.join(publicDir, entry.name), { recursive: true, force: true });
   }
-};
-</script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>`;
+  fs.mkdirSync(dailyOutputDir, { recursive: true });
+  fs.writeFileSync(path.join(dailyOutputDir, ".gitkeep"), "", "utf8");
 }
 
-function createLegacyRecordPage(record) {
-  const newUrl = `./${dateKey(record.date)}/index.html`;
-
-  return createSimpleRecordPage({
-    documentTitle: `${formatJapaneseDate(record.date)} | 数学学習記録`,
-    kicker: "MATH STUDY LOG",
-    title: formatDotDate(record.date),
-    actions: `<a class="text-link" href="../index.html">TOP</a>`,
-    content: `<section class="move-notice">\n    <p>この記録は新しいページへ移動しました。</p>\n    <a class="text-link" href="${newUrl}">新しいページへ</a>\n  </section>`,
-    displayYear: record.date.slice(0, 4)
-  });
-}
-
-function archivePageStyles() {
-  return `.archive-list {
-  border-top: 1px solid var(--line);
-}
-
-.archive-item {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 18px;
-  padding: 16px 2px;
-  border-bottom: 1px solid var(--line);
-}
-
-.archive-date {
-  color: var(--ink-soft);
-  font: 500 12px/1.5 "JetBrains Mono", monospace;
-}
-
-.archive-title {
-  color: var(--ink);
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.archive-title:hover {
-  color: var(--accent);
-}
-
-@media (max-width: 600px) {
-  .archive-item {
-    grid-template-columns: 1fr;
-    gap: 3px;
-    padding: 14px 1px;
-  }
-}`;
-}
-
-function hasCategoryContent(study, kind) {
-  return kind === "log"
-    ? study.images.length > 0
-    : Boolean(study.sessionMarkdown?.trim());
-}
-
-function createArchivePage(kind, entries) {
-  const pageName = kind.toUpperCase();
-  const items = entries
-    .filter(({ study }) => hasCategoryContent(study, kind))
-    .map(
-      ({ record, study }) => `
-    <div class="archive-item">
-      <div class="archive-date">${formatDotDate(record.date)}</div>
-      <a class="archive-title" href="../records/${dateKey(record.date)}/${encodeURIComponent(study.number)}/${kind}.html">${escapeHtml(study.title)}</a>
-    </div>`
-    )
-    .join("\n");
-
-  return createSimpleRecordPage({
-    documentTitle: `${pageName} | 数学学習記録`,
-    kicker: "MATH STUDY LOG",
-    title: pageName,
-    actions: `<a class="text-link" href="../index.html">TOP</a>`,
-    content: `<section class="archive-list">${items}\n  </section>`,
-    displayYear: records.length > 0
-      ? records[records.length - 1].date.slice(0, 4)
-      : new Date().getFullYear(),
-    extraStyles: archivePageStyles()
-  });
-}
-
-/*
-トップページ生成
-*/
-
-// 新方式の画像はソースのlogsとは分け、ブラウザから参照できる専用パスへ公開する。
-fs.rmSync(dailyOutputDir, { recursive: true, force: true });
-
-for (const [index, log] of dailyLogs.entries()) {
-  const sourceDir = path.join(logsDir, log.dateKey.slice(0, 4), log.dateKey);
-  const outputDir = path.join(dailyOutputDir, log.dateKey);
-  const outputImagesDir = path.join(outputDir, "images");
-  fs.mkdirSync(outputDir, { recursive: true });
-
-  if (log.images.length > 0) {
-    fs.mkdirSync(outputImagesDir, { recursive: true });
-
-    for (const image of log.images) {
-      fs.copyFileSync(
-        path.join(sourceDir, image),
-        path.join(outputImagesDir, image)
-      );
-    }
-  }
-
-  fs.writeFileSync(
-    path.join(outputDir, "index.html"),
-    createDailyLogPage(log, index),
-    "utf8"
-  );
-}
-
-fs.writeFileSync(
-  path.join(publicDir, "index.html"),
-  createIndexPage(),
-  "utf8"
-);
-
-/*
-recordsページ生成
-*/
-
-const archiveEntries = records
-  .flatMap((record) =>
-    studiesForRecord(record).map((study) => ({ record, study }))
-  )
-  .sort(
-    (a, b) =>
-      b.record.date.localeCompare(a.record.date) ||
-      b.study.number.localeCompare(a.study.number)
-  );
-
-records.forEach((record, index) => {
-  const recordDir = path.join(recordsDir, dateKey(record.date));
-  const studies = studiesForRecord(record);
-
-  fs.mkdirSync(recordDir, { recursive: true });
-
-  fs.writeFileSync(
-    path.join(recordDir, "index.html"),
-    createRecordIndexPage(record, index),
-    "utf8"
-  );
-
-  for (const study of studies) {
-    const studyDir = path.join(recordDir, study.number);
-    const studyImagesDir = path.join(studyDir, "images");
-
-    fs.mkdirSync(studyImagesDir, { recursive: true });
-
-    // 生成先に旧拡張子の画像を残さず、現在のLOG画像だけを公開する。
-    for (const entry of fs.readdirSync(studyImagesDir, { withFileTypes: true })) {
-      if (isImageFile(entry)) {
-        fs.unlinkSync(path.join(studyImagesDir, entry.name));
-      }
-    }
-
-    for (const image of study.images) {
-      fs.copyFileSync(
-        imageSources.get(image),
-        path.join(studyImagesDir, image)
-      );
-    }
-
-    fs.writeFileSync(
-      path.join(studyDir, "index.html"),
-      createStudyPage(record, study),
-      "utf8"
-    );
-
-    for (const kind of ["log", "session"]) {
-      fs.writeFileSync(
-        path.join(studyDir, `${kind}.html`),
-        createStudyPage(record, study, kind),
-        "utf8"
-      );
-    }
-  }
-
-  fs.writeFileSync(
-    path.join(recordsDir, `${record.date}.html`),
-    createLegacyRecordPage(record),
-    "utf8"
-  );
-});
-
-fs.writeFileSync(
-  path.join(publicDir, "log", "index.html"),
-  createArchivePage("log", archiveEntries),
-  "utf8"
-);
-
-fs.writeFileSync(
-  path.join(publicDir, "session", "index.html"),
-  createArchivePage("session", archiveEntries),
-  "utf8"
-);
-
-/*
-sitemap.xml を自動生成
-*/
-
-const sitemapUrls = [
-  `${siteUrl}/`,
-  `${siteUrl}/log/`,
-  `${siteUrl}/session/`,
-  ...dailyLogs.map(
-    (log) => `${siteUrl}/daily/${log.dateKey}/`
-  ),
-  ...records.map(
-    (record) => `${siteUrl}/records/${dateKey(record.date)}/`
-  ),
-  ...archiveEntries.map(({ record, study }) =>
-    `${siteUrl}/records/${dateKey(record.date)}/${study.number}/index.html`
-  ),
-  ...archiveEntries.flatMap(({ record, study }) =>
-    ["log", "session"].filter((kind) => hasCategoryContent(study, kind)).map((kind) =>
-      `${siteUrl}/records/${dateKey(record.date)}/${study.number}/${kind}.html`
-    )
-  )
-];
-
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+function writeSitemap(logs) {
+  const urls = [`${siteUrl}/`, ...logs.map((log) => `${siteUrl}/daily/${log.dateKey}/`)];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${sitemapUrls
-  .map(
-    (url) => `  <url>
-    <loc>${url}</loc>
-  </url>`
-  )
-  .join("\n")}
+${urls.map((url) => `  <url>\n    <loc>${url}</loc>\n  </url>`).join("\n")}
 </urlset>
 `;
+  fs.writeFileSync(path.join(publicDir, "sitemap.xml"), xml, "utf8");
+}
 
-fs.writeFileSync(
-  path.join(publicDir, "sitemap.xml"),
-  sitemap,
-  "utf8"
-);
+function build() {
+  const logs = loadLogs(logsDir);
+  cleanPublicOutput();
+  for (const [index, log] of logs.entries()) {
+    const sourceDir = path.join(logsDir, log.dateKey.slice(0, 4), log.dateKey);
+    const outputDir = path.join(dailyOutputDir, log.dateKey);
+    const outputImagesDir = path.join(outputDir, "images");
+    fs.mkdirSync(outputDir, { recursive: true });
+    if (log.images.length > 0) {
+      fs.mkdirSync(outputImagesDir, { recursive: true });
+      for (const image of log.images) fs.copyFileSync(path.join(sourceDir, image), path.join(outputImagesDir, image));
+    }
+    fs.writeFileSync(path.join(outputDir, "index.html"), createDailyPage(log, index, logs), "utf8");
+  }
+  fs.writeFileSync(path.join(publicDir, "index.html"), createHomePage(logs), "utf8");
+  writeSitemap(logs);
+  fs.writeFileSync(path.join(publicDir, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`, "utf8");
+  console.log("Math Study Log build complete.");
+  console.log(`Daily logs : ${logs.length}`);
+}
 
-/*
-robots.txt を自動生成
-*/
-
-const robots = `User-agent: *
-Allow: /
-
-Sitemap: ${siteUrl}/sitemap.xml
-`;
-
-fs.writeFileSync(
-  path.join(publicDir, "robots.txt"),
-  robots,
-  "utf8"
-);
-
-console.log("");
-console.log("Math Study Log build complete.");
-console.log(`Study days : ${records.length}`);
-console.log(
-  `Problems   : ${records.reduce(
-    (total, record) => total + problemCount(record),
-    0
-  )}`
-);
-console.log(`Images     : ${imageFiles.length}`);
-console.log(`New logs   : ${dailyLogs.length}`);
-console.log("");
+build();

@@ -1,12 +1,5 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const MarkdownIt = require("markdown-it");
-
-const markdown = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: false
-});
 
 function isValidDateKey(dateKey) {
   if (!/^\d{8}$/.test(dateKey)) return false;
@@ -75,7 +68,6 @@ function loadLogs(logsDir) {
         date: isoDateFromKey(dateKey),
         dateKey,
         markdown: markdownSource,
-        markdownHtml: markdown.render(markdownSource),
         images,
         coverImage: images.includes(expectedCoverImage)
           ? expectedCoverImage

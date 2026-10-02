@@ -1,71 +1,29 @@
 # Math Study Log
 
-数学学習記録の静的サイトです。`content/records/` に記事を置き、GitHub Actions のビルドで目次・カレンダー・公開HTMLを自動生成します。
+毎日の数学学習を、紙の写真と自由記載のMarkdownで残す静的サイトです。
 
-## 新方式の学習記録
+## 学習記録の追加
 
-2026年10月以降の学習記録は、旧方式とは独立した `logs/` に次の形で置けます。
-
-```text
-logs/YYYY/YYYYMMDD/
-  YYYYMMDD.md
-  YYYYMMDD-1.webp
-  YYYYMMDD-2.webp
-```
-
-ビルド時に `scripts/load-logs.js` が日付、Markdown本文とHTML、画像一覧、代表画像、画像枚数を読み込みます。Markdownや画像がない日も安全に扱います。代表画像は `public/daily/YYYYMMDD/images/` にコピーされ、トップページに最新20件（タブレット12件、スマートフォン5件）を表示します。それ以前の記録は年・月別の折りたたみにまとめます。
-
-## 記事の追加
-
-1つのフォルダーに、1つのChatGPTオリジナル問題を置きます。同日に複数問ある場合は `001`、`002`、`003` と分けます。
+1日につき1フォルダーを `logs/` に追加します。
 
 ```text
-content/records/YYYYMMDD/NNN/
-  images/
-    YYYYMMDD-NNN-1.webp
-    YYYYMMDD-NNN-2.webp  # 2枚目がある場合
-  session.md
-  question.md
-  answer.md
-  meta.json
+logs/
+└─ YYYY/
+   └─ YYYYMMDD/
+      ├─ YYYYMMDD-1.webp
+      ├─ YYYYMMDD-2.webp
+      └─ YYYYMMDD.md
 ```
 
-- `session.md`: 教材でのつまずき、修正、気づき、ポイントのみ。教材の問題文や模範解答は載せません。
-- `question.md`: ChatGPTオリジナル問題。ヒントは `<details>` / `<summary>` で折りたたみます。
-- `answer.md`: 解説と模範解答。模範解答は `<details>` / `<summary>` で折りたたみます。
-- `meta.json`: 日付、番号、タイトル、分類。
+- フォルダー名は `YYYYMMDD` です。
+- 画像は `YYYYMMDD-1.webp` から始め、ページ順に番号を付けます。
+- `YYYYMMDD.md` はfront matterなしの自由記載です。
+- 画像1枚を学習1ページとして数えます。
+- 1枚目の画像がトップページの代表画像になります。
 
-LOG画像は `.webp` のみで、枝番は枚数にかかわらず必ず `-1` から始めます。`f`、`r`、`extra` は使いません。
+更新時にJSON、分類、一覧、HTMLを編集する必要はありません。WebPとMarkdownを追加してcommit・pushすると、GitHub Actionsがトップページ、日別ページ、sitemapを自動生成します。
 
-## 分類
-
-`session.md`、`question.md`、`answer.md` の先頭に同じ分類コメントを置きます。
-
-```md
-<!--
-subject: 数学III
-category: 極限
-subcategory: 数列の極限
--->
-```
-
-科目・中分類の名称と順番は `content/classification-master.json` で管理します。カレンダーと目次はビルド時に自動更新されます。
-
-## 公開ページ
-
-記事は次の順に縦表示します。
-
-```text
-SESSION
-ORIGINAL QUESTION
-LOG
-EXPLANATION
-MODEL ANSWER（折りたたみ）
-```
-
-LOGが1枚ならそのまま表示し、2枚以上なら1枚目の後の `more` に残りを収めます。PCとスマートフォンは同じ表示順です。
-
-## 確認
+## ローカル確認
 
 ```sh
 npm ci
@@ -73,4 +31,11 @@ npm test
 npm run build
 ```
 
-日常の更新は、所定のフォルダーにファイルを置いて Commit & Push するだけで完了します。
+生成物は `public/` に出力されます。`logs/` が空でもビルドできます。
+
+## 公開ページ
+
+- `/`：最新の写真グリッドと年月別アーカイブ
+- `/daily/YYYYMMDD/`：その日の全画像とMarkdown全文
+
+GitHub Pagesへのデプロイは `.github/workflows/deploy.yml` で行います。
