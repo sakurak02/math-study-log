@@ -433,6 +433,10 @@ function createHomePage(logs) {
   const sorted = [...logs].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   const latest = sorted.slice(0, 20);
   const archived = sorted.slice(20);
+  const latestWithImage = sorted.find((log) => log.coverImage);
+  const ogImage = latestWithImage
+    ? `${siteUrl}/daily/${latestWithImage.dateKey}/images/${encodeURIComponent(latestWithImage.coverImage)}`
+    : siteOgImageUrl;
   const year = sorted[0]?.date.slice(0, 4) || new Date().getFullYear();
   const logContent = sorted.length
     ? `<div class="daily-log-subheading">LATEST</div>
@@ -445,7 +449,7 @@ function createHomePage(logs) {
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
-${documentHead({ title: "数学学習記録 | Math Study Log", description: defaultDescription, url: `${siteUrl}/` })}
+${documentHead({ title: "数学学習記録 | Math Study Log", description: defaultDescription, url: `${siteUrl}/`, image: ogImage })}
 <style>${baseStyles()}\n${homeStyles()}</style>
 </head>
 <body>

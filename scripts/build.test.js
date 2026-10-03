@@ -133,6 +133,8 @@ test("empty build keeps current branding and removes stale generated output", (t
   assert.match(page, /https:\/\/sakurak02\.github\.io\/some-clouds\//);
   assert.match(page, /googletagmanager\.com\/gtag\/js\?id=G-LTZZZFVRKP/);
   assert.match(page, /assets\/cloud\.svg/);
+  assert.match(page, /property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/og-image\.png"/);
+  assert.match(page, /name="twitter:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/og-image\.png"/);
   assertInlineScriptsParse(page);
   assert.equal(build.exists("public/records"), false);
   assert.equal(build.exists("public/log"), false);
@@ -194,6 +196,10 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   assert.match(page, /const latestCount = mobile\.matches \? 5 : tablet\.matches \? 12 : 20;/);
   assert.match(page, /@media \(max-width: 600px\)[\s\S]*\.daily-log-grid \{ grid-template-columns: minmax\(0, 1fr\)/);
   assert.match(page, /\.daily-log-excerpt \{[^}]*white-space: pre-line;[^}]*-webkit-line-clamp: 3;/);
+  assert.match(page, /property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/daily\/20261010\/images\/20261010-1\.webp"/);
+  assert.match(page, /name="twitter:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/daily\/20261010\/images\/20261010-1\.webp"/);
+  assert.match(page, /property="og:url" content="https:\/\/sakurak02\.github\.io\/math-study-log\/"/);
+  assert.match(page, /rel="canonical" href="https:\/\/sakurak02\.github\.io\/math-study-log\/"/);
   assertInlineScriptsParse(page);
 
   const dailyPage = build.read("public/daily/20261010/index.html");
