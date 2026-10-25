@@ -1,0 +1,14 @@
+{
+  "数学学習記録テンプレート": {
+    "scope": "markdown",
+    "prefix": "mathlog",
+    "body": [
+      "---",
+      "category: 未分類",
+      "---",
+      "",
+      "$0"
+    ],
+    "description": "数学学習記録の新規Markdown"
+  }
+}

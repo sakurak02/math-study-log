@@ -10,14 +10,14 @@
 <meta property="og:description" content="64歳から数学を学び直し、毎日の勉強を写真と短い記録で残す学習記録サイトです。">
 <meta property="og:url" content="https://sakurak02.github.io/math-study-log/">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://sakurak02.github.io/math-study-log/daily/20261003/images/20261003-1.webp">
+<meta property="og:image" content="https://sakurak02.github.io/math-study-log/daily/20261011/images/20261011-1.webp">
 <meta property="og:image:alt" content="数学学習記録 | Math Study Log">
 <meta property="og:site_name" content="Math Study Log">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="数学学習記録 | Math Study Log">
 <meta name="twitter:description" content="64歳から数学を学び直し、毎日の勉強を写真と短い記録で残す学習記録サイトです。">
-<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/daily/20261003/images/20261003-1.webp">
+<meta name="twitter:image" content="https://sakurak02.github.io/math-study-log/daily/20261011/images/20261011-1.webp">
 <link rel="canonical" href="https://sakurak02.github.io/math-study-log/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,6 +45,7 @@ html { background: var(--bg); }
 body { min-width: 320px; margin: 0; background: var(--bg); color: var(--ink); font-family: "Noto Sans JP", sans-serif; line-height: 1.8; }
 a { color: inherit; }
 img { max-width: 100%; }
+.log-category { margin-top: 5px; color: var(--ink-soft); font-size: 11px; font-weight: 400; overflow-wrap: anywhere; }
 p, h1, h2, h3, figure { margin: 0; }
 .some-clouds-link { position: fixed; top: 10px; right: 14px; z-index: 10; color: var(--ink-soft); font: 500 9px/1.5 "JetBrains Mono", monospace; letter-spacing: .08em; text-decoration: none; }
 .some-clouds-link:hover, .some-clouds-link:focus-visible { color: var(--accent); }
@@ -81,6 +82,14 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
 .daily-log-image-placeholder { display: grid; place-items: center; color: var(--ink-soft); font: 500 10px/1.5 "JetBrains Mono", monospace; }
 .daily-log-body { display: flex; min-height: 88px; flex: 1; flex-direction: column; padding: 8px; }
 .daily-log-date { font: 600 10px/1.45 "JetBrains Mono", monospace; }
+.daily-log-body .log-category { font-size: 9px; }
+.category-index { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.category-subjects { margin-top: 10px; }
+.category-index summary { width: fit-content; padding: 5px 0; color: var(--ink-soft); font-size: 12px; cursor: pointer; }
+.category-index summary:hover, .category-index summary:focus-visible { color: var(--accent); }
+.category-chapters { margin-left: 18px; }
+.category-list { margin: 4px 0 12px; border-left: 2px solid var(--line); }
+.category-empty { padding: 4px 12px 10px; color: var(--ink-soft); font-size: 11px; }
 .daily-log-excerpt { display: -webkit-box; min-height: 4.65em; max-height: 4.65em; margin-top: 4px; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .daily-log-pages { margin-top: auto; padding-top: 5px; border-top: 1px solid var(--line); color: var(--ink-soft); font: 500 9px/1.4 "JetBrains Mono", monospace; }
 .daily-log-empty { padding: 20px 0; color: var(--ink-soft); font-size: 13px; }
@@ -140,11 +149,119 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
   <section class="daily-log-section" aria-labelledby="daily-log-title">
     <div class="daily-log-heading"><div class="daily-log-kicker">LEARNING LOG</div><h2 id="daily-log-title">学習記録</h2></div>
     <div class="daily-log-subheading">LATEST</div>
-    <div class="daily-log-grid" id="daily-log-latest"><article class="daily-log-card" data-daily-log-entry data-date-key="20261003" data-date="2026-10-03" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ/1ページ&#10;49関数の片側からの極限&#10;50関数の極限(2)&#10;50関数の極限(3)&#10;ここ、割と好き。絶対値の符号に注意。" data-archive-excerpt="-数学Ⅲ/1ページ -49関数の片側からの極限 -50関数の極限(2) -50関数の極限(3) -ここ、割と好き。絶対値の符号に注意。" data-cover-image="20261003-1.webp" data-page-count="1">
+    <div class="daily-log-grid" id="daily-log-latest"><article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261025" data-date="2026-10-25" data-year="2026" data-month="10" data-card-excerpt="{&#10;&quot;数学学習記録テンプレート&quot;: {&#10;&quot;scope&quot;: &quot;markdown&quot;,&#10;&quot;prefix&quot;: &quot;mathlog&quot;,&#10;&quot;body&quot;: [&#10;&quot;---&quot;,&#10;&quot;category: $1&quot;,&#10;&quot;---&quot;,&#10;&quot;&quot;,&#10;&quot;# ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}&quot;,&#10;&quot;&quot;,&#10;&quot;- ${2:今日やったこと}&quot;,&#10;&quot;- ${3:気づいたこと}&quot;,&#10;&quot;- ${4:教材づくりメモ}&quot;,&#10;&quot;&quot;,&#10;&quot;$0&quot;&#10;],&#10;&quot;descripti…" data-archive-excerpt="{ &quot;数学学習記録テンプレート&quot;: { &quot;scope&quot;: &quot;markdown&quot;, &quot;prefix&quot;: &quot;mathlog&quot;, &quot;body&quot;: [ &quot;---&quot;, &quot;category: $1&quot;, &quot;---&quot;, &quot;&quot;, &quot;# ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}&quot;, &quot;&quot;, &quot;- ${2:今日やったこと}…" data-cover-image="" data-page-count="0">
+  <a class="daily-log-card-link" href="./daily/20261025/" aria-label="2026年10月25日の学習記録を開く">
+    <div class="daily-log-media"><div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div></div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="2026-10-25">2026.10.25</time>
+      <p class="log-category">未分類</p>
+      <p class="daily-log-excerpt">{
+&quot;数学学習記録テンプレート&quot;: {
+&quot;scope&quot;: &quot;markdown&quot;,
+&quot;prefix&quot;: &quot;mathlog&quot;,
+&quot;body&quot;: [
+&quot;---&quot;,
+&quot;category: $1&quot;,
+&quot;---&quot;,
+&quot;&quot;,
+&quot;# ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}&quot;,
+&quot;&quot;,
+&quot;- ${2:今日やったこと}&quot;,
+&quot;- ${3:気づいたこと}&quot;,
+&quot;- ${4:教材づくりメモ}&quot;,
+&quot;&quot;,
+&quot;$0&quot;
+],
+&quot;descripti…</p>
+      <div class="daily-log-pages">0 pages</div>
+    </div>
+  </a>
+</article>
+<article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261011" data-date="2026-10-11" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ&#10;59 中間値の定理の利用&#10;この定理、何のためにあるかわからなかった。&#10;グラフ描けばわかるじゃんって思った。だからチャッピーに聞いた。&#10;（チャッピーの回答）中間値の定理は、「どこにあるか」を教えてくれる定理ではなく、「その値をとる場所が必ずある」と保証してくれる定理です。&#10;グラフは、その存在を視覚的に納得するためのもの。&#10;定理は、それを数学的に証明するためのもの。&#10;この違いです。&#10;そして、数学では「たぶんある」「グラフを見るとありそうだ」ではなく、必ず存在すると論理的…" data-archive-excerpt="数学Ⅲ 59 中間値の定理の利用 この定理、何のためにあるかわからなかった。 グラフ描けばわかるじゃんって思った。だからチャッピーに聞いた。 （チャッピーの回答）中間値の定理は、「どこにあるか」を教えてくれる定理ではなく、「その値をとる場所が必ずある」と保証してくれる定理です。 グラフは、その存在を視覚的に納得するためのもの。 定理は、それを数学的に証明す…" data-cover-image="20261011-1.webp" data-page-count="1">
+  <a class="daily-log-card-link" href="./daily/20261011/" aria-label="2026年10月11日の学習記録を開く">
+    <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261011/images/20261011-1.webp" alt="2026年10月11日の学習写真" loading="lazy"></div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="2026-10-11">2026.10.11</time>
+      <p class="log-category">未分類</p>
+      <p class="daily-log-excerpt">数学Ⅲ
+59 中間値の定理の利用
+この定理、何のためにあるかわからなかった。
+グラフ描けばわかるじゃんって思った。だからチャッピーに聞いた。
+（チャッピーの回答）中間値の定理は、「どこにあるか」を教えてくれる定理ではなく、「その値をとる場所が必ずある」と保証してくれる定理です。
+グラフは、その存在を視覚的に納得するためのもの。
+定理は、それを数学的に証明するためのもの。
+この違いです。
+そして、数学では「たぶんある」「グラフを見るとありそうだ」ではなく、必ず存在すると論理的…</p>
+      <div class="daily-log-pages">1 page</div>
+    </div>
+  </a>
+</article>
+<article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261010" data-date="2026-10-10" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ&#10;56 関数の連続・不連続について&#10;意味はわかるけど、答案がちゃんと書けない&#10;ガウスへの拒否反応、グラフを描くと落ち着く&#10;ここも、要復習" data-archive-excerpt="-数学Ⅲ -56 関数の連続・不連続について -意味はわかるけど、答案がちゃんと書けない -ガウスへの拒否反応、グラフを描くと落ち着く -ここも、要復習" data-cover-image="20261010-1.webp" data-page-count="1">
+  <a class="daily-log-card-link" href="./daily/20261010/" aria-label="2026年10月10日の学習記録を開く">
+    <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261010/images/20261010-1.webp" alt="2026年10月10日の学習写真" loading="lazy"></div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="2026-10-10">2026.10.10</time>
+      <p class="log-category">未分類</p>
+      <p class="daily-log-excerpt">数学Ⅲ
+56 関数の連続・不連続について
+意味はわかるけど、答案がちゃんと書けない
+ガウスへの拒否反応、グラフを描くと落ち着く
+ここも、要復習</p>
+      <div class="daily-log-pages">1 page</div>
+    </div>
+  </a>
+</article>
+<article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261009" data-date="2026-10-09" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ&#10;55 三角関数の極限の図形への応用&#10;正弦定理、内分点の座標、sinθ/θの利用&#10;これらを使って、てきぱきと処理する&#10;そういわれたらそうなんやけど、のパターン" data-archive-excerpt="-数学Ⅲ -55 三角関数の極限の図形への応用 -正弦定理、内分点の座標、sinθ/θの利用 -これらを使って、てきぱきと処理する -そういわれたらそうなんやけど、のパターン" data-cover-image="20261009-1.webp" data-page-count="1">
+  <a class="daily-log-card-link" href="./daily/20261009/" aria-label="2026年10月9日の学習記録を開く">
+    <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261009/images/20261009-1.webp" alt="2026年10月9日の学習写真" loading="lazy"></div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="2026-10-09">2026.10.09</time>
+      <p class="log-category">未分類</p>
+      <p class="daily-log-excerpt">数学Ⅲ
+55 三角関数の極限の図形への応用
+正弦定理、内分点の座標、sinθ/θの利用
+これらを使って、てきぱきと処理する
+そういわれたらそうなんやけど、のパターン</p>
+      <div class="daily-log-pages">1 page</div>
+    </div>
+  </a>
+</article>
+<article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261006" data-date="2026-10-06" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ&#10;53 三角関数の極限(1)&#10;54 三角関数の極限(2)&#10;置き換え楽しい&#10;急にはさみうち思いつかない、慣れるしかないな" data-archive-excerpt="-数学Ⅲ -53 三角関数の極限(1) -54 三角関数の極限(2) -置き換え楽しい -急にはさみうち思いつかない、慣れるしかないな" data-cover-image="20261006-1.webp" data-page-count="1">
+  <a class="daily-log-card-link" href="./daily/20261006/" aria-label="2026年10月6日の学習記録を開く">
+    <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261006/images/20261006-1.webp" alt="2026年10月6日の学習写真" loading="lazy"></div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="2026-10-06">2026.10.06</time>
+      <p class="log-category">未分類</p>
+      <p class="daily-log-excerpt">数学Ⅲ
+53 三角関数の極限(1)
+54 三角関数の極限(2)
+置き換え楽しい
+急にはさみうち思いつかない、慣れるしかないな</p>
+      <div class="daily-log-pages">1 page</div>
+    </div>
+  </a>
+</article>
+<article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261004" data-date="2026-10-04" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ&#10;52 関数の極限(4)はさみうちの原理&#10;ここは難しかった&#10;解答見ずに書けるようになるまで3回かかった&#10;そしてきっとすぐ忘れそう、要復習" data-archive-excerpt="-数学Ⅲ -52 関数の極限(4)はさみうちの原理 -ここは難しかった -解答見ずに書けるようになるまで3回かかった -そしてきっとすぐ忘れそう、要復習" data-cover-image="20261004-1.webp" data-page-count="1">
+  <a class="daily-log-card-link" href="./daily/20261004/" aria-label="2026年10月4日の学習記録を開く">
+    <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261004/images/20261004-1.webp" alt="2026年10月4日の学習写真" loading="lazy"></div>
+    <div class="daily-log-body">
+      <time class="daily-log-date" datetime="2026-10-04">2026.10.04</time>
+      <p class="log-category">未分類</p>
+      <p class="daily-log-excerpt">数学Ⅲ
+52 関数の極限(4)はさみうちの原理
+ここは難しかった
+解答見ずに書けるようになるまで3回かかった
+そしてきっとすぐ忘れそう、要復習</p>
+      <div class="daily-log-pages">1 page</div>
+    </div>
+  </a>
+</article>
+<article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261003" data-date="2026-10-03" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ/1ページ&#10;49関数の片側からの極限&#10;50関数の極限(2)&#10;50関数の極限(3)&#10;ここ、割と好き。絶対値の符号に注意。" data-archive-excerpt="-数学Ⅲ/1ページ -49関数の片側からの極限 -50関数の極限(2) -50関数の極限(3) -ここ、割と好き。絶対値の符号に注意。" data-cover-image="20261003-1.webp" data-page-count="1">
   <a class="daily-log-card-link" href="./daily/20261003/" aria-label="2026年10月3日の学習記録を開く">
     <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261003/images/20261003-1.webp" alt="2026年10月3日の学習写真" loading="lazy"></div>
     <div class="daily-log-body">
       <time class="daily-log-date" datetime="2026-10-03">2026.10.03</time>
+      <p class="log-category">未分類</p>
       <p class="daily-log-excerpt">数学Ⅲ/1ページ
 49関数の片側からの極限
 50関数の極限(2)
@@ -154,11 +271,12 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
     </div>
   </a>
 </article>
-<article class="daily-log-card" data-daily-log-entry data-date-key="20261002" data-date="2026-10-02" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ/1ページ&#10;47関数の極限&#10;48極限値の条件から関数の係数決定&#10;まあまあだった。" data-archive-excerpt="-数学Ⅲ/1ページ -47関数の極限 -48極限値の条件から関数の係数決定 -まあまあだった。" data-cover-image="20261002-1.webp" data-page-count="1">
+<article class="daily-log-card" data-daily-log-entry data-category="未分類" data-date-key="20261002" data-date="2026-10-02" data-year="2026" data-month="10" data-card-excerpt="数学Ⅲ/1ページ&#10;47関数の極限&#10;48極限値の条件から関数の係数決定&#10;まあまあだった。" data-archive-excerpt="-数学Ⅲ/1ページ -47関数の極限 -48極限値の条件から関数の係数決定 -まあまあだった。" data-cover-image="20261002-1.webp" data-page-count="1">
   <a class="daily-log-card-link" href="./daily/20261002/" aria-label="2026年10月2日の学習記録を開く">
     <div class="daily-log-media"><img class="daily-log-image" src="./daily/20261002/images/20261002-1.webp" alt="2026年10月2日の学習写真" loading="lazy"></div>
     <div class="daily-log-body">
       <time class="daily-log-date" datetime="2026-10-02">2026.10.02</time>
+      <p class="log-category">未分類</p>
       <p class="daily-log-excerpt">数学Ⅲ/1ページ
 47関数の極限
 48極限値の条件から関数の係数決定
@@ -172,6 +290,43 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
       <div id="daily-log-years"></div>
     </section>
   </section>
+  <section class="category-index" aria-labelledby="category-title"><h2 class="daily-log-kicker" id="category-title">CATEGORY</h2><div class="category-subjects"><details class="category-subject"><summary>数学I</summary><div class="category-chapters"><details class="category-chapter" data-category-name="数学I｜数と式"><summary>数と式</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学I｜集合と命題"><summary>集合と命題</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学I｜2次関数"><summary>2次関数</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学I｜図形と計量"><summary>図形と計量</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学I｜データの分析"><summary>データの分析</summary><p class="category-empty">学習記録はまだありません。</p></details></div></details>
+<details class="category-subject"><summary>数学A</summary><div class="category-chapters"><details class="category-chapter" data-category-name="数学A｜場合の数"><summary>場合の数</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学A｜確率"><summary>確率</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学A｜図形の性質"><summary>図形の性質</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学A｜数学と人間の活動"><summary>数学と人間の活動</summary><p class="category-empty">学習記録はまだありません。</p></details></div></details>
+<details class="category-subject"><summary>数学II</summary><div class="category-chapters"><details class="category-chapter" data-category-name="数学II｜式と証明"><summary>式と証明</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学II｜複素数と方程式"><summary>複素数と方程式</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学II｜図形と方程式"><summary>図形と方程式</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学II｜三角関数"><summary>三角関数</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学II｜指数関数と対数関数"><summary>指数関数と対数関数</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学II｜微分法"><summary>微分法</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学II｜積分法"><summary>積分法</summary><p class="category-empty">学習記録はまだありません。</p></details></div></details>
+<details class="category-subject"><summary>数学B</summary><div class="category-chapters"><details class="category-chapter" data-category-name="数学B｜数列"><summary>数列</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学B｜統計的な推測"><summary>統計的な推測</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学B｜数学と社会生活"><summary>数学と社会生活</summary><p class="category-empty">学習記録はまだありません。</p></details></div></details>
+<details class="category-subject"><summary>数学C</summary><div class="category-chapters"><details class="category-chapter" data-category-name="数学C｜平面上のベクトル"><summary>平面上のベクトル</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学C｜空間のベクトル"><summary>空間のベクトル</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学C｜複素数平面"><summary>複素数平面</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学C｜式と曲線"><summary>式と曲線</summary><p class="category-empty">学習記録はまだありません。</p></details></div></details>
+<details class="category-subject"><summary>数学III</summary><div class="category-chapters"><details class="category-chapter" data-category-name="数学III｜関数"><summary>関数</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学III｜極限"><summary>極限</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学III｜微分法"><summary>微分法</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学III｜微分法の応用"><summary>微分法の応用</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学III｜積分法"><summary>積分法</summary><p class="category-empty">学習記録はまだありません。</p></details>
+<details class="category-chapter" data-category-name="数学III｜積分法の応用"><summary>積分法の応用</summary><p class="category-empty">学習記録はまだありません。</p></details></div></details>
+<details class="category-chapter" data-category-name="未分類"><summary>未分類</summary><div class="category-list"><a class="daily-log-archive-link" href="./daily/20261025/"><time class="daily-log-archive-date" datetime="2026-10-25">2026.10.25</time><span class="daily-log-archive-excerpt">{ &quot;数学学習記録テンプレート&quot;: { &quot;scope&quot;: &quot;markdown&quot;, &quot;prefix&quot;: &quot;mathlog&quot;, &quot;body&quot;: [ &quot;---&quot;, &quot;category: $1&quot;, &quot;---&quot;, &quot;&quot;, &quot;# ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}&quot;, &quot;&quot;, &quot;- ${2:今日やったこと}…</span></a>
+<a class="daily-log-archive-link" href="./daily/20261011/"><time class="daily-log-archive-date" datetime="2026-10-11">2026.10.11</time><span class="daily-log-archive-excerpt">数学Ⅲ 59 中間値の定理の利用 この定理、何のためにあるかわからなかった。 グラフ描けばわかるじゃんって思った。だからチャッピーに聞いた。 （チャッピーの回答）中間値の定理は、「どこにあるか」を教えてくれる定理ではなく、「その値をとる場所が必ずある」と保証してくれる定理です。 グラフは、その存在を視覚的に納得するためのもの。 定理は、それを数学的に証明す…</span></a>
+<a class="daily-log-archive-link" href="./daily/20261010/"><time class="daily-log-archive-date" datetime="2026-10-10">2026.10.10</time><span class="daily-log-archive-excerpt">-数学Ⅲ -56 関数の連続・不連続について -意味はわかるけど、答案がちゃんと書けない -ガウスへの拒否反応、グラフを描くと落ち着く -ここも、要復習</span></a>
+<a class="daily-log-archive-link" href="./daily/20261009/"><time class="daily-log-archive-date" datetime="2026-10-09">2026.10.09</time><span class="daily-log-archive-excerpt">-数学Ⅲ -55 三角関数の極限の図形への応用 -正弦定理、内分点の座標、sinθ/θの利用 -これらを使って、てきぱきと処理する -そういわれたらそうなんやけど、のパターン</span></a>
+<a class="daily-log-archive-link" href="./daily/20261006/"><time class="daily-log-archive-date" datetime="2026-10-06">2026.10.06</time><span class="daily-log-archive-excerpt">-数学Ⅲ -53 三角関数の極限(1) -54 三角関数の極限(2) -置き換え楽しい -急にはさみうち思いつかない、慣れるしかないな</span></a>
+<a class="daily-log-archive-link" href="./daily/20261004/"><time class="daily-log-archive-date" datetime="2026-10-04">2026.10.04</time><span class="daily-log-archive-excerpt">-数学Ⅲ -52 関数の極限(4)はさみうちの原理 -ここは難しかった -解答見ずに書けるようになるまで3回かかった -そしてきっとすぐ忘れそう、要復習</span></a>
+<a class="daily-log-archive-link" href="./daily/20261003/"><time class="daily-log-archive-date" datetime="2026-10-03">2026.10.03</time><span class="daily-log-archive-excerpt">-数学Ⅲ/1ページ -49関数の片側からの極限 -50関数の極限(2) -50関数の極限(3) -ここ、割と好き。絶対値の符号に注意。</span></a>
+<a class="daily-log-archive-link" href="./daily/20261002/"><time class="daily-log-archive-date" datetime="2026-10-02">2026.10.02</time><span class="daily-log-archive-excerpt">-数学Ⅲ/1ページ -47関数の極限 -48極限値の条件から関数の係数決定 -まあまあだった。</span></a></div></details></div></section>
   <div class="guide-divider" aria-hidden="true"><img class="divider-guide" src="./images/kuumo/s2.png" alt=""></div>
   <section class="about-section">
     <div class="about-kicker">MY GOAL</div>
@@ -202,7 +357,7 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
 
   const applyData = (element, entry) => {
     element.dataset.dailyLogEntry = "";
-    for (const key of ["dateKey", "date", "year", "month", "cardExcerpt", "archiveExcerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
+    for (const key of ["dateKey", "date", "year", "month", "category", "cardExcerpt", "archiveExcerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
   };
   const japaneseDate = (date) => {
     const [year, month, day] = date.split("-").map(Number);
@@ -238,13 +393,16 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
     time.className = "daily-log-date";
     time.dateTime = entry.date;
     time.textContent = entry.date.replace(/-/g, ".");
+    const category = document.createElement("p");
+    category.className = "log-category";
+    category.textContent = entry.category;
     const excerpt = document.createElement("p");
     excerpt.className = "daily-log-excerpt";
     excerpt.textContent = entry.cardExcerpt;
     const pages = document.createElement("div");
     pages.className = "daily-log-pages";
     pages.textContent = entry.pageCount + " " + (entry.pageCount === "1" ? "page" : "pages");
-    body.append(time, excerpt, pages);
+    body.append(time, category, excerpt, pages);
     link.append(media, body);
     article.append(link);
     return article;

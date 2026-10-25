@@ -29,7 +29,7 @@ function escapeAttribute(value = "") {
 }
 
 function withoutFirstHeading(source = "") {
-  return source.replace(/^\uFEFF?[ \t]*#[ \t]+[^\r\n]*(?:\r?\n|$)/, "").trim();
+  return source.trim().replace(/^\uFEFF?[ \t]*#[ \t]+\d{4}-\d{2}-\d{2}[ \t]*(?:\r?\n|$)/, "").trim();
 }
 
 function excerptFromMarkdown(source = "", maxLength = 180) {
@@ -167,6 +167,7 @@ html { background: var(--bg); }
 body { min-width: 320px; margin: 0; background: var(--bg); color: var(--ink); font-family: "Noto Sans JP", sans-serif; line-height: 1.8; }
 a { color: inherit; }
 img { max-width: 100%; }
+.log-category { margin-top: 5px; color: var(--ink-soft); font-size: 11px; font-weight: 400; overflow-wrap: anywhere; }
 p, h1, h2, h3, figure { margin: 0; }
 .some-clouds-link { position: fixed; top: 10px; right: 14px; z-index: 10; color: var(--ink-soft); font: 500 9px/1.5 "JetBrains Mono", monospace; letter-spacing: .08em; text-decoration: none; }
 .some-clouds-link:hover, .some-clouds-link:focus-visible { color: var(--accent); }
@@ -191,7 +192,7 @@ footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--ink
 }
 
 function dailyLogDataAttributes(log) {
-  return `data-daily-log-entry data-date-key="${log.dateKey}" data-date="${escapeAttribute(log.date)}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}" data-card-excerpt="${escapeAttribute(cardExcerptFromMarkdown(log.markdown))}" data-archive-excerpt="${escapeAttribute(excerptFromMarkdown(log.markdown))}" data-cover-image="${escapeAttribute(log.coverImage || "")}" data-page-count="${log.pageCount}"`;
+  return `data-daily-log-entry data-category="${escapeAttribute(log.category)}" data-date-key="${log.dateKey}" data-date="${escapeAttribute(log.date)}" data-year="${log.dateKey.slice(0, 4)}" data-month="${log.dateKey.slice(4, 6)}" data-card-excerpt="${escapeAttribute(cardExcerptFromMarkdown(log.markdown))}" data-archive-excerpt="${escapeAttribute(excerptFromMarkdown(log.markdown))}" data-cover-image="${escapeAttribute(log.coverImage || "")}" data-page-count="${log.pageCount}"`;
 }
 
 function createDailyLogCard(log) {
@@ -204,6 +205,7 @@ function createDailyLogCard(log) {
     <div class="daily-log-media">${image}</div>
     <div class="daily-log-body">
       <time class="daily-log-date" datetime="${log.date}">${formatDotDate(log.date)}</time>
+      <p class="log-category">${escapeHtml(log.category)}</p>
       <p class="daily-log-excerpt">${escapeHtml(cardExcerptFromMarkdown(log.markdown))}</p>
       <div class="daily-log-pages">${pageLabel}</div>
     </div>
@@ -238,6 +240,45 @@ function groupArchive(logs) {
 </section>`).join("\n");
 }
 
+const categorySubjects = new Map([
+  ["数学I", ["数と式", "集合と命題", "2次関数", "図形と計量", "データの分析"]],
+  ["数学A", ["場合の数", "確率", "図形の性質", "数学と人間の活動"]],
+  ["数学II", ["式と証明", "複素数と方程式", "図形と方程式", "三角関数", "指数関数と対数関数", "微分法", "積分法"]],
+  ["数学B", ["数列", "統計的な推測", "数学と社会生活"]],
+  ["数学C", ["平面上のベクトル", "空間のベクトル", "複素数平面", "式と曲線"]],
+  ["数学III", ["関数", "極限", "微分法", "微分法の応用", "積分法", "積分法の応用"]],
+  ["未分類", []]
+]);
+
+function createCategoryIndex(logs) {
+  const grouped = new Map();
+  for (const log of logs) {
+    if (!grouped.has(log.category)) grouped.set(log.category, []);
+    grouped.get(log.category).push(log);
+  }
+  const list = (category) => {
+    const entries = grouped.get(category) || [];
+    return entries.length
+      ? `<div class="category-list">${entries.map((log) => `<a class="daily-log-archive-link" href="./daily/${log.dateKey}/"><time class="daily-log-archive-date" datetime="${log.date}">${formatDotDate(log.date)}</time><span class="daily-log-archive-excerpt">${escapeHtml(excerptFromMarkdown(log.markdown))}</span></a>`).join("\n")}</div>`
+      : `<p class="category-empty">学習記録はまだありません。</p>`;
+  };
+  const chapter = (category, label) => `<details class="category-chapter" data-category-name="${escapeAttribute(category)}"><summary>${escapeHtml(label)}</summary>${list(category)}</details>`;
+  const known = new Set(["未分類"]);
+  const subjects = [...categorySubjects].map(([subject, chapters]) => {
+    if (!chapters.length) return chapter(subject, subject);
+    return `<details class="category-subject"><summary>${subject}</summary><div class="category-chapters">${chapters.map((name) => {
+      const category = `${subject}｜${name}`;
+      known.add(category);
+      return chapter(category, name);
+    }).join("\n")}</div></details>`;
+  });
+  // Keep free-text categories discoverable without discarding their value.
+  for (const category of grouped.keys()) {
+    if (!known.has(category)) subjects.push(chapter(category, category));
+  }
+  return `<section class="category-index" aria-labelledby="category-title"><h2 class="daily-log-kicker" id="category-title">CATEGORY</h2><div class="category-subjects">${subjects.join("\n")}</div></section>`;
+}
+
 function homepageScript() {
   return `<script>
 (() => {
@@ -253,7 +294,7 @@ function homepageScript() {
 
   const applyData = (element, entry) => {
     element.dataset.dailyLogEntry = "";
-    for (const key of ["dateKey", "date", "year", "month", "cardExcerpt", "archiveExcerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
+    for (const key of ["dateKey", "date", "year", "month", "category", "cardExcerpt", "archiveExcerpt", "coverImage", "pageCount"]) element.dataset[key] = entry[key];
   };
   const japaneseDate = (date) => {
     const [year, month, day] = date.split("-").map(Number);
@@ -289,13 +330,16 @@ function homepageScript() {
     time.className = "daily-log-date";
     time.dateTime = entry.date;
     time.textContent = entry.date.replace(/-/g, ".");
+    const category = document.createElement("p");
+    category.className = "log-category";
+    category.textContent = entry.category;
     const excerpt = document.createElement("p");
     excerpt.className = "daily-log-excerpt";
     excerpt.textContent = entry.cardExcerpt;
     const pages = document.createElement("div");
     pages.className = "daily-log-pages";
     pages.textContent = entry.pageCount + " " + (entry.pageCount === "1" ? "page" : "pages");
-    body.append(time, excerpt, pages);
+    body.append(time, category, excerpt, pages);
     link.append(media, body);
     article.append(link);
     return article;
@@ -380,6 +424,14 @@ function homeStyles() {
 .daily-log-image-placeholder { display: grid; place-items: center; color: var(--ink-soft); font: 500 10px/1.5 "JetBrains Mono", monospace; }
 .daily-log-body { display: flex; min-height: 88px; flex: 1; flex-direction: column; padding: 8px; }
 .daily-log-date { font: 600 10px/1.45 "JetBrains Mono", monospace; }
+.daily-log-body .log-category { font-size: 9px; }
+.category-index { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
+.category-subjects { margin-top: 10px; }
+.category-index summary { width: fit-content; padding: 5px 0; color: var(--ink-soft); font-size: 12px; cursor: pointer; }
+.category-index summary:hover, .category-index summary:focus-visible { color: var(--accent); }
+.category-chapters { margin-left: 18px; }
+.category-list { margin: 4px 0 12px; border-left: 2px solid var(--line); }
+.category-empty { padding: 4px 12px 10px; color: var(--ink-soft); font-size: 11px; }
 .daily-log-excerpt { display: -webkit-box; min-height: 4.65em; max-height: 4.65em; margin-top: 4px; overflow: hidden; color: var(--ink-soft); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-line; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .daily-log-pages { margin-top: auto; padding-top: 5px; border-top: 1px solid var(--line); color: var(--ink-soft); font: 500 9px/1.4 "JetBrains Mono", monospace; }
 .daily-log-empty { padding: 20px 0; color: var(--ink-soft); font-size: 13px; }
@@ -464,6 +516,7 @@ ${someCloudsLink()}
     <div class="daily-log-heading"><div class="daily-log-kicker">LEARNING LOG</div><h2 id="daily-log-title">学習記録</h2></div>
     ${logContent}
   </section>
+  ${createCategoryIndex(sorted)}
   <div class="guide-divider" aria-hidden="true"><img class="divider-guide" src="./images/kuumo/s2.png" alt=""></div>
   <section class="about-section">
     <div class="about-kicker">MY GOAL</div>
@@ -551,7 +604,7 @@ ${someCloudsLink()}
 <header><div class="header-inner"><div class="header-title">MATH STUDY LOG</div><div class="header-date">数学学習記録</div><div class="header-guide-wrap"><span class="header-guide-copy">クーモとまなぶ</span><img class="header-guide" src="../../images/kuumo/s1.png" alt="案内キャラクター クーモ"></div></div></header>
 <main class="record-main">
   <div class="page-actions"><a class="text-link" href="../../index.html">← 学習記録へ戻る</a></div>
-  <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1></div>
+  <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1><p class="log-category">${escapeHtml(log.category)}</p></div>
   <article class="daily-entry">
     <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${images}</section>
     <section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2><div class="daily-markdown-content">${markdownSource ? markdown.render(normalizeStudyNoteMarkdown(markdownSource)) : ""}</div></section>

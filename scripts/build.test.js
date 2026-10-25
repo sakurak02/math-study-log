@@ -4,6 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
+const vm = require("node:vm");
 const { loadLogs } = require("./load-logs");
 
 const projectDir = path.resolve(__dirname, "..");
@@ -59,6 +60,9 @@ function fixture(t, files = {}) {
     },
     exists(file) {
       return fs.existsSync(path.join(tempDir, file));
+    },
+    write(file, contents) {
+      fs.writeFileSync(path.join(tempDir, file), contents);
     },
     loadLogs() {
       return loadLogs(path.join(tempDir, "logs"));
@@ -176,7 +180,7 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   const page = build.read("public/index.html");
   const archiveStart = page.indexOf('id="daily-log-archive"');
   const latestHtml = page.slice(page.indexOf('id="daily-log-latest"'), archiveStart);
-  const archiveHtml = page.slice(archiveStart, page.indexOf('<div class="guide-divider"', archiveStart));
+  const archiveHtml = page.slice(archiveStart, page.indexOf('<section class="category-index"', archiveStart));
   const expectedOrder = [...dateKeys].sort((a, b) => b.localeCompare(a));
   const latestKeys = [...latestHtml.matchAll(/data-date-key="(\d{8})"/g)].map((match) => match[1]);
   const archiveKeys = [...archiveHtml.matchAll(/data-date-key="(\d{8})"/g)].map((match) => match[1]);
@@ -242,6 +246,149 @@ test("study note renders compact dash lines as a list between paragraphs", (t) =
   assert.doesNotMatch(note, /<h1>|# 2026-10-02|<p>-47/);
   assert.match(page, /\.daily-markdown-content ul, \.daily-markdown-content ol \{[^}]*margin: \.75rem 0 \.75rem 1\.5rem;[^}]*padding-left: 1rem;/);
   assert.match(page, /\.daily-markdown-content li \{[^}]*line-height: 1\.8;[^}]*overflow-wrap: anywhere;/);
+});
+
+test("front matter categories are separated from free-form notes with safe defaults", (t) => {
+  const cases = [
+    ["---\ncategory: 数学III｜極限\n---\n\n今日は47番と48番。", "数学III｜極限", "\n今日は47番と48番。"],
+    ["---\ncategory: 未分類\n---\n漸化式。", "未分類", "漸化式。"],
+    ["昔の自由記入。", "未分類", "昔の自由記入。"],
+    ["---\ntitle: テスト\n---\n本文", "未分類", "本文"],
+    ["---\ncategory: \n---\n本文", "未分類", "本文"],
+    ['\uFEFF---\r\ncategory: "数学B｜数列"\r\n---\r\n本文', "数学B｜数列", "本文"],
+    ["---\ncategory: '数学III｜極限' # コメント\n---\n本文", "数学III｜極限", "本文"],
+    ["---\ncategory: 数学III｜極限 # コメント\n---\n本文", "数学III｜極限", "本文"],
+    ['---\ncategory: "数学III｜極限 # 復習" # コメント\n---\n本文', "数学III｜極限 # 復習", "本文"],
+    ["---\ncategory: [数列]\n---\n本文", "未分類", "本文"],
+    ["---\ncategory: null\n---\n本文", "未分類", "本文"],
+    ["---\ncategory: |\n  数列\n---\n本文", "未分類", "本文"],
+    ["---\ncategory: 未分類\n---", "未分類", ""],
+    ["本文\n\n---\ncategory: 本文中\n---", "未分類", "本文\n\n---\ncategory: 本文中\n---"]
+  ];
+  for (const [source, category, body] of cases) {
+    const build = fixture(t, { "logs/2026/20261025/20261025.md": source });
+    const [log] = build.loadLogs();
+    assert.equal(log.category, category, source);
+    assert.equal(log.markdown, body, source);
+    assert.equal(log.date, "2026-10-25");
+  }
+});
+
+function categorySection(page, category) {
+  return page.split(`data-category-name="${category}"`)[1]?.split("</details>")[0] || "";
+}
+
+test("categories appear on cards and daily pages, with text lists independent of chronology", (t) => {
+  const source = "---\ncategory: 数学III｜極限\n---\n\n今日は47番と48番。\n48番は係数決定の考え方をもう一度見直したい。";
+  const build = fixture(t, {
+    "logs/2026/20261025/20261025.md": source,
+    "logs/2026/20261018/20261018.md": "---\ncategory: 数学III｜極限\n---\n極限の復習",
+    "logs/2026/20261017/20261017.md": "---\ncategory: 数学B｜数列\n---\n漸化式。",
+    "logs/2026/20261016/20261016.md": "---\ncategory: 未分類\n---\n未分類の記録",
+    "logs/2026/20261015/20261015.md": "古い記録"
+  });
+  let result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  let home = build.read("public/index.html");
+  const daily = build.read("public/daily/20261025/index.html");
+  assert.match(home, /<time class="daily-log-date"[^>]*>2026\.10\.25<\/time>\s*<p class="log-category">数学III｜極限<\/p>/);
+  assert.match(daily, /<h1>2026\.10\.25<\/h1><p class="log-category">数学III｜極限<\/p>/);
+  assert.match(daily, /<p>今日は47番と48番。\n48番は係数決定の考え方をもう一度見直したい。<\/p>/);
+  assert.doesNotMatch(home + daily, /category:|<hr>|<h2>category/);
+  const limits = categorySection(home, "数学III｜極限");
+  assert.match(limits, /20261025\/[^]*2026\.10\.25[^]*今日は47番と48番。[^]*20261018\/[^]*極限の復習/);
+  assert.doesNotMatch(limits, /<img|20261017|20261016|20261015|data-daily-log-entry/);
+  assert.match(categorySection(home, "数学B｜数列"), /20261017\/[^]*漸化式。/);
+  assert.match(categorySection(home, "未分類"), /20261016\/[^]*20261015\//);
+  assert.equal((home.match(/data-category-name=/g) || []).length, 30);
+  assert.equal((home.match(/data-daily-log-entry data-category=/g) || []).length, 5);
+  assertInlineScriptsParse(home);
+  const sitemap = build.read("public/sitemap.xml");
+  assert.equal((sitemap.match(/<loc>/g) || []).length, 6);
+  assert.match(sitemap, /\/daily\/20261025\//);
+
+  build.write("logs/2026/20261025/20261025.md", source.replace("数学III｜極限", "数学B｜数列"));
+  result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  home = build.read("public/index.html");
+  assert.doesNotMatch(categorySection(home, "数学III｜極限"), /20261025/);
+  assert.match(categorySection(home, "数学B｜数列"), /20261025\/[^]*20261017\//);
+  assert.match(build.read("public/daily/20261025/index.html"), /class="log-category">数学B｜数列/);
+  assert.equal(build.read("public/sitemap.xml"), sitemap);
+});
+
+test("free-form headings and category values render safely", (t) => {
+  const category = '<script>alert("test")</script>';
+  const build = fixture(t, {
+    "logs/2026/20261025/20261025.md": `---\ncategory: '${category}'\n---\n\n# 漸化式の気づき\n\n本文。\n\n---\n\n後半。`
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const daily = build.read("public/daily/20261025/index.html");
+  const home = build.read("public/index.html");
+  assert.match(daily, /<h1>漸化式の気づき<\/h1>/);
+  assert.match(daily, /<hr>/);
+  assert.match(home, /&lt;script&gt;alert\(&quot;test&quot;\)&lt;\/script&gt;/);
+  assert.doesNotMatch(home + daily, /<script>alert/);
+});
+
+test("responsive card rebuilding retains categories without duplicating chronological entries", (t) => {
+  const files = Object.fromEntries(Array.from({ length: 25 }, (_, index) => {
+    const key = `202610${String(index + 1).padStart(2, "0")}`;
+    return [`logs/2026/${key}/${key}.md`, `---\ncategory: 数学III｜極限\n---\n記録${key}`];
+  }));
+  const build = fixture(t, files);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+  // A minimal DOM for executing the actual generated responsive script.
+  const element = () => ({
+    dataset: {}, children: [],
+    append(...children) { this.children.push(...children); },
+    replaceChildren(...children) { this.children = children; },
+    setAttribute() {},
+    querySelectorAll() { return []; }
+  });
+  const targets = Object.fromEntries(["#daily-log-latest", "#daily-log-archive", "#daily-log-years"].map((id) => [id, element()]));
+  const entries = [...home.matchAll(/<article[^>]+data-daily-log-entry ([^>]+)>/g)].map((match) => {
+    const node = element();
+    for (const attr of match[1].matchAll(/data-([\w-]+)="([^"]*)"/g)) {
+      const key = attr[1].replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      node.dataset[key] = attr[2];
+    }
+    return node;
+  });
+  const queries = new Map();
+  const script = [...home.matchAll(/<script>([\s\S]*?)<\/script>/g)].find((match) => match[1].includes("const latestGrid"))[1];
+  vm.runInNewContext(script, {
+    document: {
+      querySelector: (id) => targets[id],
+      querySelectorAll: () => entries,
+      createElement: element
+    },
+    window: {
+      matchMedia: (query) => {
+        const media = { matches: false, addEventListener: (_, callback) => { media.change = callback; } };
+        queries.set(query, media);
+        return media;
+      }
+    }
+  });
+  const descendants = (node) => node.children.flatMap((child) => [child, ...descendants(child)]);
+  for (const [width, count] of [[1200, 20], [800, 12], [390, 5], [1200, 20]]) {
+    for (const [query, media] of queries) media.matches = width <= Number(query.match(/\d+/)[0]);
+    [...queries.values()][0].change();
+    const cards = targets["#daily-log-latest"].children;
+    assert.equal(cards.length, count);
+    for (const card of cards) {
+      assert.equal(card.dataset.category, "数学III｜極限");
+      assert.equal(descendants(card).find((node) => node.className === "log-category").textContent, "数学III｜極限");
+    }
+    const chronological = [...cards, ...descendants(targets["#daily-log-years"]).filter((node) => node.className === "daily-log-archive-item")];
+    assert.equal(chronological.length, 25);
+    assert.equal(new Set(chronological.map((node) => node.dataset.dateKey)).size, 25);
+    assert.deepEqual(chronological.map((node) => node.dataset.dateKey), entries.map((node) => node.dataset.dateKey).sort().reverse());
+  }
 });
 
 test("runtime and dependencies contain only the new log system", () => {

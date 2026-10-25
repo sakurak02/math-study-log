@@ -1,6 +1,36 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
+// Only a single-line category scalar is supported; this is not a general YAML parser.
+function parseLogMarkdown(source) {
+  const frontMatter = source.match(/^\uFEFF?---[ \t]*\r?\n([\s\S]*?)^---[ \t]*(?:\r?\n|$)/m);
+  if (!frontMatter || frontMatter.index !== 0) {
+    return { category: "未分類", markdown: source };
+  }
+
+  const categoryLine = frontMatter[1].match(/^category:[ \t]*(.*)$/m);
+  let category = categoryLine?.[1].trim() || "";
+  if (category.startsWith('"')) {
+    try {
+      const quoted = category.match(/^("(?:[^"\\]|\\.)*")(?:[ \t]+#.*)?$/);
+      category = quoted ? JSON.parse(quoted[1]) : "";
+    } catch {
+      category = "";
+    }
+  } else if (category.startsWith("'")) {
+    const quoted = category.match(/^'((?:[^']|'')*)'(?:[ \t]+#.*)?$/);
+    category = quoted ? quoted[1].replace(/''/g, "'") : "";
+  } else {
+    category = category.replace(/[ \t]+#.*$/, "");
+    if (/^(?:[>|[\]{}&*!#]|null$|~$)/i.test(category)) category = "";
+  }
+
+  return {
+    category: typeof category === "string" && category.trim() ? category.trim() : "未分類",
+    markdown: source.slice(frontMatter[0].length)
+  };
+}
+
 function isValidDateKey(dateKey) {
   if (!/^\d{8}$/.test(dateKey)) return false;
 
@@ -63,11 +93,13 @@ function loadLogs(logsDir) {
         )
         .map((image) => image.filename);
       const expectedCoverImage = `${dateKey}-1.webp`;
+      const { category, markdown } = parseLogMarkdown(markdownSource);
 
       logs.push({
         date: isoDateFromKey(dateKey),
         dateKey,
-        markdown: markdownSource,
+        markdown,
+        category,
         images,
         coverImage: images.includes(expectedCoverImage)
           ? expectedCoverImage
