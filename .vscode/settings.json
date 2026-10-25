@@ -1,3 +1,11 @@
 {
-  "editor.tabCompletion": "onlySnippets"
+  "editor.tabCompletion": "onlySnippets",
+  "editor.snippetSuggestions": "top",
+  "[markdown]": {
+    "editor.quickSuggestions": {
+      "other": true,
+      "comments": false,
+      "strings": true
+    }
+  }
 }
