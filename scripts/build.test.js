@@ -317,6 +317,31 @@ test("categories appear on cards and daily pages, with text lists independent of
   assert.equal(build.read("public/sitemap.xml"), sitemap);
 });
 
+test("daily pages show a subtle category below the date for categorized and legacy notes", (t) => {
+  const build = fixture(t, {
+    "logs/2026/20261025/20261025.md": "---\ncategory: 数学III｜極限\n---\n\nカテゴリ表示テスト。",
+    "logs/2026/20261024/20261024.md": "---\ncategory: 未分類\n---\n\n未分類の本文。",
+    "logs/2026/20261023/20261023.md": "古い記録の本文。"
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  for (const [key, category, body] of [
+    ["20261025", "数学III｜極限", "カテゴリ表示テスト。"],
+    ["20261024", "未分類", "未分類の本文。"],
+    ["20261023", "未分類", "古い記録の本文。"]
+  ]) {
+    const page = build.read(`public/daily/${key}/index.html`);
+    const content = page.split('<main class="record-main">')[1].split("</main>")[0];
+    const dotDate = `${key.slice(0, 4)}.${key.slice(4, 6)}.${key.slice(6)}`;
+    assert.ok(content.includes(`<h1>${dotDate}</h1><p class="log-category">${category}</p>`));
+    assert.ok(content.indexOf('class="log-category"') < content.indexOf("STUDY NOTE"));
+    assert.ok(content.includes(`<div class="daily-markdown-content"><p>${body}</p>`));
+    assert.equal((content.match(/class="log-category"/g) || []).length, 1);
+    assert.doesNotMatch(content, /category:|CATEGORY:|---/);
+    assert.match(page, /\.page-head \.log-category \{[^}]*display: block;[^}]*color: var\(--ink-soft\);[^}]*font-size: 12px;/);
+  }
+});
+
 test("free-form headings and category values render safely", (t) => {
   const category = '<script>alert("test")</script>';
   const build = fixture(t, {

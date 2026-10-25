@@ -548,6 +548,7 @@ function dailyStyles() {
   return `.record-main { width: min(860px, calc(100% - 48px)); }
 .page-head { margin-bottom: 26px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .page-head h1 { margin-top: 4px; font-size: 25px; line-height: 1.5; }
+.page-head .log-category { display: block; margin-top: 8px; color: var(--ink-soft); font-size: 12px; font-weight: 400; line-height: 1.7; }
 .page-actions { margin-bottom: 14px; }
 .text-link { color: var(--accent); font-size: 12px; text-decoration-color: var(--line); text-underline-offset: 3px; }
 .daily-entry { width: min(760px, 100%); margin: 0 auto; }
