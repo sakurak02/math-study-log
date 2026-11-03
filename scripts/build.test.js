@@ -422,3 +422,178 @@ test("runtime and dependencies contain only the new log system", () => {
   assert.doesNotMatch(source, /classification|createMonthCalendar|TableOfContents|ORIGINAL QUESTION|EXPLANATION|content[\\/]records/i);
   assert.deepEqual(Object.keys(packageJson.dependencies), ["markdown-it"]);
 });
+
+test("new template renders all fields in order and keeps paper and photo counts separate", (t) => {
+  const source = `---
+category: 数学III｜極限
+教材: 青チャート 数学III
+範囲: 数列の極限・例題15〜20
+問題数: 12
+用紙: 8
+苦戦度: 🌧️🌧️🌧️🌧️
+喜び度: ☀️☀️☀️
+---
+
+## 記録メモ
+
+今日は計算が長かった。でも最後の問題が解けた。`;
+  const build = fixture(t, {
+    "logs/2026/20261103/20261103.md": source,
+    "logs/2026/20261103/20261103-1.webp": createVp8xWebp()
+  });
+  const [log] = build.loadLogs();
+  assert.equal(log.problemCount, 12);
+  assert.equal(log.paperCount, 8);
+  assert.equal(log.pageCount, 1);
+  assert.equal(log.scope, "数列の極限・例題15〜20");
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+  const daily = build.read("public/daily/20261103/index.html");
+  const content = daily.split('<main class="record-main">')[1].split("</main>")[0];
+  const ordered = [
+    "<h1>2026.11.03</h1>", 'class="daily-sheet-image"',
+    "<dt>教材</dt><dd>青チャート 数学III</dd>",
+    "<dt>範囲</dt><dd>数列の極限・例題15〜20</dd>",
+    "<dt>問題数</dt><dd>12問</dd>", "<dt>用紙枚数</dt><dd>8枚</dd>",
+    "<dt>苦戦度</dt><dd>🌧️🌧️🌧️🌧️</dd>", "<dt>喜び度</dt><dd>☀️☀️☀️</dd>",
+    'id="daily-markdown-heading">記録メモ</h2>', "今日は計算が長かった。"
+  ];
+  let previous = -1;
+  for (const value of ordered) {
+    const position = content.indexOf(value);
+    assert.ok(position > previous, value);
+    previous = position;
+  }
+  assert.match(home, /class="daily-log-pages">写真 1枚/);
+  assert.match(daily, /class="daily-sheet-label">写真 1 \/ 1枚/);
+  assert.match(home, /pages.textContent = "写真 " \+ entry.pageCount \+ "枚"/);
+  assert.match(categorySection(home, "数学III｜極限"), /20261103/);
+  assert.doesNotMatch(home, /記録メモ/);
+  assert.equal((content.match(/記録メモ/g) || []).length, 1);
+  assert.match(daily, /grid-template-columns: 6em minmax\(0, 1fr\)/);
+  assert.match(daily, /\.study-details dd \{[^}]*overflow-wrap: anywhere/);
+});
+
+test("counts distinguish missing, blank and zero; blank notes and fields stay hidden", (t) => {
+  const build = fixture(t, {
+    "logs/2026/20261103/20261103.md": "---\n問題数: 0\n用紙: 0\n---\n\n## 記録メモ\n\n  ",
+    "logs/2026/20261102/20261102.md": "---\n教材: \n範囲: \n問題数: \n用紙: \n苦戦度: \n喜び度: \n---\n\n## 記録メモ\n",
+    "logs/2026/20261101/20261101.md": "古い記録。"
+  });
+  const [legacy, blank, zero] = build.loadLogs();
+  assert.equal(legacy.problemCount, undefined);
+  assert.equal(legacy.paperCount, undefined);
+  assert.equal(blank.problemCount, null);
+  assert.equal(blank.paperCount, null);
+  assert.equal(zero.problemCount, 0);
+  assert.equal(zero.paperCount, 0);
+  assert.equal(build.run().status, 0);
+  const zeroPage = build.read("public/daily/20261103/index.html");
+  assert.match(zeroPage, /<dt>問題数<\/dt><dd>0問<\/dd>/);
+  assert.match(zeroPage, /<dt>用紙枚数<\/dt><dd>0枚<\/dd>/);
+  for (const key of ["20261103", "20261102"]) {
+    const page = build.read(`public/daily/${key}/index.html`);
+    assert.doesNotMatch(page, /<section class="daily-markdown"|id="daily-markdown-heading"|記録メモ/);
+  }
+  for (const key of ["20261102", "20261101"]) {
+    assert.doesNotMatch(build.read(`public/daily/${key}/index.html`), /<dl class="study-details"|<dt>/);
+  }
+  assert.match(build.read("public/daily/20261101/index.html"), /古い記録。/);
+  assert.doesNotMatch(build.read("public/index.html"), /記録メモ/);
+});
+
+test("single-line fields support quotes, comments and safe rendering without using date metadata", (t) => {
+  const build = fixture(t, {
+    "logs/2026/20261103/20261103.md": `---
+date: 2000-01-01
+category: '数学III｜極限'
+教材: "青チャート # III" # コメント
+範囲: '<script>alert(1)</script>'
+問題数: "0"
+用紙: 8 # コメント
+苦戦度: '🌧️'
+喜び度: "☀️☀️☀️☀️☀️"
+---
+
+## 記録メモ
+
+# 自由な見出し
+
+本文。`
+  });
+  const [log] = build.loadLogs();
+  assert.equal(log.date, "2026-11-03");
+  assert.equal(log.material, "青チャート # III");
+  assert.equal(log.paperCount, 8);
+  assert.equal(log.problemCount, 0);
+  assert.equal(build.run().status, 0);
+  const page = build.read("public/daily/20261103/index.html");
+  assert.match(page, /<dd>&lt;script&gt;alert\(1\)&lt;\/script&gt;<\/dd>/);
+  assert.doesNotMatch(page, /<script>alert/);
+  assert.match(page, /<h1>自由な見出し<\/h1>/);
+});
+
+test("counts and ratings reject invalid input with the source filename", (t) => {
+  for (let count = 1; count <= 5; count += 1) {
+    const build = fixture(t, {
+      "logs/2026/20261103/20261103.md": `\uFEFF---\r\n苦戦度:\t${"🌧️".repeat(count)}\r\n喜び度: ${"☀️".repeat(count)}\r\n---\r\n`
+    });
+    const [log] = build.loadLogs();
+    assert.equal(log.difficulty, "🌧️".repeat(count));
+    assert.equal(log.joy, "☀️".repeat(count));
+  }
+  for (const [key, value] of [
+    ["問題数", "-1"], ["用紙", "1.5"], ["問題数", "abc"],
+    ["用紙", "9007199254740992"], ["苦戦度", "🌧️🌧️🌧️🌧️🌧️🌧️"],
+    ["喜び度", "☀️☀️☀️☀️☀️☀️"], ["苦戦度", "☀️"], ["喜び度", "3"]
+  ]) {
+    const build = fixture(t, {
+      "logs/2026/20261103/20261103.md": `---\n${key}: ${value}\n---\n`
+    });
+    assert.throws(() => build.loadLogs(), (error) => {
+      assert.match(error.message, /20261103\.md/);
+      assert.ok(error.message.includes(key));
+      return true;
+    });
+  }
+});
+
+test("mixed old and new logs retain chronology, monthly archives and category hierarchy", (t) => {
+  const files = {};
+  for (let day = 1; day <= 25; day += 1) {
+    const dateKey = `202610${String(day).padStart(2, "0")}`;
+    files[`logs/2026/${dateKey}/${dateKey}.md`] = day % 2
+      ? `---\ncategory: 数学III｜極限\n教材: 青チャート\n範囲: 独立した範囲\n問題数: 1\n---\n\n## 記録メモ\n\n記録${dateKey}`
+      : `# 2026-10-${String(day).padStart(2, "0")}\n\n記録${dateKey}`;
+  }
+  const build = fixture(t, files);
+  const logs = build.loadLogs();
+  assert.equal(logs[0].dateKey, "20261001");
+  assert.equal(logs.at(-1).dateKey, "20261025");
+  assert.equal(build.run().status, 0);
+  const home = build.read("public/index.html");
+  const keys = [...home.matchAll(/data-date-key="(\d{8})"/g)].map((match) => match[1]);
+  assert.deepEqual(keys, logs.map((log) => log.dateKey).reverse());
+  assert.match(home, /data-archive-month="2026-10"/);
+  assert.match(home, /class="category-subject"><summary>数学III<\/summary>/);
+  assert.match(categorySection(home, "数学III｜極限"), /20261025/);
+  assert.match(categorySection(home, "未分類"), /20261024/);
+  assert.doesNotMatch(home, /data-category-name="独立した範囲"|記録メモ/);
+  const oldPage = build.read("public/daily/20261024/index.html");
+  assert.doesNotMatch(oldPage, /<dl class="study-details"/);
+  assert.match(oldPage, /記録20261024/);
+});
+
+test("mathlog snippet includes unchanged categories and ordered input stops", () => {
+  const snippets = JSON.parse(fs.readFileSync(path.join(projectDir, ".vscode/math-log.code-snippets"), "utf8"));
+  const template = snippets["数学学習記録テンプレート"];
+  assert.equal(template.prefix, "mathlog");
+  assert.equal(template.body[1], snippets["カテゴリ選択"].body[0]);
+  const stops = [...template.body.join("\n").matchAll(/\$\{(\d+)/g)].map((match) => Number(match[1]));
+  assert.deepEqual(stops, [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.ok(template.body.includes("## 記録メモ"));
+  assert.doesNotMatch(template.body.join("\n"), /^date:/m);
+  assert.match(template.body.join("\n"), /🌧️🌧️🌧️🌧️🌧️/);
+  assert.match(template.body.join("\n"), /☀️☀️☀️☀️☀️/);
+});

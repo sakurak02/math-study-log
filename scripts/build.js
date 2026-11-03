@@ -29,7 +29,9 @@ function escapeAttribute(value = "") {
 }
 
 function withoutFirstHeading(source = "") {
-  return source.trim().replace(/^\uFEFF?[ \t]*#[ \t]+\d{4}-\d{2}-\d{2}[ \t]*(?:\r?\n|$)/, "").trim();
+  return source.trim()
+    .replace(/^\uFEFF?[ \t]*#[ \t]+\d{4}-\d{2}-\d{2}[ \t]*(?:\r?\n|$)/, "").trim()
+    .replace(/^##[ \t]+記録メモ[ \t]*(?:\r?\n|$)/, "").trim();
 }
 
 function excerptFromMarkdown(source = "", maxLength = 180) {
@@ -199,7 +201,7 @@ function createDailyLogCard(log) {
   const image = log.coverImage
     ? `<img class="daily-log-image" src="./daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}" alt="${escapeHtml(formatJapaneseDate(log.date))}の学習写真" loading="lazy">`
     : `<div class="daily-log-image-placeholder" aria-label="学習写真なし"><span>NO IMAGE</span></div>`;
-  const pageLabel = `${log.pageCount} ${log.pageCount === 1 ? "page" : "pages"}`;
+  const pageLabel = `写真 ${log.pageCount}枚`;
   return `<article class="daily-log-card" ${dailyLogDataAttributes(log)}>
   <a class="daily-log-card-link" href="./daily/${log.dateKey}/" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習記録を開く">
     <div class="daily-log-media">${image}</div>
@@ -338,7 +340,7 @@ function homepageScript() {
     excerpt.textContent = entry.cardExcerpt;
     const pages = document.createElement("div");
     pages.className = "daily-log-pages";
-    pages.textContent = entry.pageCount + " " + (entry.pageCount === "1" ? "page" : "pages");
+    pages.textContent = "写真 " + entry.pageCount + "枚";
     body.append(time, category, excerpt, pages);
     link.append(media, body);
     article.append(link);
@@ -558,6 +560,9 @@ function dailyStyles() {
 .daily-sheet-link:hover, .daily-sheet-link:focus-visible { border-color: var(--accent); }
 .daily-sheet-image { display: block; width: 100%; height: auto; border-radius: 7px; }
 .daily-no-images { padding: 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink-soft); font-size: 13px; text-align: center; }
+.study-details { display: grid; grid-template-columns: 6em minmax(0, 1fr); gap: 8px 16px; margin: 28px 0 0; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); font-size: 14px; }
+.study-details dt { color: var(--ink-soft); }
+.study-details dd { min-width: 0; margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 .daily-markdown { margin-top: 38px; padding-top: 26px; border-top: 1px solid var(--line); }
 .daily-markdown-heading { margin-bottom: 18px; color: var(--accent); font: 600 11px/1.5 "JetBrains Mono", monospace; letter-spacing: .1em; }
 .daily-markdown-content { font-size: 15px; line-height: 1.9; }
@@ -578,16 +583,34 @@ function dailyStyles() {
 @media (max-width: 600px) { .record-main { width: calc(100% - 24px); } .page-head h1 { font-size: 22px; } .daily-sheets { gap: 24px; } .daily-markdown { margin-top: 30px; padding-top: 22px; } .daily-markdown-content { font-size: 14px; } }`;
 }
 
+function createStudyDetails(log) {
+  const rows = [
+    ["教材", log.material],
+    ["範囲", log.scope],
+    ["問題数", log.problemCount == null ? null : `${log.problemCount}問`],
+    ["用紙枚数", log.paperCount == null ? null : `${log.paperCount}枚`],
+    ["苦戦度", log.difficulty],
+    ["喜び度", log.joy]
+  ].filter(([, value]) => value != null && value !== "");
+  return rows.length
+    ? `<dl class="study-details" aria-label="学習内容">${rows.map(([label, value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`).join("")}</dl>`
+    : "";
+}
+
 function createDailyPage(log, index, logs) {
   const previous = index > 0 ? logs[index - 1] : null;
   const next = index < logs.length - 1 ? logs[index + 1] : null;
   const markdownSource = withoutFirstHeading(log.markdown);
+  const noteHeading = /^##[ \t]+記録メモ[ \t]*\r?$/m.test(log.markdown) ? "記録メモ" : "STUDY NOTE";
+  const note = markdownSource
+    ? `<section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">${noteHeading}</h2><div class="daily-markdown-content">${markdown.render(normalizeStudyNoteMarkdown(markdownSource))}</div></section>`
+    : "";
   const description = excerptFromMarkdown(log.markdown, 140) || defaultDescription;
   const coverUrl = log.coverImage ? `${siteUrl}/daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}` : siteOgImageUrl;
   const images = log.images.length
     ? log.images.map((image, imageIndex) => `<figure class="daily-sheet">
-  <figcaption class="daily-sheet-label">PAGE ${imageIndex + 1}</figcaption>
-  <a class="daily-sheet-link" href="./images/${encodeURIComponent(image)}" target="_blank" rel="noopener" aria-label="${escapeHtml(formatJapaneseDate(log.date))} ページ${imageIndex + 1}を原寸で開く">
+  <figcaption class="daily-sheet-label">写真 ${imageIndex + 1} / ${log.pageCount}枚</figcaption>
+  <a class="daily-sheet-link" href="./images/${encodeURIComponent(image)}" target="_blank" rel="noopener" aria-label="${escapeHtml(formatJapaneseDate(log.date))} 写真${imageIndex + 1}を原寸で開く">
     <img class="daily-sheet-image" src="./images/${encodeURIComponent(image)}" alt="${escapeHtml(formatJapaneseDate(log.date))} 学習記録 ページ${imageIndex + 1}" loading="lazy">
   </a>
 </figure>`).join("\n")
@@ -608,7 +631,8 @@ ${someCloudsLink()}
   <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1><p class="log-category">${escapeHtml(log.category)}</p></div>
   <article class="daily-entry">
     <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${images}</section>
-    <section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">STUDY NOTE</h2><div class="daily-markdown-content">${markdownSource ? markdown.render(normalizeStudyNoteMarkdown(markdownSource)) : ""}</div></section>
+    ${createStudyDetails(log)}
+    ${note}
     <nav class="day-navigation" aria-label="学習日を移動">${previousLink}${nextLink}</nav>
   </article>
 </main>

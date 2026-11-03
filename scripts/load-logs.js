@@ -1,32 +1,63 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-// Only a single-line category scalar is supported; this is not a general YAML parser.
+// The template uses single-line scalars, not arbitrary YAML objects or arrays.
+function readScalar(frontMatter, key) {
+  const line = frontMatter.match(new RegExp(`^${key}:[ \\t]*(.*)$`, "m"));
+  if (!line) return undefined;
+  let value = line[1].trim();
+  if (value.startsWith('"')) {
+    try {
+      const quoted = value.match(/^("(?:[^"\\]|\\.)*")(?:[ \t]+#.*)?$/);
+      value = quoted ? JSON.parse(quoted[1]) : "";
+    } catch {
+      value = "";
+    }
+  } else if (value.startsWith("'")) {
+    const quoted = value.match(/^'((?:[^']|'')*)'(?:[ \t]+#.*)?$/);
+    value = quoted ? quoted[1].replace(/''/g, "'") : "";
+  } else {
+    value = value.replace(/[ \t]+#.*$/, "");
+    if (/^(?:[>|[\]{}&*!#]|null$|~$)/i.test(value)) value = "";
+  }
+
+  return value.trim();
+}
+
+function readCount(frontMatter, key) {
+  const value = readScalar(frontMatter, key);
+  if (value === undefined) return undefined; // Not specified (legacy records).
+  if (value === "") return null; // Explicitly blank; different from zero.
+  if (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value))) {
+    throw new Error(`${key}には0以上の整数を入力してください。`);
+  }
+  return Number(value);
+}
+
+function readRating(frontMatter, key, mark) {
+  const value = readScalar(frontMatter, key);
+  if (!value) return value;
+  const marks = Array.from(value.replace(/\uFE0F/g, ""));
+  if (marks.length < 1 || marks.length > 5 || marks.some((item) => item !== mark)) {
+    throw new Error(`${key}には${mark}\uFE0Fを1〜5個入力してください。`);
+  }
+  return value;
+}
+
 function parseLogMarkdown(source) {
   const frontMatter = source.match(/^\uFEFF?---[ \t]*\r?\n([\s\S]*?)^---[ \t]*(?:\r?\n|$)/m);
   if (!frontMatter || frontMatter.index !== 0) {
     return { category: "未分類", markdown: source };
   }
-
-  const categoryLine = frontMatter[1].match(/^category:[ \t]*(.*)$/m);
-  let category = categoryLine?.[1].trim() || "";
-  if (category.startsWith('"')) {
-    try {
-      const quoted = category.match(/^("(?:[^"\\]|\\.)*")(?:[ \t]+#.*)?$/);
-      category = quoted ? JSON.parse(quoted[1]) : "";
-    } catch {
-      category = "";
-    }
-  } else if (category.startsWith("'")) {
-    const quoted = category.match(/^'((?:[^']|'')*)'(?:[ \t]+#.*)?$/);
-    category = quoted ? quoted[1].replace(/''/g, "'") : "";
-  } else {
-    category = category.replace(/[ \t]+#.*$/, "");
-    if (/^(?:[>|[\]{}&*!#]|null$|~$)/i.test(category)) category = "";
-  }
-
+  const fields = frontMatter[1];
   return {
-    category: typeof category === "string" && category.trim() ? category.trim() : "未分類",
+    category: readScalar(fields, "category") || "未分類",
+    material: readScalar(fields, "教材"),
+    scope: readScalar(fields, "範囲"),
+    problemCount: readCount(fields, "問題数"),
+    paperCount: readCount(fields, "用紙"),
+    difficulty: readRating(fields, "苦戦度", "🌧"),
+    joy: readRating(fields, "喜び度", "☀"),
     markdown: source.slice(frontMatter[0].length)
   };
 }
@@ -93,13 +124,17 @@ function loadLogs(logsDir) {
         )
         .map((image) => image.filename);
       const expectedCoverImage = `${dateKey}-1.webp`;
-      const { category, markdown } = parseLogMarkdown(markdownSource);
+      let record;
+      try {
+        record = parseLogMarkdown(markdownSource);
+      } catch (error) {
+        throw new Error(`${markdownPath}: ${error.message}`, { cause: error });
+      }
 
       logs.push({
         date: isoDateFromKey(dateKey),
         dateKey,
-        markdown,
-        category,
+        ...record,
         images,
         coverImage: images.includes(expectedCoverImage)
           ? expectedCoverImage
