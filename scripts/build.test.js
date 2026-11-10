@@ -696,9 +696,11 @@ test("mixed old and new logs retain chronology, monthly archives and category hi
 
 test("mathlog offers two templates and keeps the existing category selection snippet", () => {
   const snippets = JSON.parse(fs.readFileSync(path.join(projectDir, ".vscode/math-log.code-snippets"), "utf8"));
-  const templates = Object.entries(snippets).filter(([, snippet]) => snippet.prefix === "mathlog");
+  const templates = Object.entries(snippets).filter(([, snippet]) => snippet.prefix);
   assert.deepEqual(templates.map(([name]) => name), ["数学学習記録｜1分野", "数学学習記録｜複数分野"]);
   const [[, single], [, multi]] = templates;
+  assert.equal(single.prefix, "mathlog");
+  assert.equal(multi.prefix, "mathlog");
   assert.equal(single.scope, "markdown");
   assert.equal(multi.scope, "markdown");
   assert.deepEqual(single.body, ["---", "category: 未分類", "---", "", "$0"]);
@@ -707,7 +709,7 @@ test("mathlog offers two templates and keeps the existing category selection sni
     "  - ${3:category: 未分類}", "    images: [${4}]", "---", "", "$0"
   ]);
   const picker = snippets["カテゴリ選択"];
-  assert.equal(picker.prefix, "mcat");
+  assert.equal(picker.prefix, undefined);
   const choices = picker.body[0].match(/^category: \$\{1\|(.+)\|\}$/)?.[1].split(",");
   assert.equal(choices.length, 30);
   assert.ok(choices.includes("数学III｜積分法"));
