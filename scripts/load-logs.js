@@ -146,70 +146,71 @@ function isoDateFromKey(dateKey) {
   return `${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-${dateKey.slice(6, 8)}`;
 }
 
+function loadLog(dateDir, dateKey) {
+  const markdownPath = path.join(dateDir, `${dateKey}.md`);
+  const markdownSource = fs.existsSync(markdownPath)
+    ? fs.readFileSync(markdownPath, "utf8")
+    : "";
+  const imagePattern = new RegExp(`^${dateKey}-([1-9]\\d*)\\.webp$`);
+  const images = fs
+    .readdirSync(dateDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && imagePattern.test(entry.name))
+    .map((entry) => ({
+      filename: entry.name,
+      number: BigInt(entry.name.match(imagePattern)[1])
+    }))
+    .sort((a, b) =>
+      a.number < b.number
+        ? -1
+        : a.number > b.number
+          ? 1
+          : a.filename.localeCompare(b.filename)
+    )
+    .map((image) => image.filename);
+  const expectedCoverImage = `${dateKey}-1.webp`;
+  let record;
+  try {
+    record = parseLogMarkdown(markdownSource);
+  } catch (error) {
+    throw new Error(`${markdownPath}: ${error.message}`, { cause: error });
+  }
+  const categories = resolveCategories(record, images, dateKey, markdownPath);
+  const { categoryAssignments, ...details } = record;
+
+  return {
+    date: isoDateFromKey(dateKey),
+    dateKey,
+    sourceDir: dateDir,
+    ...details,
+    category: categories.map(({ category }) => category).join(" / "),
+    categories,
+    images,
+    coverImage: images.includes(expectedCoverImage)
+      ? expectedCoverImage
+      : null,
+    pageCount: images.length
+  };
+}
+
+function directoryNames(directory, pattern) {
+  return fs.readdirSync(directory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && pattern.test(entry.name))
+    .map((entry) => entry.name);
+}
+
 function loadLogs(logsDir) {
   if (!fs.existsSync(logsDir)) return [];
 
   const logs = [];
-  const yearDirectories = fs
-    .readdirSync(logsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && /^\d{4}$/.test(entry.name));
-
-  for (const yearEntry of yearDirectories) {
-    const yearDir = path.join(logsDir, yearEntry.name);
-    const dateDirectories = fs
-      .readdirSync(yearDir, { withFileTypes: true })
-      .filter(
-        (entry) =>
-          entry.isDirectory() &&
-          isValidDateKey(entry.name) &&
-          entry.name.startsWith(yearEntry.name)
-      );
-
-    for (const dateEntry of dateDirectories) {
-      const dateKey = dateEntry.name;
-      const dateDir = path.join(yearDir, dateKey);
-      const markdownPath = path.join(dateDir, `${dateKey}.md`);
-      const markdownSource = fs.existsSync(markdownPath)
-        ? fs.readFileSync(markdownPath, "utf8")
-        : "";
-      const imagePattern = new RegExp(`^${dateKey}-([1-9]\\d*)\\.webp$`);
-      const images = fs
-        .readdirSync(dateDir, { withFileTypes: true })
-        .filter((entry) => entry.isFile() && imagePattern.test(entry.name))
-        .map((entry) => ({
-          filename: entry.name,
-          number: BigInt(entry.name.match(imagePattern)[1])
-        }))
-        .sort((a, b) =>
-          a.number < b.number
-            ? -1
-            : a.number > b.number
-              ? 1
-              : a.filename.localeCompare(b.filename)
-        )
-        .map((image) => image.filename);
-      const expectedCoverImage = `${dateKey}-1.webp`;
-      let record;
-      try {
-        record = parseLogMarkdown(markdownSource);
-      } catch (error) {
-        throw new Error(`${markdownPath}: ${error.message}`, { cause: error });
+  for (const year of directoryNames(logsDir, /^\d{4}$/)) {
+    const yearDir = path.join(logsDir, year);
+    for (const month of directoryNames(yearDir, /^\d{2}$/)) {
+      const monthDir = path.join(yearDir, month);
+      for (const day of directoryNames(monthDir, /^\d{2}$/)) {
+        const dateKey = year + month + day;
+        if (!isValidDateKey(dateKey)) continue;
+        logs.push(loadLog(path.join(monthDir, day), dateKey));
       }
-      const categories = resolveCategories(record, images, dateKey, markdownPath);
-      const { categoryAssignments, ...details } = record;
-
-      logs.push({
-        date: isoDateFromKey(dateKey),
-        dateKey,
-        ...details,
-        category: categories.map(({ category }) => category).join(" / "),
-        categories,
-        images,
-        coverImage: images.includes(expectedCoverImage)
-          ? expectedCoverImage
-          : null,
-        pageCount: images.length
-      });
     }
   }
 

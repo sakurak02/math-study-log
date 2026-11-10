@@ -680,13 +680,12 @@ function build() {
   const logs = loadLogs(logsDir);
   cleanPublicOutput();
   for (const [index, log] of logs.entries()) {
-    const sourceDir = path.join(logsDir, log.dateKey.slice(0, 4), log.dateKey);
     const outputDir = path.join(dailyOutputDir, log.dateKey);
     const outputImagesDir = path.join(outputDir, "images");
     fs.mkdirSync(outputDir, { recursive: true });
     if (log.images.length > 0) {
       fs.mkdirSync(outputImagesDir, { recursive: true });
-      for (const image of log.images) fs.copyFileSync(path.join(sourceDir, image), path.join(outputImagesDir, image));
+      for (const image of log.images) fs.copyFileSync(path.join(log.sourceDir, image), path.join(outputImagesDir, image));
     }
     fs.writeFileSync(path.join(outputDir, "index.html"), createDailyPage(log, index, logs), "utf8");
     for (const [categoryIndex, category] of log.categories.entries()) {

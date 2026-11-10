@@ -9,6 +9,13 @@ const { loadLogs } = require("./load-logs");
 
 const projectDir = path.resolve(__dirname, "..");
 
+function markdownPathForDate(dateKey) {
+  const year = dateKey.slice(0, 4);
+  const month = dateKey.slice(4, 6);
+  const day = dateKey.slice(6, 8);
+  return `logs/${year}/${month}/${day}/${dateKey}.md`;
+}
+
 function createVp8xWebp(width = 1200, height = 1600) {
   const buffer = Buffer.alloc(30);
   buffer.write("RIFF", 0, "ascii");
@@ -83,36 +90,42 @@ test("logs loader safely handles missing and empty input", (t) => {
   assert.equal(result.status, 0, result.stderr);
 });
 
-test("logs loader reads Markdown and sorts WebP pages numerically", (t) => {
+test("logs loader derives the date from year, month and day and sorts WebP pages numerically", (t) => {
   const webp = createVp8xWebp();
   const source = "# 2026-10-02\n\n数学III。極限。\n\n自由記載の本文。\n";
   const build = fixture(t, {
-    "logs/2026/20261002/20261002.md": source,
-    "logs/2026/20261002/20261002-10.webp": webp,
-    "logs/2026/20261002/20261002-2.webp": webp,
-    "logs/2026/20261002/20261002-1.webp": webp,
-    "logs/2026/20261002/20261002-0.webp": webp,
-    "logs/2026/20261002/other.webp": webp
+    "logs/2026/10/02/20261002.md": source,
+    "logs/2026/10/02/20261002-10.webp": webp,
+    "logs/2026/10/02/20261002-2.webp": webp,
+    "logs/2026/10/02/20261002-1.webp": webp,
+    "logs/2026/10/02/20261002-0.webp": webp,
+    "logs/2026/10/02/other.webp": webp
   });
   const [log] = build.loadLogs();
 
   assert.equal(log.date, "2026-10-02");
+  assert.equal(log.dateKey, "20261002");
   assert.equal(log.markdown, source);
   assert.deepEqual(log.images, ["20261002-1.webp", "20261002-2.webp", "20261002-10.webp"]);
   assert.equal(log.coverImage, "20261002-1.webp");
   assert.equal(log.pageCount, 3);
 });
 
-test("logs loader skips malformed dates and returns dates in ascending order", (t) => {
+test("logs loader skips malformed folders and the old layout and returns dates in ascending order", (t) => {
   const build = fixture(t, {
-    "logs/2026/20261003/20261003.md": "third",
-    "logs/2026/20261001/20261001.md": "first",
-    "logs/2026/20260230/20260230.md": "invalid",
-    "logs/2025/20261004/20261004.md": "wrong year",
-    "logs/misc/20261005/20261005.md": "wrong parent"
+    "logs/2026/10/03/20261003.md": "third",
+    "logs/2026/10/01/20261001.md": "first",
+    "logs/2024/02/29/20240229.md": "leap day",
+    "logs/2026/02/30/20260230.md": "invalid",
+    "logs/2026/13/01/20261301.md": "invalid month",
+    "logs/2026/10/00/20261000.md": "invalid day",
+    "logs/2026/1/05/20260105.md": "single digit month",
+    "logs/2026/10/5/20261005.md": "single digit day",
+    "logs/misc/10/05/20261005.md": "wrong parent",
+    "logs/2026/20261005/20261005.md": "old layout"
   });
 
-  assert.deepEqual(build.loadLogs().map((log) => log.dateKey), ["20261001", "20261003"]);
+  assert.deepEqual(build.loadLogs().map((log) => log.dateKey), ["20240229", "20261001", "20261003"]);
 });
 
 test("empty build keeps current branding and removes stale generated output", (t) => {
@@ -157,23 +170,23 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
     ...Array.from({ length: 3 }, (_, index) => `202508${String(index + 1).padStart(2, "0")}`)
   ];
   const files = Object.fromEntries(dateKeys.map((dateKey) => [
-    `logs/${dateKey.slice(0, 4)}/${dateKey}/${dateKey}.md`,
+    markdownPathForDate(dateKey),
     `# ${dateKey.slice(0, 4)}-${dateKey.slice(4, 6)}-${dateKey.slice(6)}\n\nLog ${dateKey}\n\n全文です。`
   ]));
-  files["logs/2026/20261010/20261010.md"] = `# 2026-10-10
+  files["logs/2026/10/10/20261010.md"] = `# 2026-10-10
 
 - 数学III
 - 1ページ
 - 47 関数の極限
 - 48 極限値の条件から関数を考える`;
-  files["logs/2026/20261009/20261009.md"] = `# 2026-10-09
+  files["logs/2026/10/09/20261009.md"] = `# 2026-10-09
 
 -数学II
 -1ページ
 -関数の極限`;
-  files["logs/2026/20261010/20261010-10.webp"] = webp;
-  files["logs/2026/20261010/20261010-2.webp"] = webp;
-  files["logs/2026/20261010/20261010-1.webp"] = webp;
+  files["logs/2026/10/10/20261010-10.webp"] = webp;
+  files["logs/2026/10/10/20261010-2.webp"] = webp;
+  files["logs/2026/10/10/20261010-1.webp"] = webp;
   const build = fixture(t, files);
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -235,7 +248,7 @@ test("study note renders compact dash lines as a list between paragraphs", (t) =
 
 48番は少し迷った。`;
   const build = fixture(t, {
-    "logs/2026/20261002/20261002.md": source
+    "logs/2026/10/02/20261002.md": source
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -266,7 +279,7 @@ test("front matter categories are separated from free-form notes with safe defau
     ["本文\n\n---\ncategory: 本文中\n---", "未分類", "本文\n\n---\ncategory: 本文中\n---"]
   ];
   for (const [source, category, body] of cases) {
-    const build = fixture(t, { "logs/2026/20261025/20261025.md": source });
+    const build = fixture(t, { "logs/2026/10/25/20261025.md": source });
     const [log] = build.loadLogs();
     assert.equal(log.category, category, source);
     assert.equal(log.markdown, body, source);
@@ -281,9 +294,9 @@ function categorySection(page, category) {
 test("a single category includes all of the day's photos", (t) => {
   const webp = createVp8xWebp();
   const build = fixture(t, {
-    "logs/2026/20261109/20261109.md": "---\ncategory: 数学III｜極限\n---\n",
-    "logs/2026/20261109/20261109-1.webp": webp,
-    "logs/2026/20261109/20261109-2.webp": webp
+    "logs/2026/11/09/20261109.md": "---\ncategory: 数学III｜極限\n---\n",
+    "logs/2026/11/09/20261109-1.webp": webp,
+    "logs/2026/11/09/20261109-2.webp": webp
   });
   const [log] = build.loadLogs();
   assert.deepEqual(log.categories, [{
@@ -314,11 +327,11 @@ categories:
 
 積分は置換積分を復習。数列は漸化式を進めた。`;
   const build = fixture(t, {
-    "logs/2026/20261110/20261110.md": source.replace(/\n/g, "\r\n"),
-    "logs/2026/20261110/20261110-1.webp": webp,
-    "logs/2026/20261110/20261110-2.webp": webp,
-    "logs/2026/20261110/20261110-3.webp": webp,
-    "logs/2026/20261110/20261110-4.webp": webp
+    "logs/2026/11/10/20261110.md": source.replace(/\n/g, "\r\n"),
+    "logs/2026/11/10/20261110-1.webp": webp,
+    "logs/2026/11/10/20261110-2.webp": webp,
+    "logs/2026/11/10/20261110-3.webp": webp,
+    "logs/2026/11/10/20261110-4.webp": webp
   });
   const groups = [
     { category: "数学III｜積分法", images: ["20261110-1.webp", "20261110-2.webp"] },
@@ -357,7 +370,7 @@ categories:
 test("invalid, missing and overlapping photo numbers warn without breaking an empty note", (t) => {
   const webp = createVp8xWebp();
   const build = fixture(t, {
-    "logs/2026/20261110/20261110.md": `---
+    "logs/2026/11/10/20261110.md": `---
 categories:
   - category: 数学III｜積分法
     images: [1, 8, 2-4]
@@ -367,9 +380,9 @@ categories:
     images: [3, 3]
 ---
 `,
-    "logs/2026/20261110/20261110-1.webp": webp,
-    "logs/2026/20261110/20261110-2.webp": webp,
-    "logs/2026/20261110/20261110-3.webp": webp
+    "logs/2026/11/10/20261110-1.webp": webp,
+    "logs/2026/11/10/20261110-2.webp": webp,
+    "logs/2026/11/10/20261110-3.webp": webp
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -390,11 +403,11 @@ categories:
 test("categories appear on cards and daily pages, with text lists independent of chronology", (t) => {
   const source = "---\ncategory: 数学III｜極限\n---\n\n今日は47番と48番。\n48番は係数決定の考え方をもう一度見直したい。";
   const build = fixture(t, {
-    "logs/2026/20261025/20261025.md": source,
-    "logs/2026/20261018/20261018.md": "---\ncategory: 数学III｜極限\n---\n極限の復習",
-    "logs/2026/20261017/20261017.md": "---\ncategory: 数学B｜数列\n---\n漸化式。",
-    "logs/2026/20261016/20261016.md": "---\ncategory: 未分類\n---\n未分類の記録",
-    "logs/2026/20261015/20261015.md": "古い記録"
+    "logs/2026/10/25/20261025.md": source,
+    "logs/2026/10/18/20261018.md": "---\ncategory: 数学III｜極限\n---\n極限の復習",
+    "logs/2026/10/17/20261017.md": "---\ncategory: 数学B｜数列\n---\n漸化式。",
+    "logs/2026/10/16/20261016.md": "---\ncategory: 未分類\n---\n未分類の記録",
+    "logs/2026/10/15/20261015.md": "古い記録"
   });
   let result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -416,7 +429,7 @@ test("categories appear on cards and daily pages, with text lists independent of
   assert.equal((sitemap.match(/<loc>/g) || []).length, 6);
   assert.match(sitemap, /\/daily\/20261025\//);
 
-  build.write("logs/2026/20261025/20261025.md", source.replace("数学III｜極限", "数学B｜数列"));
+  build.write("logs/2026/10/25/20261025.md", source.replace("数学III｜極限", "数学B｜数列"));
   result = build.run();
   assert.equal(result.status, 0, result.stderr);
   home = build.read("public/index.html");
@@ -428,9 +441,9 @@ test("categories appear on cards and daily pages, with text lists independent of
 
 test("daily pages show a subtle category below the date for categorized and legacy notes", (t) => {
   const build = fixture(t, {
-    "logs/2026/20261025/20261025.md": "---\ncategory: 数学III｜極限\n---\n\nカテゴリ表示テスト。",
-    "logs/2026/20261024/20261024.md": "---\ncategory: 未分類\n---\n\n未分類の本文。",
-    "logs/2026/20261023/20261023.md": "古い記録の本文。"
+    "logs/2026/10/25/20261025.md": "---\ncategory: 数学III｜極限\n---\n\nカテゴリ表示テスト。",
+    "logs/2026/10/24/20261024.md": "---\ncategory: 未分類\n---\n\n未分類の本文。",
+    "logs/2026/10/23/20261023.md": "古い記録の本文。"
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -454,7 +467,7 @@ test("daily pages show a subtle category below the date for categorized and lega
 test("free-form headings and category values render safely", (t) => {
   const category = '<script>alert("test")</script>';
   const build = fixture(t, {
-    "logs/2026/20261025/20261025.md": `---\ncategory: '${category}'\n---\n\n# 漸化式の気づき\n\n本文。\n\n---\n\n後半。`
+    "logs/2026/10/25/20261025.md": `---\ncategory: '${category}'\n---\n\n# 漸化式の気づき\n\n本文。\n\n---\n\n後半。`
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
@@ -469,7 +482,7 @@ test("free-form headings and category values render safely", (t) => {
 test("responsive card rebuilding retains categories without duplicating chronological entries", (t) => {
   const files = Object.fromEntries(Array.from({ length: 25 }, (_, index) => {
     const key = `202610${String(index + 1).padStart(2, "0")}`;
-    return [`logs/2026/${key}/${key}.md`, `---\ncategory: 数学III｜極限\n---\n記録${key}`];
+    return [markdownPathForDate(key), `---\ncategory: 数学III｜極限\n---\n記録${key}`];
   }));
   const build = fixture(t, files);
   const result = build.run();
@@ -547,8 +560,8 @@ category: 数学III｜極限
 
 今日は計算が長かった。でも最後の問題が解けた。`;
   const build = fixture(t, {
-    "logs/2026/20261103/20261103.md": source,
-    "logs/2026/20261103/20261103-1.webp": createVp8xWebp()
+    "logs/2026/11/03/20261103.md": source,
+    "logs/2026/11/03/20261103-1.webp": createVp8xWebp()
   });
   const [log] = build.loadLogs();
   assert.equal(log.problemCount, 12);
@@ -586,9 +599,9 @@ category: 数学III｜極限
 
 test("counts distinguish missing, blank and zero; blank notes and fields stay hidden", (t) => {
   const build = fixture(t, {
-    "logs/2026/20261103/20261103.md": "---\n問題数: 0\n用紙: 0\n---\n\n## 記録メモ\n\n  ",
-    "logs/2026/20261102/20261102.md": "---\n教材: \n範囲: \n問題数: \n用紙: \n苦戦度: \n喜び度: \n---\n\n## 記録メモ\n",
-    "logs/2026/20261101/20261101.md": "古い記録。"
+    "logs/2026/11/03/20261103.md": "---\n問題数: 0\n用紙: 0\n---\n\n## 記録メモ\n\n  ",
+    "logs/2026/11/02/20261102.md": "---\n教材: \n範囲: \n問題数: \n用紙: \n苦戦度: \n喜び度: \n---\n\n## 記録メモ\n",
+    "logs/2026/11/01/20261101.md": "古い記録。"
   });
   const [legacy, blank, zero] = build.loadLogs();
   assert.equal(legacy.problemCount, undefined);
@@ -614,7 +627,7 @@ test("counts distinguish missing, blank and zero; blank notes and fields stay hi
 
 test("single-line fields support quotes, comments and safe rendering without using date metadata", (t) => {
   const build = fixture(t, {
-    "logs/2026/20261103/20261103.md": `---
+    "logs/2026/11/03/20261103.md": `---
 date: 2000-01-01
 category: '数学III｜極限'
 教材: "青チャート # III" # コメント
@@ -646,7 +659,7 @@ category: '数学III｜極限'
 test("counts and ratings reject invalid input with the source filename", (t) => {
   for (let count = 1; count <= 5; count += 1) {
     const build = fixture(t, {
-      "logs/2026/20261103/20261103.md": `\uFEFF---\r\n苦戦度:\t${"🌧️".repeat(count)}\r\n喜び度: ${"☀️".repeat(count)}\r\n---\r\n`
+      "logs/2026/11/03/20261103.md": `\uFEFF---\r\n苦戦度:\t${"🌧️".repeat(count)}\r\n喜び度: ${"☀️".repeat(count)}\r\n---\r\n`
     });
     const [log] = build.loadLogs();
     assert.equal(log.difficulty, "🌧️".repeat(count));
@@ -658,7 +671,7 @@ test("counts and ratings reject invalid input with the source filename", (t) => 
     ["喜び度", "☀️☀️☀️☀️☀️☀️"], ["苦戦度", "☀️"], ["喜び度", "3"]
   ]) {
     const build = fixture(t, {
-      "logs/2026/20261103/20261103.md": `---\n${key}: ${value}\n---\n`
+      "logs/2026/11/03/20261103.md": `---\n${key}: ${value}\n---\n`
     });
     assert.throws(() => build.loadLogs(), (error) => {
       assert.match(error.message, /20261103\.md/);
@@ -672,7 +685,7 @@ test("mixed old and new logs retain chronology, monthly archives and category hi
   const files = {};
   for (let day = 1; day <= 25; day += 1) {
     const dateKey = `202610${String(day).padStart(2, "0")}`;
-    files[`logs/2026/${dateKey}/${dateKey}.md`] = day % 2
+    files[markdownPathForDate(dateKey)] = day % 2
       ? `---\ncategory: 数学III｜極限\n教材: 青チャート\n範囲: 独立した範囲\n問題数: 1\n---\n\n## 記録メモ\n\n記録${dateKey}`
       : `# 2026-10-${String(day).padStart(2, "0")}\n\n記録${dateKey}`;
   }
