@@ -278,6 +278,115 @@ function categorySection(page, category) {
   return page.split(`data-category-name="${category}"`)[1]?.split("</details>")[0] || "";
 }
 
+test("a single category includes all of the day's photos", (t) => {
+  const webp = createVp8xWebp();
+  const build = fixture(t, {
+    "logs/2026/20261109/20261109.md": "---\ncategory: 数学III｜極限\n---\n",
+    "logs/2026/20261109/20261109-1.webp": webp,
+    "logs/2026/20261109/20261109-2.webp": webp
+  });
+  const [log] = build.loadLogs();
+  assert.deepEqual(log.categories, [{
+    category: "数学III｜極限",
+    images: ["20261109-1.webp", "20261109-2.webp"]
+  }]);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  const home = build.read("public/index.html");
+  assert.match(categorySection(home, "数学III｜極限"), /href="\.\/daily\/20261109\/"/);
+  const daily = build.read("public/daily/20261109/index.html");
+  assert.match(daily, /class="daily-sheet-image" src="\.\/images\/20261109-1\.webp"/);
+  assert.match(daily, /class="daily-sheet-image" src="\.\/images\/20261109-2\.webp"/);
+});
+
+test("category links open filtered photos while the daily page shows every photo and the shared note", (t) => {
+  const webp = createVp8xWebp();
+  const source = `---
+categories:
+  - category: '数学III｜積分法'
+    images: [2, 1] # 写真番号
+  - category: 数学B｜数列
+    images: [3]
+  - category: 未分類
+    images: []
+教材: 青チャート
+---
+
+積分は置換積分を復習。数列は漸化式を進めた。`;
+  const build = fixture(t, {
+    "logs/2026/20261110/20261110.md": source.replace(/\n/g, "\r\n"),
+    "logs/2026/20261110/20261110-1.webp": webp,
+    "logs/2026/20261110/20261110-2.webp": webp,
+    "logs/2026/20261110/20261110-3.webp": webp,
+    "logs/2026/20261110/20261110-4.webp": webp
+  });
+  const groups = [
+    { category: "数学III｜積分法", images: ["20261110-1.webp", "20261110-2.webp"] },
+    { category: "数学B｜数列", images: ["20261110-3.webp"] },
+    { category: "未分類", images: [] }
+  ];
+  const [log] = build.loadLogs();
+  assert.deepEqual(log.categories, groups);
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stderr, "");
+
+  const imagesIn = (page) => [...page.matchAll(/class="daily-sheet-image" src="\.\/images\/([^"]+)"/g)]
+    .map((match) => match[1]);
+  const home = build.read("public/index.html");
+  assert.match(home, /class="daily-log-card-link" href="\.\/daily\/20261110\/"/);
+  assert.match(home, /class="log-category">数学III｜積分法 \/ 数学B｜数列 \/ 未分類<\/p>/);
+  const daily = build.read("public/daily/20261110/index.html");
+  assert.match(daily, /class="log-category">数学III｜積分法 \/ 数学B｜数列 \/ 未分類<\/p>/);
+  assert.match(daily, /積分は置換積分を復習。数列は漸化式を進めた。/);
+  assert.deepEqual(imagesIn(daily), [...groups.flatMap(({ images }) => images), "20261110-4.webp"]);
+
+  for (const { category, images } of groups) {
+    const section = categorySection(home, category);
+    const href = section.match(/href="\.\/(daily\/20261110\/[^"]+)"/)?.[1];
+    assert.ok(href, category);
+    const page = build.read(`public/${href}`);
+    assert.deepEqual(imagesIn(page), images);
+    assert.ok(page.includes(`class="log-category">${category}</p>`));
+    assert.match(page, /積分は置換積分を復習。数列は漸化式を進めた。/);
+    assert.match(page, /<dt>教材<\/dt><dd>青チャート<\/dd>/);
+    assert.match(page, /href="\.\/">この日の全写真を見る/);
+  }
+});
+
+test("invalid, missing and overlapping photo numbers warn without breaking an empty note", (t) => {
+  const webp = createVp8xWebp();
+  const build = fixture(t, {
+    "logs/2026/20261110/20261110.md": `---
+categories:
+  - category: 数学III｜積分法
+    images: [1, 8, 2-4]
+  - category: 未分類
+    images: [1, 2]
+  - category: 未分類
+    images: [3, 3]
+---
+`,
+    "logs/2026/20261110/20261110-1.webp": webp,
+    "logs/2026/20261110/20261110-2.webp": webp,
+    "logs/2026/20261110/20261110-3.webp": webp
+  });
+  const result = build.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /20261110\.md（数学III｜積分法）: 画像番号 8 .*見つかりません/);
+  assert.match(result.stderr, /不正な画像番号「2-4」/);
+  assert.match(result.stderr, /20261110\.md（未分類）: 画像番号 1 .*重複/);
+  const daily = build.read("public/daily/20261110/index.html");
+  assert.doesNotMatch(daily, /<section class="daily-markdown"/);
+  const section = categorySection(build.read("public/index.html"), "未分類");
+  const links = [...section.matchAll(/href="\.\/(daily\/20261110\/[^"]+)"/g)];
+  assert.equal(links.length, 1);
+  const page = build.read(`public/${links[0][1]}`);
+  assert.doesNotMatch(page, /20261110-1\.webp|<section class="daily-markdown"/);
+  assert.deepEqual([...page.matchAll(/class="daily-sheet-image" src="\.\/images\/([^"]+)"/g)]
+    .map((match) => match[1]), ["20261110-2.webp", "20261110-3.webp"]);
+});
+
 test("categories appear on cards and daily pages, with text lists independent of chronology", (t) => {
   const source = "---\ncategory: 数学III｜極限\n---\n\n今日は47番と48番。\n48番は係数決定の考え方をもう一度見直したい。";
   const build = fixture(t, {
@@ -585,15 +694,23 @@ test("mixed old and new logs retain chronology, monthly archives and category hi
   assert.match(oldPage, /記録20261024/);
 });
 
-test("mathlog snippet includes unchanged categories and ordered input stops", () => {
+test("mathlog offers two templates and keeps the existing category selection snippet", () => {
   const snippets = JSON.parse(fs.readFileSync(path.join(projectDir, ".vscode/math-log.code-snippets"), "utf8"));
-  const template = snippets["数学学習記録テンプレート"];
-  assert.equal(template.prefix, "mathlog");
-  assert.equal(template.body[1], snippets["カテゴリ選択"].body[0]);
-  const stops = [...template.body.join("\n").matchAll(/\$\{(\d+)/g)].map((match) => Number(match[1]));
-  assert.deepEqual(stops, [1, 2, 3, 4, 5, 6, 7, 8]);
-  assert.ok(template.body.includes("## 記録メモ"));
-  assert.doesNotMatch(template.body.join("\n"), /^date:/m);
-  assert.match(template.body.join("\n"), /🌧️🌧️🌧️🌧️🌧️/);
-  assert.match(template.body.join("\n"), /☀️☀️☀️☀️☀️/);
+  const templates = Object.entries(snippets).filter(([, snippet]) => snippet.prefix === "mathlog");
+  assert.deepEqual(templates.map(([name]) => name), ["数学学習記録｜1分野", "数学学習記録｜複数分野"]);
+  const [[, single], [, multi]] = templates;
+  assert.equal(single.scope, "markdown");
+  assert.equal(multi.scope, "markdown");
+  assert.deepEqual(single.body, ["---", "category: 未分類", "---", "", "$0"]);
+  assert.deepEqual(multi.body, [
+    "---", "categories:", "  - ${1:category: 未分類}", "    images: [${2}]",
+    "  - ${3:category: 未分類}", "    images: [${4}]", "---", "", "$0"
+  ]);
+  const picker = snippets["カテゴリ選択"];
+  assert.equal(picker.prefix, "mcat");
+  const choices = picker.body[0].match(/^category: \$\{1\|(.+)\|\}$/)?.[1].split(",");
+  assert.equal(choices.length, 30);
+  assert.ok(choices.includes("数学III｜積分法"));
+  assert.ok(choices.includes("数学B｜数列"));
+  assert.ok(choices.includes("未分類"));
 });

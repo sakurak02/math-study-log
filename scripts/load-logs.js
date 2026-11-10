@@ -1,11 +1,14 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-// The template uses single-line scalars, not arbitrary YAML objects or arrays.
-function readScalar(frontMatter, key) {
+function readField(frontMatter, key) {
   const line = frontMatter.match(new RegExp(`^${key}:[ \\t]*(.*)$`, "m"));
-  if (!line) return undefined;
-  let value = line[1].trim();
+  return line?.[1].trim();
+}
+
+function readScalar(frontMatter, key) {
+  let value = readField(frontMatter, key);
+  if (value === undefined) return undefined;
   if (value.startsWith('"')) {
     try {
       const quoted = value.match(/^("(?:[^"\\]|\\.)*")(?:[ \t]+#.*)?$/);
@@ -22,6 +25,67 @@ function readScalar(frontMatter, key) {
   }
 
   return value.trim();
+}
+
+// Only the categories list uses nested fields. Each images value is an inline array.
+function readCategoryAssignments(frontMatter) {
+  const header = frontMatter.match(/^categories:.*(?:\r?\n|$)/m);
+  if (!header) return undefined;
+
+  const block = frontMatter.slice(header.index + header[0].length).split(/^[^\s#]/m, 1)[0];
+  return block.split(/^[ \t]+-[ \t]+/m).slice(1).map((item) => {
+    const fields = item.replace(/^[ \t]+/gm, "");
+    return {
+      category: readScalar(fields, "category") || "未分類",
+      imageList: readField(fields, "images")
+    };
+  });
+}
+
+function resolveCategories(record, images, dateKey, markdownPath) {
+  if (!record.categoryAssignments) return [{ category: record.category, images }];
+
+  const grouped = new Map();
+  const available = new Set(images);
+  const assigned = new Map();
+  const warn = (category, message) => console.warn(`${markdownPath}（${category}）: ${message}`);
+
+  for (const { category, imageList } of record.categoryAssignments) {
+    if (!grouped.has(category)) grouped.set(category, []);
+
+    const list = imageList?.match(/^\[([^\]]*)\][ \t]*(?:#.*)?$/);
+    if (!list) {
+      warn(category, "images は [1, 2] の形式で入力してください。");
+      continue;
+    }
+    const numbers = list[1].trim().replace(/,$/, "");
+    if (!numbers) continue;
+
+    for (const token of numbers.split(",")) {
+      const number = token.trim();
+      if (!/^[1-9]\d*$/.test(number)) {
+        warn(category, `不正な画像番号「${number}」をスキップしました。`);
+        continue;
+      }
+      const filename = `${dateKey}-${number}.webp`;
+      if (!available.has(filename)) {
+        warn(category, `画像番号 ${number} の ${filename} が見つかりません。`);
+      }
+      const firstCategory = assigned.get(filename);
+      if (firstCategory && firstCategory !== category) {
+        warn(category, `画像番号 ${number} が「${firstCategory}」と重複しています。最初の指定を使います。`);
+        continue;
+      }
+      assigned.set(filename, category);
+    }
+  }
+
+  for (const image of images) {
+    const category = assigned.get(image);
+    if (category) grouped.get(category).push(image);
+  }
+  if (!grouped.size) grouped.set("未分類", []);
+  return [...grouped].map(([category, images]) => ({ category, images }));
 }
 
 function readCount(frontMatter, key) {
@@ -52,6 +116,7 @@ function parseLogMarkdown(source) {
   const fields = frontMatter[1];
   return {
     category: readScalar(fields, "category") || "未分類",
+    categoryAssignments: readCategoryAssignments(fields),
     material: readScalar(fields, "教材"),
     scope: readScalar(fields, "範囲"),
     problemCount: readCount(fields, "問題数"),
@@ -130,11 +195,15 @@ function loadLogs(logsDir) {
       } catch (error) {
         throw new Error(`${markdownPath}: ${error.message}`, { cause: error });
       }
+      const categories = resolveCategories(record, images, dateKey, markdownPath);
+      const { categoryAssignments, ...details } = record;
 
       logs.push({
         date: isoDateFromKey(dateKey),
         dateKey,
-        ...record,
+        ...details,
+        category: categories.map(({ category }) => category).join(" / "),
+        categories,
         images,
         coverImage: images.includes(expectedCoverImage)
           ? expectedCoverImage

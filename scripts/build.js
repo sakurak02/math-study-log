@@ -252,16 +252,23 @@ const categorySubjects = new Map([
   ["未分類", []]
 ]);
 
+function categoryPageName(log, index) {
+  if (log.categories.length === 1 && log.categories[index].images.length === log.images.length) return "";
+  return `category-${index + 1}.html`;
+}
+
 function createCategoryIndex(logs) {
   const grouped = new Map();
   for (const log of logs) {
-    if (!grouped.has(log.category)) grouped.set(log.category, []);
-    grouped.get(log.category).push(log);
+    for (const [index, { category }] of log.categories.entries()) {
+      if (!grouped.has(category)) grouped.set(category, []);
+      grouped.get(category).push({ log, pageName: categoryPageName(log, index) });
+    }
   }
   const list = (category) => {
     const entries = grouped.get(category) || [];
     return entries.length
-      ? `<div class="category-list">${entries.map((log) => `<a class="daily-log-archive-link" href="./daily/${log.dateKey}/"><time class="daily-log-archive-date" datetime="${log.date}">${formatDotDate(log.date)}</time><span class="daily-log-archive-excerpt">${escapeHtml(excerptFromMarkdown(log.markdown))}</span></a>`).join("\n")}</div>`
+      ? `<div class="category-list">${entries.map(({ log, pageName }) => `<a class="daily-log-archive-link" href="./daily/${log.dateKey}/${pageName}"><time class="daily-log-archive-date" datetime="${log.date}">${formatDotDate(log.date)}</time><span class="daily-log-archive-excerpt">${escapeHtml(excerptFromMarkdown(log.markdown))}</span></a>`).join("\n")}</div>`
       : `<p class="category-empty">学習記録はまだありません。</p>`;
   };
   const chapter = (category, label) => `<details class="category-chapter" data-category-name="${escapeAttribute(category)}"><summary>${escapeHtml(label)}</summary>${list(category)}</details>`;
@@ -597,19 +604,23 @@ function createStudyDetails(log) {
     : "";
 }
 
-function createDailyPage(log, index, logs) {
+function createDailyPage(log, index, logs, categoryView) {
   const previous = index > 0 ? logs[index - 1] : null;
   const next = index < logs.length - 1 ? logs[index + 1] : null;
+  const category = categoryView?.category ?? log.category;
+  const photos = categoryView?.images ?? log.images;
+  const coverImage = categoryView ? photos[0] : log.coverImage;
+  const url = `${siteUrl}/daily/${log.dateKey}/${categoryView?.pageName ?? ""}`;
   const markdownSource = withoutFirstHeading(log.markdown);
   const noteHeading = /^##[ \t]+記録メモ[ \t]*\r?$/m.test(log.markdown) ? "記録メモ" : "STUDY NOTE";
   const note = markdownSource
     ? `<section class="daily-markdown" aria-labelledby="daily-markdown-heading"><h2 class="daily-markdown-heading" id="daily-markdown-heading">${noteHeading}</h2><div class="daily-markdown-content">${markdown.render(normalizeStudyNoteMarkdown(markdownSource))}</div></section>`
     : "";
   const description = excerptFromMarkdown(log.markdown, 140) || defaultDescription;
-  const coverUrl = log.coverImage ? `${siteUrl}/daily/${log.dateKey}/images/${encodeURIComponent(log.coverImage)}` : siteOgImageUrl;
-  const images = log.images.length
-    ? log.images.map((image, imageIndex) => `<figure class="daily-sheet">
-  <figcaption class="daily-sheet-label">写真 ${imageIndex + 1} / ${log.pageCount}枚</figcaption>
+  const coverUrl = coverImage ? `${siteUrl}/daily/${log.dateKey}/images/${encodeURIComponent(coverImage)}` : siteOgImageUrl;
+  const images = photos.length
+    ? photos.map((image, imageIndex) => `<figure class="daily-sheet">
+  <figcaption class="daily-sheet-label">写真 ${imageIndex + 1} / ${photos.length}枚</figcaption>
   <a class="daily-sheet-link" href="./images/${encodeURIComponent(image)}" target="_blank" rel="noopener" aria-label="${escapeHtml(formatJapaneseDate(log.date))} 写真${imageIndex + 1}を原寸で開く">
     <img class="daily-sheet-image" src="./images/${encodeURIComponent(image)}" alt="${escapeHtml(formatJapaneseDate(log.date))} 学習記録 ページ${imageIndex + 1}" loading="lazy">
   </a>
@@ -617,10 +628,13 @@ function createDailyPage(log, index, logs) {
     : `<p class="daily-no-images">学習写真はありません。</p>`;
   const previousLink = previous ? `<a class="text-link" href="../${previous.dateKey}/">← ${formatDotDate(previous.date)}</a>` : `<span></span>`;
   const nextLink = next ? `<a class="text-link" href="../${next.dateKey}/">${formatDotDate(next.date)} →</a>` : `<span></span>`;
+  const navigation = categoryView
+    ? `<div class="day-navigation"><a class="text-link" href="./">この日の全写真を見る</a><span></span></div>`
+    : `<nav class="day-navigation" aria-label="学習日を移動">${previousLink}${nextLink}</nav>`;
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
-${documentHead({ title: `${formatDotDate(log.date)} | 数学学習記録`, description, url: `${siteUrl}/daily/${log.dateKey}/`, image: coverUrl, extra: mathJaxTags() })}
+${documentHead({ title: `${formatDotDate(log.date)} | 数学学習記録`, description, url, image: coverUrl, extra: mathJaxTags() })}
 <style>${baseStyles()}\n${dailyStyles()}</style>
 </head>
 <body>
@@ -628,12 +642,12 @@ ${someCloudsLink()}
 <header><div class="header-inner"><div class="header-title">MATH STUDY LOG</div><div class="header-date">数学学習記録</div><div class="header-guide-wrap"><span class="header-guide-copy">クーモとまなぶ</span><img class="header-guide" src="../../images/kuumo/s1.png" alt="案内キャラクター クーモ"></div></div></header>
 <main class="record-main">
   <div class="page-actions"><a class="text-link" href="../../index.html">← 学習記録へ戻る</a></div>
-  <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1><p class="log-category">${escapeHtml(log.category)}</p></div>
+  <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1><p class="log-category">${escapeHtml(category)}</p></div>
   <article class="daily-entry">
     <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${images}</section>
     ${createStudyDetails(log)}
     ${note}
-    <nav class="day-navigation" aria-label="学習日を移動">${previousLink}${nextLink}</nav>
+    ${navigation}
   </article>
 </main>
 <footer>Math Study Log © ${log.date.slice(0, 4)}</footer>
@@ -675,6 +689,13 @@ function build() {
       for (const image of log.images) fs.copyFileSync(path.join(sourceDir, image), path.join(outputImagesDir, image));
     }
     fs.writeFileSync(path.join(outputDir, "index.html"), createDailyPage(log, index, logs), "utf8");
+    for (const [categoryIndex, category] of log.categories.entries()) {
+      const pageName = categoryPageName(log, categoryIndex);
+      if (pageName) {
+        const page = createDailyPage(log, index, logs, { ...category, pageName });
+        fs.writeFileSync(path.join(outputDir, pageName), page, "utf8");
+      }
+    }
   }
   fs.writeFileSync(path.join(publicDir, "index.html"), createHomePage(logs), "utf8");
   writeSitemap(logs);
