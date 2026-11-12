@@ -238,10 +238,14 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   assert.doesNotMatch(sitemap, /records|\/log\/|\/session\//);
 });
 
-test("study note renders compact dash lines as a list between paragraphs", (t) => {
+test("study note renders single newlines without disrupting paragraphs, headings, lists or math", (t) => {
   const source = `# 2026-10-02
 
 今日は極限を勉強した。
+式 $x^2$ を確認した。
+少しずつ慣れていきたい。
+
+## 復習する問題
 
 -47 関数の極限
 -48 極限値の条件から係数決定
@@ -255,7 +259,9 @@ test("study note renders compact dash lines as a list between paragraphs", (t) =
   const page = build.read("public/daily/20261002/index.html");
   const note = page.match(/<div class="daily-markdown-content">([\s\S]*?)<\/div>/)?.[1] || "";
 
-  assert.match(note, /<p>今日は極限を勉強した。<\/p>[\s\S]*<ul>[\s\S]*<li>47 関数の極限<\/li>[\s\S]*<li>48 極限値の条件から係数決定<\/li>[\s\S]*<\/ul>[\s\S]*<p>48番は少し迷った。<\/p>/);
+  assert.match(note, /<p>今日は極限を勉強した。<br>\n式 \$x\^2\$ を確認した。<br>\n少しずつ慣れていきたい。<\/p>\n<h2>復習する問題<\/h2>/);
+  assert.match(note, /<ul>\n<li>47 関数の極限<\/li>\n<li>48 極限値の条件から係数決定<\/li>\n<\/ul>\n<p>48番は少し迷った。<\/p>/);
+  assert.match(page, /window\.MathJax/);
   assert.doesNotMatch(note, /<h1>|# 2026-10-02|<p>-47/);
   assert.match(page, /\.daily-markdown-content ul, \.daily-markdown-content ol \{[^}]*margin: \.75rem 0 \.75rem 1\.5rem;[^}]*padding-left: 1rem;/);
   assert.match(page, /\.daily-markdown-content li \{[^}]*line-height: 1\.8;[^}]*overflow-wrap: anywhere;/);
@@ -401,7 +407,7 @@ categories:
 });
 
 test("categories appear on cards and daily pages, with text lists independent of chronology", (t) => {
-  const source = "---\ncategory: 数学III｜極限\n---\n\n今日は47番と48番。\n48番は係数決定の考え方をもう一度見直したい。";
+  const source = "---\ncategory: 数学III｜極限\n---\n\n今日は47番と48番。\n48番は係数決定の考え方をもう一度見直したい。\n\n次は49番。";
   const build = fixture(t, {
     "logs/2026/10/25/20261025.md": source,
     "logs/2026/10/18/20261018.md": "---\ncategory: 数学III｜極限\n---\n極限の復習",
@@ -415,7 +421,7 @@ test("categories appear on cards and daily pages, with text lists independent of
   const daily = build.read("public/daily/20261025/index.html");
   assert.match(home, /<time class="daily-log-date"[^>]*>2026\.10\.25<\/time>\s*<p class="log-category">数学III｜極限<\/p>/);
   assert.match(daily, /<h1>2026\.10\.25<\/h1><p class="log-category">数学III｜極限<\/p>/);
-  assert.match(daily, /<p>今日は47番と48番。\n48番は係数決定の考え方をもう一度見直したい。<\/p>/);
+  assert.match(daily, /<p>今日は47番と48番。<br>\n48番は係数決定の考え方をもう一度見直したい。<\/p>\n<p>次は49番。<\/p>/);
   assert.doesNotMatch(home + daily, /category:|<hr>|<h2>category/);
   const limits = categorySection(home, "数学III｜極限");
   assert.match(limits, /20261025\/[^]*2026\.10\.25[^]*今日は47番と48番。[^]*20261018\/[^]*極限の復習/);

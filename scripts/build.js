@@ -14,7 +14,7 @@ const defaultDescription =
 const siteOgImageUrl = `${siteUrl}/og-image.png`;
 const faviconUrl = `${siteUrl}/assets/cloud.svg`;
 const gaMeasurementId = "G-LTZZZFVRKP";
-const markdown = new MarkdownIt({ html: false, linkify: true, typographer: false });
+const markdown = new MarkdownIt({ html: false, linkify: true, typographer: false, breaks: true });
 
 function escapeHtml(value = "") {
   return String(value)
