@@ -1,0 +1,157 @@
+const fs = require("node:fs");
+const path = require("node:path");
+
+const title = "ひたすら数学｜64歳からの高校数学学び直し・学習記録";
+const description = "64歳から高校数学を学び直す日々の記録。Focus Goldの学習動画や手書きの数学ノート、自作数学教材を公開しています。";
+const youtubeUrl = "https://www.youtube.com/@sakurak02";
+
+function styles() {
+  return `:root { --navy:#263548; --gold:#E3CE9B; --white:#FFFFFF; --muted:#CED7E1; --line:#e0e5eb; }
+* { box-sizing:border-box; }
+html { background:var(--white); }
+body { margin:0; color:var(--navy); font-family:"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; font-size:16px; line-height:1.9; -webkit-font-smoothing:antialiased; }
+h1,h2,h3,p { margin:0; }
+a { color:inherit; text-underline-offset:5px; }
+a:focus-visible { outline:2px solid #9c7733; outline-offset:7px; }
+.skip-link { position:absolute; left:20px; top:-100px; padding:8px 16px; background:white; z-index:2; }
+.skip-link:focus { top:16px; }
+.hero { background:var(--navy); color:white; text-align:center; padding:76px 24px 71px; }
+.hero h1 { font-size:clamp(32px, 4vw, 44px); font-weight:500; letter-spacing:.16em; padding-left:.16em; line-height:1.6; }
+.brand-symbol { display:block; width:108px; height:48px; margin:24px auto 27px; }
+.tagline { font-size:23px; font-weight:400; letter-spacing:.12em; }
+.subtitle { color:var(--muted); font-size:14px; letter-spacing:.11em; margin-top:13px; }
+.home-main { width:min(960px, calc(100% - 64px)); margin:auto; }
+.entrances { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); padding:55px 0 52px; }
+.entrance { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:160px; padding:20px 12px; text-decoration:none; }
+.entrance + .entrance { border-left:1px solid var(--line); }
+.entrance:hover { background:#f5f7f9; }
+.entrance svg { width:39px; height:39px; fill:none; stroke:currentColor; stroke-width:1.35; stroke-linecap:round; stroke-linejoin:round; margin-bottom:17px; }
+.entrance h2 { font-size:22px; font-weight:500; letter-spacing:.055em; line-height:1.6; }
+.entrance p { margin-top:5px; font-size:14px; letter-spacing:.09em; }
+.about { border-top:1px solid var(--line); padding:43px 16px 49px; text-align:center; }
+.about-copy { font-size:15px; line-height:2.2; letter-spacing:.04em; }
+.closing { margin-top:28px; font-size:16px; letter-spacing:.12em; }
+.footer { text-align:center; padding:21px 24px 30px; font-size:13px; color:#596778; letter-spacing:.06em; }
+.footer a { text-decoration:none; }
+.footer a:hover { text-decoration:underline; }
+.footer span { padding:0 10px; color:#9aa6b3; }
+.shop-header { background:var(--navy); color:white; padding:23px 32px; }
+.shop-header-inner { width:min(1040px, 100%); margin:auto; }
+.brand-link { display:inline-flex; align-items:center; gap:15px; text-decoration:none; font-size:18px; letter-spacing:.1em; }
+.brand-link img { width:48px; height:24px; }
+.shop-main { width:min(1040px, calc(100% - 64px)); margin:auto; padding:47px 0 48px; }
+.back-link { font-size:14px; }
+.shop-intro { margin:37px 0 45px; }
+.shop-intro h1 { font-weight:500; font-size:36px; letter-spacing:.06em; }
+.shop-label { margin-top:2px; font-size:16px; letter-spacing:.08em; }
+.shop-description { margin-top:22px; color:#596778; }
+.books-list { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:52px 44px; }
+.book { display:flex; flex-direction:column; border-top:1px solid var(--line); padding-top:26px; }
+.book-cover { display:block; width:100%; height:260px; object-fit:contain; background:#f5f7f9; }
+.book-details { display:flex; flex-direction:column; flex:1; align-items:flex-start; padding-top:23px; }
+.book-title { font-size:19px; line-height:1.8; font-weight:500; margin-bottom:13px; }
+.book-description { font-size:15px; color:#596778; margin-bottom:9px; }
+.book-price { margin:14px 0; padding-top:8px; font-size:16px; margin-top:auto; }
+.book-link { display:inline-block; border:1px solid var(--navy); padding:8px 26px; text-decoration:none; font-size:14px; }
+.book-link:hover { background:var(--navy); color:white; }
+.shop-bottom { border-top:1px solid var(--line); margin-top:52px; padding-top:28px; }
+@media(max-width:600px) {
+  .hero { padding:56px 20px 49px; }
+  .hero h1 { font-size:32px; letter-spacing:.13em; }
+  .brand-symbol { width:96px; margin:22px auto 23px; }
+  .tagline { font-size:19px; letter-spacing:.06em; }
+  .subtitle { font-size:14px; letter-spacing:.035em; margin-top:12px; }
+  .home-main { width:calc(100% - 48px); }
+  .entrances { grid-template-columns:1fr; padding:26px 0; }
+  .entrance { min-height:164px; padding:25px 12px; }
+  .entrance + .entrance { border-left:0; border-top:1px solid var(--line); }
+  .entrance svg { width:34px; height:34px; margin-bottom:12px; }
+  .entrance h2 { font-size:21px; }
+  .about { padding:31px 0 34px; }
+  .about-copy { font-size:14px; letter-spacing:0; }
+  .closing { font-size:15px; letter-spacing:.06em; margin-top:25px; }
+  .footer { padding-bottom:24px; }
+  .shop-header { padding:20px 24px; }
+  .shop-main { width:calc(100% - 48px); padding-top:28px; }
+  .shop-intro { margin:28px 0 32px; }
+  .shop-intro h1 { font-size:30px; }
+  .books-list { grid-template-columns:1fr; gap:36px; }
+  .book-cover { height:auto; max-height:340px; aspect-ratio:1.5; }
+}`;
+}
+
+const footer = () => `<footer class="footer">sakurak02<span aria-hidden="true">｜</span><a href="https://sakurak02.github.io/some-clouds/">some clouds</a></footer>`;
+
+function createLandingPage({ documentHead, siteUrl }) {
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+${documentHead({ title, description, url: `${siteUrl}/` })}
+<meta name="theme-color" content="#263548">
+<style>${styles()}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header class="hero">
+  <h1>ひたすら数学</h1>
+  <img class="brand-symbol" src="./assets/infinity.svg" width="108" height="48" alt="無限大">
+  <p class="tagline">数学、どこまで行けるか。</p>
+  <p class="subtitle">64歳からの挑戦と学習記録</p>
+</header>
+<main class="home-main" id="main">
+  <nav class="entrances" aria-label="数学の学びと教材">
+    <a class="entrance" href="${youtubeUrl}">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="10" width="40" height="28" rx="4"/><path d="m20 17 12 7-12 7z"/></svg>
+      <h2>Focus Gold</h2><p>学習動画</p>
+    </a>
+    <a class="entrance" href="./study-log.html">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 12c-5-4-12-5-20-3v29c8-2 15-1 20 3 5-4 12-5 20-3V9c-8-2-15-1-20 3v29"/><path d="M10 16c3-.4 6 0 8 1m-8 6c3-.4 6 0 8 1m12-7c2-1 5-1.4 8-1m-8 8c2-1 5-1.4 8-1"/></svg>
+      <h2>Study Log</h2><p>数学学習記録</p>
+    </a>
+    <a class="entrance" href="./shop/">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 15h30l3 27H6z"/><path d="M17 19V11a7 7 0 0 1 14 0v8"/></svg>
+      <h2>Shop</h2><p>自作数学教材</p>
+    </a>
+  </nav>
+  <section class="about" aria-label="管理人紹介">
+    <p class="about-copy">文系出身。64歳から数学を学び直しています。<br>理解したことを動画で発表しながら、<br>日々の学びを記録しています。</p>
+    <p class="closing">果てしない道のりを、一問ずつ。</p>
+  </section>
+</main>
+${footer()}
+<script>
+// Preserve links to sections of the former log index.
+if (/^#(?:daily-log-|category-title$)/.test(location.hash)) {
+  location.replace('./study-log.html' + location.hash);
+}
+</script>
+</body>
+</html>
+`;
+}
+
+function createShopPage({ documentHead, siteUrl }) {
+  const products = fs.readFileSync(path.join(__dirname, "shop-products.html"), "utf8");
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+${documentHead({ title: "Shop｜自作数学教材｜ひたすら数学", description: "高校数学の理解と演習のために作った数学教材。積分、複素数平面、2次関数、式と曲線の教材をご紹介します。", url: `${siteUrl}/shop/` })}
+<meta name="theme-color" content="#263548">
+<style>${styles()}</style>
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<header class="shop-header"><div class="shop-header-inner"><a class="brand-link" href="../"><img src="../assets/infinity.svg" alt="" width="48" height="24">ひたすら数学</a></div></header>
+<main class="shop-main" id="main">
+  <a class="back-link" href="../">トップページへ戻る</a>
+  <div class="shop-intro"><h1>Shop</h1><p class="shop-label">自作数学教材</p><p class="shop-description">数学を理解し、手を動かして身につけるために。<br>AIと一緒に作った数学教材を並べています。<br>商品の詳細・ご購入はBOOTHでご覧いただけます。</p></div>
+  <section aria-label="数学教材一覧" class="books-list">${products.replaceAll('<h3 ', '<h2 ').replaceAll('</h3>', '</h2>')}</section>
+  <p class="shop-bottom"><a class="back-link" href="../">トップページへ戻る</a></p>
+</main>
+${footer()}
+</body>
+</html>
+`;
+}
+
+module.exports = { createLandingPage, createShopPage };

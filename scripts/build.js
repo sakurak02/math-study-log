@@ -2,17 +2,17 @@ const fs = require("node:fs");
 const path = require("node:path");
 const MarkdownIt = require("markdown-it");
 const { loadLogs } = require("./load-logs");
+const { createLandingPage, createShopPage } = require("./site-pages");
 
 const rootDir = path.resolve(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
 const logsDir = path.join(rootDir, "logs");
 const dailyOutputDir = path.join(publicDir, "daily");
 const siteUrl = "https://sakurak02.github.io/math-study-log";
-const siteName = "Math Study Log";
+const siteName = "ひたすら数学";
 const defaultDescription =
   "64歳から数学を学び直し、毎日の勉強を写真と短い記録で残す学習記録サイトです。";
 const siteOgImageUrl = `${siteUrl}/og-image.png`;
-const faviconUrl = `${siteUrl}/assets/cloud.svg`;
 const gaMeasurementId = "G-LTZZZFVRKP";
 const markdown = new MarkdownIt({ html: false, linkify: true, typographer: false, breaks: true });
 
@@ -142,7 +142,7 @@ function documentHead({ title, description, url, image = siteOgImageUrl, extra =
   return `<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(title)}</title>
-<link rel="icon" type="image/svg+xml" href="${faviconUrl}">
+<link rel="icon" type="image/svg+xml" href="${url.includes("/daily/") ? "../../" : url.endsWith("/shop/") ? "../" : "./"}assets/favicon.svg">
 ${socialMetaTags({ title, description, url, image })}
 <link rel="canonical" href="${url}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -510,22 +510,24 @@ function createHomePage(logs) {
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
-${documentHead({ title: "数学学習記録 | Math Study Log", description: defaultDescription, url: `${siteUrl}/`, image: ogImage })}
+${documentHead({ title: "数学学習記録 | Math Study Log", description: defaultDescription, url: `${siteUrl}/study-log.html`, image: ogImage })}
 <style>${baseStyles()}\n${homeStyles()}</style>
 </head>
 <body>
 ${someCloudsLink()}
 <header><div class="header-inner">
   <div class="header-title">MATH STUDY LOG</div>
-  <div class="header-date">数学学習記録</div>
+  <h1 class="header-date">数学学習記録</h1>
   <div class="header-guide-wrap"><span class="header-guide-copy">クーモとまなぶ</span><img class="header-guide" src="./images/kuumo/s1.png" alt="案内キャラクター クーモ"></div>
 </div></header>
 <main>
+  <p style="margin-bottom:24px"><a href="./">ひたすら数学 トップへ</a></p>
   <section class="daily-log-section" aria-labelledby="daily-log-title">
     <div class="daily-log-heading"><div class="daily-log-kicker">LEARNING LOG</div><h2 id="daily-log-title">学習記録</h2></div>
     ${logContent}
   </section>
   ${createCategoryIndex(sorted)}
+  ${retainedDailyKeys(logs).length ? `<section class="category-index" aria-label="以前の学習記録"><h2 class="daily-log-kicker">以前の学習記録</h2>${retainedDailyKeys(logs).map((key) => `<p><a href="./daily/${key}/">${key.slice(0, 4)}.${key.slice(4, 6)}.${key.slice(6)}</a></p>`).join("")}</section>` : ""}
   <div class="guide-divider" aria-hidden="true"><img class="divider-guide" src="./images/kuumo/s2.png" alt=""></div>
   <section class="about-section">
     <div class="about-kicker">MY GOAL</div>
@@ -641,7 +643,7 @@ ${documentHead({ title: `${formatDotDate(log.date)} | 数学学習記録`, descr
 ${someCloudsLink()}
 <header><div class="header-inner"><div class="header-title">MATH STUDY LOG</div><div class="header-date">数学学習記録</div><div class="header-guide-wrap"><span class="header-guide-copy">クーモとまなぶ</span><img class="header-guide" src="../../images/kuumo/s1.png" alt="案内キャラクター クーモ"></div></div></header>
 <main class="record-main">
-  <div class="page-actions"><a class="text-link" href="../../index.html">← 学習記録へ戻る</a></div>
+  <div class="page-actions"><a class="text-link" href="../../study-log.html">← 学習記録へ戻る</a>　<a class="text-link" href="../../">ひたすら数学 トップへ</a></div>
   <div class="page-head"><div class="page-kicker">LEARNING LOG</div><h1>${formatDotDate(log.date)}</h1><p class="log-category">${escapeHtml(category)}</p></div>
   <article class="daily-entry">
     <section class="daily-sheets" aria-label="${escapeHtml(formatJapaneseDate(log.date))}の学習写真">${images}</section>
@@ -658,16 +660,25 @@ ${someCloudsLink()}
 
 function cleanPublicOutput() {
   fs.mkdirSync(publicDir, { recursive: true });
-  const preserved = new Set(["assets", "images", "og-image.png"]);
+  const preserved = new Set(["assets", "images", "daily", "og-image.png", "CNAME", ".nojekyll"]);
   for (const entry of fs.readdirSync(publicDir, { withFileTypes: true })) {
-    if (!preserved.has(entry.name)) fs.rmSync(path.join(publicDir, entry.name), { recursive: true, force: true });
+    if (!preserved.has(entry.name) && !/^google.*\.html$/.test(entry.name)) fs.rmSync(path.join(publicDir, entry.name), { recursive: true, force: true });
   }
   fs.mkdirSync(dailyOutputDir, { recursive: true });
   fs.writeFileSync(path.join(dailyOutputDir, ".gitkeep"), "", "utf8");
 }
 
+function retainedDailyKeys(logs) {
+  const generated = new Set(logs.map((log) => log.dateKey));
+  return fs.readdirSync(dailyOutputDir).filter((key) =>
+    /^\d{8}$/.test(key) && !generated.has(key) &&
+    fs.existsSync(path.join(dailyOutputDir, key, "index.html"))
+  ).sort().reverse();
+}
+
 function writeSitemap(logs) {
-  const urls = [`${siteUrl}/`, ...logs.map((log) => `${siteUrl}/daily/${log.dateKey}/`)];
+  const dailyKeys = [...logs.map((log) => log.dateKey), ...retainedDailyKeys(logs)];
+  const urls = [`${siteUrl}/`, `${siteUrl}/study-log.html`, `${siteUrl}/shop/`, ...dailyKeys.map((key) => `${siteUrl}/daily/${key}/`)];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map((url) => `  <url>\n    <loc>${url}</loc>\n  </url>`).join("\n")}
@@ -696,7 +707,10 @@ function build() {
       }
     }
   }
-  fs.writeFileSync(path.join(publicDir, "index.html"), createHomePage(logs), "utf8");
+  fs.writeFileSync(path.join(publicDir, "study-log.html"), createHomePage(logs), "utf8");
+  fs.writeFileSync(path.join(publicDir, "index.html"), createLandingPage({ documentHead, siteUrl }), "utf8");
+  fs.mkdirSync(path.join(publicDir, "shop"), { recursive: true });
+  fs.writeFileSync(path.join(publicDir, "shop/index.html"), createShopPage({ documentHead, siteUrl }), "utf8");
   writeSitemap(logs);
   fs.writeFileSync(path.join(publicDir, "robots.txt"), `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`, "utf8");
   console.log("Math Study Log build complete.");

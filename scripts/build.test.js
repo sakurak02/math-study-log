@@ -41,6 +41,9 @@ function fixture(t, files = {}) {
   fs.mkdirSync(path.join(tempDir, "scripts"), { recursive: true });
   fs.copyFileSync(path.join(__dirname, "build.js"), path.join(tempDir, "scripts/build.js"));
   fs.copyFileSync(path.join(__dirname, "load-logs.js"), path.join(tempDir, "scripts/load-logs.js"));
+  for (const file of ["site-pages.js", "shop-products.html"]) {
+    fs.copyFileSync(path.join(__dirname, file), path.join(tempDir, "scripts", file));
+  }
 
   for (const [file, contents] of Object.entries({
     "public/assets/cloud.svg": "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>",
@@ -128,17 +131,18 @@ test("logs loader skips malformed folders and the old layout and returns dates i
   assert.deepEqual(build.loadLogs().map((log) => log.dateKey), ["20240229", "20261001", "20261003"]);
 });
 
-test("empty build keeps current branding and removes stale generated output", (t) => {
+test("empty build keeps branding, verification files and previously published daily records", (t) => {
   const build = fixture(t, {
     "logs/.gitkeep": "",
     "public/records/old/index.html": "old",
     "public/log/index.html": "old",
     "public/session/index.html": "old",
-    "public/daily/19990101/index.html": "old"
+    "public/daily/19990101/index.html": "old",
+    "public/google-verification.html": "verification"
   });
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
-  const page = build.read("public/index.html");
+  const page = build.read("public/study-log.html");
   const sitemap = build.read("public/sitemap.xml");
 
   assert.match(page, /学習記録はまだありません。/);
@@ -149,16 +153,18 @@ test("empty build keeps current branding and removes stale generated output", (t
   assert.match(page, /images\/kuumo\/s3\.png/);
   assert.match(page, /https:\/\/sakurak02\.github\.io\/some-clouds\//);
   assert.match(page, /googletagmanager\.com\/gtag\/js\?id=G-LTZZZFVRKP/);
-  assert.match(page, /assets\/cloud\.svg/);
+  assert.match(page, /assets\/favicon\.svg/);
   assert.match(page, /property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/og-image\.png"/);
   assert.match(page, /name="twitter:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/og-image\.png"/);
   assertInlineScriptsParse(page);
   assert.equal(build.exists("public/records"), false);
   assert.equal(build.exists("public/log"), false);
   assert.equal(build.exists("public/session"), false);
-  assert.equal(build.exists("public/daily/19990101"), false);
+  assert.equal(build.read("public/daily/19990101/index.html"), "old");
+  assert.equal(build.read("public/google-verification.html"), "verification");
   assert.equal(build.exists("public/daily/.gitkeep"), true);
-  assert.doesNotMatch(sitemap, /math-study-log\/(?:daily|records|log|session)\//);
+  assert.doesNotMatch(sitemap, /math-study-log\/(?:records|log|session)\//);
+  assert.match(sitemap, /daily\/19990101\//);
   assert.match(build.read("public/robots.txt"), /Sitemap: https:\/\/sakurak02\.github\.io\/math-study-log\/sitemap\.xml/);
 });
 
@@ -190,7 +196,7 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   const build = fixture(t, files);
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
-  const page = build.read("public/index.html");
+  const page = build.read("public/study-log.html");
   const archiveStart = page.indexOf('id="daily-log-archive"');
   const latestHtml = page.slice(page.indexOf('id="daily-log-latest"'), archiveStart);
   const archiveHtml = page.slice(archiveStart, page.indexOf('<section class="category-index"', archiveStart));
@@ -215,8 +221,8 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   assert.match(page, /\.daily-log-excerpt \{[^}]*white-space: pre-line;[^}]*-webkit-line-clamp: 3;/);
   assert.match(page, /property="og:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/daily\/20261010\/images\/20261010-1\.webp"/);
   assert.match(page, /name="twitter:image" content="https:\/\/sakurak02\.github\.io\/math-study-log\/daily\/20261010\/images\/20261010-1\.webp"/);
-  assert.match(page, /property="og:url" content="https:\/\/sakurak02\.github\.io\/math-study-log\/"/);
-  assert.match(page, /rel="canonical" href="https:\/\/sakurak02\.github\.io\/math-study-log\/"/);
+  assert.match(page, /property="og:url" content="https:\/\/sakurak02\.github\.io\/math-study-log\/study-log\.html"/);
+  assert.match(page, /rel="canonical" href="https:\/\/sakurak02\.github\.io\/math-study-log\/study-log\.html"/);
   assertInlineScriptsParse(page);
 
   const dailyPage = build.read("public/daily/20261010/index.html");
@@ -233,7 +239,7 @@ test("build creates responsive latest cards, text archives, daily pages, and sit
   assertInlineScriptsParse(dailyPage);
 
   const sitemap = build.read("public/sitemap.xml");
-  assert.equal((sitemap.match(/<loc>/g) || []).length, dateKeys.length + 1);
+  assert.equal((sitemap.match(/<loc>/g) || []).length, dateKeys.length + 3);
   assert.match(sitemap, /\/daily\/20261010\//);
   assert.doesNotMatch(sitemap, /records|\/log\/|\/session\//);
 });
@@ -311,7 +317,7 @@ test("a single category includes all of the day's photos", (t) => {
   }]);
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
-  const home = build.read("public/index.html");
+  const home = build.read("public/study-log.html");
   assert.match(categorySection(home, "数学III｜極限"), /href="\.\/daily\/20261109\/"/);
   const daily = build.read("public/daily/20261109/index.html");
   assert.match(daily, /class="daily-sheet-image" src="\.\/images\/20261109-1\.webp"/);
@@ -352,7 +358,7 @@ categories:
 
   const imagesIn = (page) => [...page.matchAll(/class="daily-sheet-image" src="\.\/images\/([^"]+)"/g)]
     .map((match) => match[1]);
-  const home = build.read("public/index.html");
+  const home = build.read("public/study-log.html");
   assert.match(home, /class="daily-log-card-link" href="\.\/daily\/20261110\/"/);
   assert.match(home, /class="log-category">数学III｜積分法 \/ 数学B｜数列 \/ 未分類<\/p>/);
   const daily = build.read("public/daily/20261110/index.html");
@@ -397,7 +403,7 @@ categories:
   assert.match(result.stderr, /20261110\.md（未分類）: 画像番号 1 .*重複/);
   const daily = build.read("public/daily/20261110/index.html");
   assert.doesNotMatch(daily, /<section class="daily-markdown"/);
-  const section = categorySection(build.read("public/index.html"), "未分類");
+  const section = categorySection(build.read("public/study-log.html"), "未分類");
   const links = [...section.matchAll(/href="\.\/(daily\/20261110\/[^"]+)"/g)];
   assert.equal(links.length, 1);
   const page = build.read(`public/${links[0][1]}`);
@@ -417,7 +423,7 @@ test("categories appear on cards and daily pages, with text lists independent of
   });
   let result = build.run();
   assert.equal(result.status, 0, result.stderr);
-  let home = build.read("public/index.html");
+  let home = build.read("public/study-log.html");
   const daily = build.read("public/daily/20261025/index.html");
   assert.match(home, /<time class="daily-log-date"[^>]*>2026\.10\.25<\/time>\s*<p class="log-category">数学III｜極限<\/p>/);
   assert.match(daily, /<h1>2026\.10\.25<\/h1><p class="log-category">数学III｜極限<\/p>/);
@@ -432,13 +438,13 @@ test("categories appear on cards and daily pages, with text lists independent of
   assert.equal((home.match(/data-daily-log-entry data-category=/g) || []).length, 5);
   assertInlineScriptsParse(home);
   const sitemap = build.read("public/sitemap.xml");
-  assert.equal((sitemap.match(/<loc>/g) || []).length, 6);
+  assert.equal((sitemap.match(/<loc>/g) || []).length, 8);
   assert.match(sitemap, /\/daily\/20261025\//);
 
   build.write("logs/2026/10/25/20261025.md", source.replace("数学III｜極限", "数学B｜数列"));
   result = build.run();
   assert.equal(result.status, 0, result.stderr);
-  home = build.read("public/index.html");
+  home = build.read("public/study-log.html");
   assert.doesNotMatch(categorySection(home, "数学III｜極限"), /20261025/);
   assert.match(categorySection(home, "数学B｜数列"), /20261025\/[^]*20261017\//);
   assert.match(build.read("public/daily/20261025/index.html"), /class="log-category">数学B｜数列/);
@@ -478,7 +484,7 @@ test("free-form headings and category values render safely", (t) => {
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
   const daily = build.read("public/daily/20261025/index.html");
-  const home = build.read("public/index.html");
+  const home = build.read("public/study-log.html");
   assert.match(daily, /<h1>漸化式の気づき<\/h1>/);
   assert.match(daily, /<hr>/);
   assert.match(home, /&lt;script&gt;alert\(&quot;test&quot;\)&lt;\/script&gt;/);
@@ -493,7 +499,7 @@ test("responsive card rebuilding retains categories without duplicating chronolo
   const build = fixture(t, files);
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
-  const home = build.read("public/index.html");
+  const home = build.read("public/study-log.html");
   // A minimal DOM for executing the actual generated responsive script.
   const element = () => ({
     dataset: {}, children: [],
@@ -576,7 +582,7 @@ category: 数学III｜極限
   assert.equal(log.scope, "数列の極限・例題15〜20");
   const result = build.run();
   assert.equal(result.status, 0, result.stderr);
-  const home = build.read("public/index.html");
+  const home = build.read("public/study-log.html");
   const daily = build.read("public/daily/20261103/index.html");
   const content = daily.split('<main class="record-main">')[1].split("</main>")[0];
   const ordered = [
@@ -628,7 +634,7 @@ test("counts distinguish missing, blank and zero; blank notes and fields stay hi
     assert.doesNotMatch(build.read(`public/daily/${key}/index.html`), /<dl class="study-details"|<dt>/);
   }
   assert.match(build.read("public/daily/20261101/index.html"), /古い記録。/);
-  assert.doesNotMatch(build.read("public/index.html"), /記録メモ/);
+  assert.doesNotMatch(build.read("public/study-log.html"), /記録メモ/);
 });
 
 test("single-line fields support quotes, comments and safe rendering without using date metadata", (t) => {
@@ -700,7 +706,7 @@ test("mixed old and new logs retain chronology, monthly archives and category hi
   assert.equal(logs[0].dateKey, "20261001");
   assert.equal(logs.at(-1).dateKey, "20261025");
   assert.equal(build.run().status, 0);
-  const home = build.read("public/index.html");
+  const home = build.read("public/study-log.html");
   const keys = [...home.matchAll(/data-date-key="(\d{8})"/g)].map((match) => match[1]);
   assert.deepEqual(keys, logs.map((log) => log.dateKey).reverse());
   assert.match(home, /data-archive-month="2026-10"/);
