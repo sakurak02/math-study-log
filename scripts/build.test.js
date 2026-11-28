@@ -741,3 +741,47 @@ test("mathlog offers two templates and keeps the existing category selection sni
   assert.ok(choices.includes("数学B｜数列"));
   assert.ok(choices.includes("未分類"));
 });
+
+test("log updates rebuild the study index without replacing the branded landing page or shop", (t) => {
+  const build = fixture(t, { "logs/2026/11/23/20261123.md": "最初の記録" });
+  assert.equal(build.run().status, 0);
+  const landing = build.read("public/index.html");
+  const shop = build.read("public/shop/index.html");
+  assert.match(landing, /<title>ひたすら数学｜64歳からの高校数学学び直し・学習記録<\/title>/);
+  assert.match(landing, /href="https:\/\/www.youtube.com\/@sakurak02"/);
+  assert.match(landing, /href="\.\/study-log.html"/);
+  assert.match(landing, /href="\.\/shop\/"/);
+  assert.match(landing, /src="\.\/assets\/infinity.svg"/);
+  assert.match(landing, /href="\.\/assets\/favicon.svg"/);
+  assert.match(landing, /G-LTZZZFVRKP/);
+  assert.doesNotMatch(landing, /data-daily-log-entry|クーモ|全制覇|毎日更新/);
+  assert.equal((landing.match(/<h1>/g) || []).length, 1);
+  assertInlineScriptsParse(landing);
+  build.write("logs/2026/11/23/20261123.md", "更新後の記録");
+  assert.equal(build.run().status, 0);
+  assert.equal(build.read("public/index.html"), landing);
+  assert.equal(build.read("public/shop/index.html"), shop);
+  assert.match(build.read("public/study-log.html"), /更新後の記録/);
+  assert.match(build.read("public/daily/20261123/index.html"), /href="\.\.\/\.\.\/study-log.html"/);
+  assert.match(build.read("public/daily/20261123/index.html"), /href="\.\.\/\.\.\/">ひたすら数学 トップへ/);
+});
+
+test("shop lists only the six existing math products with their original prices and sales links", (t) => {
+  const build = fixture(t);
+  assert.equal(build.run().status, 0);
+  const shop = build.read("public/shop/index.html");
+  const products = [...shop.matchAll(/<article class="book"[^]*?<\/article>/g)].map(([html]) => html);
+  assert.equal(products.length, 6);
+  for (const [index, [id, price]] of [
+    ["9017392", "500"], ["9017539", "300"], ["9017559", "300"],
+    ["8529005", "490"], ["8420562", "490"], ["8398118", "980"]
+  ].entries()) {
+    assert.ok(products[index].includes(`../assets/products/${id}.jpg`));
+    assert.ok(products[index].includes(`価格：${price}円`));
+    assert.ok(products[index].includes(`https://kikakuk.booth.pm/items/${id}`));
+  }
+  assert.doesNotMatch(shop, /9002377|壁紙|キャラクター|<form/);
+  assert.match(shop, /href="\.\.\/">トップページへ戻る/);
+  assert.match(shop, /href="\.\.\/assets\/favicon.svg"/);
+  assert.match(build.read("public/sitemap.xml"), /study-log\.html[^]*\/shop\//);
+});

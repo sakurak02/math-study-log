@@ -1,6 +1,6 @@
-# Math Study Log
+# ひたすら数学 / Math Study Log
 
-毎日の数学学習を、計算用紙の写真・学習内容・自由記述のメモで残す静的サイトです。
+「ひたすら数学」のトップ、数学教材Shop、計算用紙の写真・学習内容・自由記述のメモで残すStudy Logからなる静的サイトです。
 
 ## 毎日の更新手順（VS Code・GitHub Desktop）
 
@@ -11,7 +11,7 @@
 5. **カテゴリと写真を指定する。** `category: 未分類` の部分を選択し、既存の `⌘ + Option + C` でカテゴリを選びます。複数分野の場合は各項目の `images` に写真の連番を入力します。3分野以上の日は同じ形の項目を追加します。本文は1日共通のメモで、空欄でも構いません。
 6. **GitHub DesktopでCommitする。** `math-study-log` を選び、追加・変更したファイルを確認します。Summaryに「11月3日の学習記録」などと入力してCommitします。新しい日付フォルダと写真も対象に含めてください。
 7. **Pushする。** `main` ブランチへ反映し、`Push origin` を押します。別ブランチで作業している場合は、変更を `main` に取り込むと公開処理が始まります。
-8. **公開結果を確認する。** GitHubのリポジトリの「Actions」で「Deploy Math Study Log」が成功したことを確認し、[数学学習記録](https://sakurak02.github.io/math-study-log/)を開きます。some-clouds の「Math」からも同じページに入れます。表示が古ければ再読み込みしてください。
+8. **公開結果を確認する。** GitHubのリポジトリの「Actions」で「Deploy Math Study Log」が成功したことを確認し、[数学学習記録](https://sakurak02.github.io/math-study-log/study-log.html)を開きます。some-clouds の「Math」からは「ひたすら数学」のトップに入り、Study Logを選べます。表示が古ければ再読み込みしてください。
 
 JSON・一覧・HTMLを手作業で編集したり、some-clouds を更新したりする必要はありません。GitHub Actionsがテスト、トップページ・日別ページ・サイトマップの生成、GitHub Pagesへの公開を行います。
 
@@ -98,7 +98,32 @@ npm run build
 
 ## 公開ページ
 
-- `/`：最新の写真グリッド、年月別アーカイブ、教科→章のカテゴリー別テキスト一覧
+- `/`：ひたすら数学のトップ（学習動画・Study Log・Shopへの入口）
+- `/study-log.html`：従来の写真グリッド、年月別アーカイブ、教科→章のカテゴリー別テキスト一覧
+- `/shop/`：数学教材6商品の紹介と既存BOOTHへのリンク
 - `/daily/YYYYMMDD/`：その日の全写真、学習内容、記録メモ
 
 公開設定は `.github/workflows/deploy.yml` で管理します。公開URL・日付フォルダ・写真の命名規則・標準カテゴリーは従来どおりです。
+
+
+## トップ・Shopと学習記録の生成
+
+日常のObsidian等によるMarkdown・画像の保存と、Commit・Pushの手順は変わりません。追加の更新作業は不要です。
+
+- `scripts/build.js` はStudy Logを `public/study-log.html` に出力し、`scripts/site-pages.js` からトップとShopを別々に生成します。学習記録の更新でトップが一覧に置き換わることはありません。
+- 一覧のURLのみ `/` から `/study-log.html` に移りました。旧URLは新トップとして有効です。旧一覧の `#daily-log-*` と `#category-title` のリンクは新一覧へ引き継ぎます。日別・カテゴリ別ページ、画像のURLは維持します。
+- 元のMarkdownがなく公開ファイルだけ残っている日別ページも削除せず、一覧の「以前の学習記録」とサイトマップからリンクします。既存の `public/daily/20261025/` が該当します。
+- Google Analyticsの測定ID `G-LTZZZFVRKP` は全ページで維持します。Search Console関連では公開先URL・robots.txt・サイトマップURLを維持し、既存の `google*.html`、`CNAME`、`.nojekyll` は再生成時も残します。
+- `public/assets/infinity.svg` は独立した再利用用ロゴ、`public/assets/favicon.svg` はファビコンです。`public/og-image.png` は1200×630のブランド画像です。
+- 商品情報はsome cloudsのShopのMathematics欄から転記した `scripts/shop-products.html`、画像は `public/assets/products/` です。ビルド時にsome cloudsのリポジトリやネットワークを参照しません。some clouds側には変更を加えていません。
+- Focus Goldは確認済みの既存YouTubeチャンネル `https://www.youtube.com/@sakurak02` にリンクします。問題文・紙面・動画の転載や埋め込み、教材購入リンクの追加は行っていません。既存の公開条件に関する新しい許諾の主張も追加していません。
+
+### 完成画面のローカル確認
+
+```sh
+node --test
+node scripts/build.js
+python3 -m http.server 4173 --bind 127.0.0.1 --directory public
+```
+
+ブラウザで `http://127.0.0.1:4173/` を開きます。終了はターミナルで `Control + C`。npmが使える環境では従来どおり `npm test` と `npm run build` も同じ処理です。本番への反映は、完成画面の確認後に行ってください。
